@@ -1,0 +1,44 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    ".": {},
+    "apps/web": {
+      "ignoreDependencies": ["@t3-oss/env-nextjs"],
+      "entry": [
+        "app/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}",
+        "__tests__/**/*.{ts,tsx}",
+        "e2e/**/*.{ts,tsx}"
+      ],
+      "project": [
+        "app/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "__tests__/**/*.{ts,tsx}",
+        "e2e/**/*.{ts,tsx}"
+      ],
+      "playwright": {
+        "config": ["playwright.config.ts"],
+        "entry": ["e2e/**/*.{ts,spec.ts}"]
+      }
+    },
+    "packages/ui": {
+      "ignoreDependencies": ["@tailwindcss/postcss", "postcss-load-config"],
+      "ignore": ["src/styles/**"]
+    },
+    "packages/typescript-config": {
+      "ignore": ["**/*"],
+      "ignoreDependencies": ["next"]
+    },
+    "packages/api": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/db": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["prisma"]
+    }
+  }
+}
