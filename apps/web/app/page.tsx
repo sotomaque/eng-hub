@@ -1,24 +1,54 @@
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import { Button } from "@workspace/ui/components/button";
+import { Suspense } from "react";
+import { AppHeader } from "@/components/app-header";
+import { ProjectSheet } from "@/components/project-sheet";
+import { ProjectsTable } from "@/components/projects-table";
+import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";
+import { createServerCaller } from "@/lib/trpc/server";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+interface PageProps {
+  searchParams: Promise<{
+    edit?: string;
+    create?: string;
+  }>;
+}
+
+async function ProjectsContent() {
+  const trpc = await createServerCaller();
+  const projects = await trpc.project.getAll();
+  return <ProjectsTable projects={projects} />;
+}
+
+async function EditProjectContent({ projectId }: { projectId: string }) {
+  const trpc = await createServerCaller();
+  const project = await trpc.project.getById({ id: projectId });
+  if (!project) return null;
+  return <ProjectSheet project={project} />;
+}
+
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const editProjectId = params.edit;
+  const isCreating = params.create === "true";
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-4xl font-bold tracking-tight">Eng Hub</h1>
-      <p className="text-muted-foreground text-lg">
-        Engineering project management dashboard
-      </p>
-      <SignedOut>
-        <SignInButton mode="modal">
-          <Button>Get Started</Button>
-        </SignInButton>
-      </SignedOut>
-      <SignedIn>
-        <div className="flex items-center gap-4">
-          <UserButton />
-          <p className="text-muted-foreground text-sm">You're signed in</p>
-        </div>
-      </SignedIn>
-    </main>
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <Suspense fallback={<ProjectsTableSkeleton />}>
+          <ProjectsContent />
+        </Suspense>
+      </main>
+
+      {isCreating && <ProjectSheet />}
+
+      {editProjectId && (
+        <Suspense fallback={null}>
+          <EditProjectContent projectId={editProjectId} />
+        </Suspense>
+      )}
+    </div>
   );
 }

@@ -1,0 +1,82 @@
+import { db } from "@workspace/db";
+import { z } from "zod";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+
+const roadmapStatusEnum = z.enum([
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "AT_RISK",
+]);
+
+const createQuarterlyGoalSchema = z.object({
+  projectId: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  targetDate: z.coerce.date(),
+  status: roadmapStatusEnum.default("NOT_STARTED"),
+});
+
+const updateQuarterlyGoalSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  targetDate: z.coerce.date(),
+  status: roadmapStatusEnum,
+});
+
+export const quarterlyGoalRouter = createTRPCRouter({
+  getByProjectId: publicProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ input }) => {
+      return db.quarterlyGoal.findMany({
+        where: { projectId: input.projectId },
+        orderBy: { targetDate: "asc" },
+      });
+    }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      return db.quarterlyGoal.findUnique({
+        where: { id: input.id },
+      });
+    }),
+
+  create: protectedProcedure
+    .input(createQuarterlyGoalSchema)
+    .mutation(async ({ input }) => {
+      return db.quarterlyGoal.create({
+        data: {
+          projectId: input.projectId,
+          title: input.title,
+          description: input.description,
+          targetDate: input.targetDate,
+          status: input.status,
+        },
+      });
+    }),
+
+  update: protectedProcedure
+    .input(updateQuarterlyGoalSchema)
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      return db.quarterlyGoal.update({
+        where: { id },
+        data: {
+          title: data.title,
+          description: data.description,
+          targetDate: data.targetDate,
+          status: data.status,
+        },
+      });
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      return db.quarterlyGoal.delete({
+        where: { id: input.id },
+      });
+    }),
+});

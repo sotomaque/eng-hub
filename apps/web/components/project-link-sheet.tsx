@@ -1,0 +1,153 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { ProjectLink } from "@prisma/client";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@workspace/ui/components/button";
+import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@workspace/ui/components/sheet";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { useTRPC } from "@/lib/trpc/client";
+import {
+  type CreateProjectLinkInput,
+  createProjectLinkSchema,
+} from "@/lib/validations/project-link";
+
+interface ProjectLinkSheetProps {
+  projectId: string;
+  link?: ProjectLink;
+}
+
+export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
+  const router = useRouter();
+  const trpc = useTRPC();
+  const isEditing = !!link;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateProjectLinkInput>({
+    resolver: zodResolver(createProjectLinkSchema),
+    defaultValues: {
+      projectId,
+      label: link?.label ?? "",
+      url: link?.url ?? "",
+    },
+  });
+
+  const createMutation = useMutation(
+    trpc.projectLink.create.mutationOptions({
+      onSuccess: () => {
+        toast.success("Link added");
+        handleClose();
+        router.refresh();
+      },
+      onError: (error) => toast.error(error.message),
+      onSettled: () => setIsSubmitting(false),
+    }),
+  );
+
+  const updateMutation = useMutation(
+    trpc.projectLink.update.mutationOptions({
+      onSuccess: () => {
+        toast.success("Link updated");
+        handleClose();
+        router.refresh();
+      },
+      onError: (error) => toast.error(error.message),
+      onSettled: () => setIsSubmitting(false),
+    }),
+  );
+
+  function handleClose() {
+    router.push(`/projects/${projectId}`, { scroll: false });
+    reset();
+  }
+
+  function onSubmit(data: CreateProjectLinkInput) {
+    setIsSubmitting(true);
+    if (isEditing && link) {
+      const { projectId: _, ...rest } = data;
+      updateMutation.mutate({ ...rest, id: link.id });
+    } else {
+      createMutation.mutate(data);
+    }
+  }
+
+  return (
+    <Sheet open onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? "Edit Link" : "Add Link"}</SheetTitle>
+          <SheetDescription>
+            {isEditing
+              ? "Update the link details."
+              : "Add a helpful link for this project (Figma, docs, etc.)."}
+          </SheetDescription>
+        </SheetHeader>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4 py-4"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="label">Label</Label>
+            <Input
+              id="label"
+              placeholder="Figma Designs"
+              {...register("label")}
+              aria-invalid={!!errors.label}
+            />
+            {errors.label && (
+              <p className="text-destructive text-sm">{errors.label.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="url">URL</Label>
+            <Input
+              id="url"
+              type="url"
+              placeholder="https://figma.com/..."
+              {...register("url")}
+              aria-invalid={!!errors.url}
+            />
+            {errors.url && (
+              <p className="text-destructive text-sm">{errors.url.message}</p>
+            )}
+          </div>
+
+          <SheetFooter className="pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              {isEditing ? "Save Changes" : "Add Link"}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}

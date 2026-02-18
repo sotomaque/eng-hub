@@ -6,3 +6,97 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum HealthStatus {
+  RED
+  YELLOW
+  GREEN
+}
+
+enum RoadmapStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  AT_RISK
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  githubUrl   String?  @map("github_url")
+  gitlabUrl   String?  @map("gitlab_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  statusUpdates  StatusUpdate[]
+  teamMembers    TeamMember[]
+  milestones     Milestone[]
+  quarterlyGoals QuarterlyGoal[]
+  links          ProjectLink[]
+
+  @@map("projects")
+}
+
+model StatusUpdate {
+  id          String       @id @default(cuid())
+  status      HealthStatus
+  description String?
+  authorId    String       @map("author_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  projectId   String       @map("project_id")
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("status_updates")
+}
+
+model TeamMember {
+  id             String  @id @default(cuid())
+  name           String
+  email          String
+  role           String
+  githubUsername  String? @map("github_username")
+  gitlabUsername  String? @map("gitlab_username")
+  projectId      String  @map("project_id")
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+}
+
+model Milestone {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  targetDate  DateTime      @map("target_date")
+  status      RoadmapStatus @default(NOT_STARTED)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  projectId   String        @map("project_id")
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("milestones")
+}
+
+model QuarterlyGoal {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  targetDate  DateTime      @map("target_date")
+  status      RoadmapStatus @default(NOT_STARTED)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  projectId   String        @map("project_id")
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("quarterly_goals")
+}
+
+model ProjectLink {
+  id        String  @id @default(cuid())
+  label     String
+  url       String
+  projectId String  @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_links")
+}
