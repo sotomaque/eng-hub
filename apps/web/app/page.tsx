@@ -1,3 +1,4 @@
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@workspace/ui/components/button";
 
 export default function Home() {
@@ -7,7 +8,17 @@ export default function Home() {
       <p className="text-muted-foreground text-lg">
         Engineering project management dashboard
       </p>
-      <Button>Get Started</Button>
+      <SignedOut>
+        <SignInButton mode="modal">
+          <Button>Get Started</Button>
+        </SignInButton>
+      </SignedOut>
+      <SignedIn>
+        <div className="flex items-center gap-4">
+          <UserButton />
+          <p className="text-muted-foreground text-sm">You're signed in</p>
+        </div>
+      </SignedIn>
     </main>
   );
 }
