@@ -1,6 +1,13 @@
 "use client";
 
-import type { Role, Team, TeamMember, Title } from "@prisma/client";
+import type {
+  Person,
+  Role,
+  Team,
+  TeamMember,
+  TeamMembership,
+  Title,
+} from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -34,8 +41,9 @@ import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRelations = TeamMember & {
+  person: Person;
   role: Role;
-  team: Team | null;
+  teamMemberships: (TeamMembership & { team: Team })[];
   title: Title | null;
 };
 
@@ -82,7 +90,7 @@ export function TeamMembersTable({
   const columns: ColumnDef<MemberWithRelations>[] = [
     {
       id: "name",
-      accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+      accessorFn: (row) => `${row.person.firstName} ${row.person.lastName}`,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Name" />
       ),
@@ -91,10 +99,10 @@ export function TeamMembersTable({
         return (
           <div className="flex items-center gap-2">
             <Avatar className="size-7 shrink-0">
-              <AvatarImage src={member.imageUrl ?? undefined} />
+              <AvatarImage src={member.person.imageUrl ?? undefined} />
               <AvatarFallback className="text-xs">
-                {member.firstName[0]}
-                {member.lastName[0]}
+                {member.person.firstName[0]}
+                {member.person.lastName[0]}
               </AvatarFallback>
             </Avatar>
             <span className="font-medium">{row.getValue("name")}</span>
@@ -103,7 +111,8 @@ export function TeamMembersTable({
       },
     },
     {
-      accessorKey: "email",
+      id: "email",
+      accessorFn: (row) => row.person.email,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -164,7 +173,8 @@ export function TeamMembersTable({
       },
     },
     {
-      accessorKey: "githubUsername",
+      id: "githubUsername",
+      accessorFn: (row) => row.person.githubUsername ?? "",
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -182,7 +192,8 @@ export function TeamMembersTable({
       enableSorting: false,
     },
     {
-      accessorKey: "gitlabUsername",
+      id: "gitlabUsername",
+      accessorFn: (row) => row.person.gitlabUsername ?? "",
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -232,7 +243,8 @@ export function TeamMembersTable({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Remove team member?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will remove &quot;{member.firstName} {member.lastName}
+                    This will remove &quot;{member.person.firstName}{" "}
+                    {member.person.lastName}
                     &quot; from the project team.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

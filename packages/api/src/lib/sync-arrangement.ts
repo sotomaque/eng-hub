@@ -6,7 +6,7 @@ type TransactionClient = Parameters<
 
 /**
  * Rebuilds the active arrangement's teams and assignments from the current
- * live Team / TeamMember state. Called after every live-team mutation so
+ * live Team / TeamMembership state. Called after every live-team mutation so
  * the active arrangement stays in sync.
  */
 export async function syncLiveToActiveArrangement(
@@ -28,8 +28,8 @@ export async function syncLiveToActiveArrangement(
     where: { projectId },
     orderBy: { name: "asc" },
   });
-  const members = await tx.teamMember.findMany({
-    where: { projectId, teamId: { not: null } },
+  const memberships = await tx.teamMembership.findMany({
+    where: { team: { projectId } },
   });
 
   for (const [i, team] of teams.entries()) {
@@ -42,12 +42,14 @@ export async function syncLiveToActiveArrangement(
       },
     });
 
-    const teamMembers = members.filter((m) => m.teamId === team.id);
-    if (teamMembers.length > 0) {
+    const teamMemberIds = memberships
+      .filter((m) => m.teamId === team.id)
+      .map((m) => m.teamMemberId);
+    if (teamMemberIds.length > 0) {
       await tx.arrangementAssignment.createMany({
-        data: teamMembers.map((m) => ({
+        data: teamMemberIds.map((memberId) => ({
           arrangementTeamId: arrTeam.id,
-          teamMemberId: m.id,
+          teamMemberId: memberId,
         })),
       });
     }

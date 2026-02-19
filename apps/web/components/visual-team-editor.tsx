@@ -22,8 +22,11 @@ import { useTRPC } from "@/lib/trpc/client";
 
 interface MemberData {
   id: string;
-  firstName: string;
-  lastName: string;
+  person: {
+    firstName: string;
+    lastName: string;
+    imageUrl?: string | null;
+  };
   title: { name: string } | null;
   role: Role;
 }
@@ -57,8 +60,7 @@ export function VisualTeamEditor({
   const trpc = useTRPC();
   const [activeMember, setActiveMember] = useState<{
     id: string;
-    firstName: string;
-    lastName: string;
+    person: { firstName: string; lastName: string };
   } | null>(null);
 
   const sensors = useSensors(
@@ -96,8 +98,7 @@ export function VisualTeamEditor({
     };
     setActiveMember({
       id: memberId,
-      firstName: memberFirstName,
-      lastName: memberLastName,
+      person: { firstName: memberFirstName, lastName: memberLastName },
     });
   }
 
@@ -176,7 +177,7 @@ export function VisualTeamEditor({
       <DragOverlay>
         {activeMember && (
           <div className="rounded-md border border-l-4 border-l-primary bg-background px-3 py-1.5 text-sm font-medium shadow-lg">
-            {activeMember.firstName} {activeMember.lastName}
+            {activeMember.person.firstName} {activeMember.person.lastName}
           </div>
         )}
       </DragOverlay>

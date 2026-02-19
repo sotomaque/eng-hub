@@ -50,13 +50,13 @@ model Role {
 }
 
 model Team {
-  id          String       @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String?
-  imageUrl    String?      @map("image_url")
-  projectId String       @map("project_id")
-  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  members   TeamMember[]
+  imageUrl    String?          @map("image_url")
+  projectId   String           @map("project_id")
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  memberships TeamMembership[]
 
   arrangementTeam ArrangementTeam?
 
@@ -83,26 +83,50 @@ model Title {
   @@map("titles")
 }
 
-model TeamMember {
-  id             String  @id @default(cuid())
-  firstName      String  @map("first_name")
-  lastName       String  @map("last_name")
-  email          String
-  titleId        String? @map("title_id")
-  title          Title?  @relation(fields: [titleId], references: [id], onDelete: SetNull)
-  githubUsername  String? @map("github_username")
-  gitlabUsername  String? @map("gitlab_username")
-  imageUrl       String? @map("image_url")
-  projectId      String  @map("project_id")
-  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  roleId         String  @map("role_id")
-  role           Role    @relation(fields: [roleId], references: [id])
-  teamId         String? @map("team_id")
-  team           Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+model Person {
+  id             String   @id @default(cuid())
+  firstName      String   @map("first_name")
+  lastName       String   @map("last_name")
+  email          String   @unique
+  githubUsername  String?  @map("github_username")
+  gitlabUsername  String?  @map("gitlab_username")
+  imageUrl       String?  @map("image_url")
+  clerkUserId    String?  @unique @map("clerk_user_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
+  projectMemberships TeamMember[]
+
+  @@map("people")
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  personId  String  @map("person_id")
+  person    Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+  projectId String  @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  roleId    String  @map("role_id")
+  role      Role    @relation(fields: [roleId], references: [id])
+  titleId   String? @map("title_id")
+  title     Title?  @relation(fields: [titleId], references: [id], onDelete: SetNull)
+
+  teamMemberships        TeamMembership[]
   arrangementAssignments ArrangementAssignment[]
 
+  @@unique([personId, projectId])
   @@map("team_members")
+}
+
+model TeamMembership {
+  id           String     @id @default(cuid())
+  teamId       String     @map("team_id")
+  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamMemberId String     @map("team_member_id")
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, teamMemberId])
+  @@map("team_memberships")
 }
 
 model Milestone {

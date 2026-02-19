@@ -9,7 +9,7 @@ export const teamRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.team.findMany({
         where: { projectId: input.projectId },
-        include: { _count: { select: { members: true } } },
+        include: { _count: { select: { memberships: true } } },
         orderBy: { name: "asc" },
       });
     }),

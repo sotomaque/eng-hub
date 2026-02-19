@@ -19,11 +19,13 @@ import type { TitleColorMap } from "@/lib/constants/team";
 
 interface TeamMemberData {
   id: string;
-  firstName: string;
-  lastName: string;
+  person: {
+    firstName: string;
+    lastName: string;
+    imageUrl?: string | null;
+  };
   title: { name: string } | null;
   role: Role;
-  imageUrl?: string | null;
 }
 
 interface DroppableTeamCardProps {
@@ -139,12 +141,12 @@ export function DroppableTeamCard({
               <DraggableMemberChip
                 key={member.id}
                 id={member.id}
-                firstName={member.firstName}
-                lastName={member.lastName}
+                firstName={member.person.firstName}
+                lastName={member.person.lastName}
                 title={member.title}
                 role={member.role}
                 sourceTeamId={teamId}
-                imageUrl={member.imageUrl}
+                imageUrl={member.person.imageUrl}
               />
             ))}
           </div>

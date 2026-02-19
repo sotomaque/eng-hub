@@ -8,7 +8,6 @@ import type {
   RoadmapStatus,
   StatusUpdate,
   Team,
-  TeamMember,
 } from "@prisma/client";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -43,7 +42,7 @@ interface ProjectOverviewProps {
   projectId: string;
   description: string | null;
   latestStatus: StatusUpdate | null;
-  teamMembers: TeamMember[];
+  teamMembers: { id: string }[];
   teams: Team[];
   milestones: Milestone[];
   quarterlyGoals: QuarterlyGoal[];

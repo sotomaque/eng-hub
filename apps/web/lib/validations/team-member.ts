@@ -7,7 +7,7 @@ export const createTeamMemberSchema = z.object({
   email: z.string().email("Must be a valid email"),
   titleId: z.string().optional().or(z.literal("")),
   roleId: z.string().min(1, "Role is required"),
-  teamId: z.string().optional().or(z.literal("")),
+  teamIds: z.array(z.string()).optional(),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),

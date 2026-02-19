@@ -25,8 +25,10 @@ import { useTRPC } from "@/lib/trpc/client";
 
 interface MemberData {
   id: string;
-  firstName: string;
-  lastName: string;
+  person: {
+    firstName: string;
+    lastName: string;
+  };
   title: { name: string } | null;
   role: Role;
 }
@@ -110,7 +112,7 @@ export function TableTeamView({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">
-                      {member.firstName} {member.lastName}
+                      {member.person.firstName} {member.person.lastName}
                     </p>
                     <p className="text-muted-foreground text-xs">
                       {member.role.name}
@@ -191,7 +193,8 @@ export function TableTeamView({
                     >
                       <div className="min-w-0">
                         <span className="text-sm">
-                          {a.teamMember.firstName} {a.teamMember.lastName}
+                          {a.teamMember.person.firstName}{" "}
+                          {a.teamMember.person.lastName}
                         </span>
                         <span className="text-muted-foreground ml-2 text-xs">
                           {a.teamMember.role.name}

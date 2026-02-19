@@ -30,9 +30,11 @@ export const arrangementRouter = createTRPCRouter({
             include: {
               assignments: {
                 include: {
-                  teamMember: { include: { role: true, title: true } },
+                  teamMember: {
+                    include: { person: true, role: true, title: true },
+                  },
                 },
-                orderBy: { teamMember: { lastName: "asc" } },
+                orderBy: { teamMember: { person: { lastName: "asc" } } },
               },
             },
           },
@@ -44,8 +46,8 @@ export const arrangementRouter = createTRPCRouter({
       // Get all project members to determine unassigned ones
       const allMembers = await db.teamMember.findMany({
         where: { projectId: arrangement.projectId },
-        include: { role: true, title: true },
-        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        include: { person: true, role: true, title: true },
+        orderBy: { person: { lastName: "asc" } },
       });
 
       const assignedMemberIds = new Set(
@@ -133,8 +135,8 @@ export const arrangementRouter = createTRPCRouter({
           orderBy: { name: "asc" },
         });
 
-        const members = await tx.teamMember.findMany({
-          where: { projectId: input.projectId, teamId: { not: null } },
+        const memberships = await tx.teamMembership.findMany({
+          where: { team: { projectId: input.projectId } },
         });
 
         const newArrangement = await tx.teamArrangement.create({
@@ -150,12 +152,14 @@ export const arrangementRouter = createTRPCRouter({
             },
           });
 
-          const teamMembers = members.filter((m) => m.teamId === team.id);
-          if (teamMembers.length > 0) {
+          const teamMemberIds = memberships
+            .filter((m) => m.teamId === team.id)
+            .map((m) => m.teamMemberId);
+          if (teamMemberIds.length > 0) {
             await tx.arrangementAssignment.createMany({
-              data: teamMembers.map((m) => ({
+              data: teamMemberIds.map((memberId) => ({
                 arrangementTeamId: newTeam.id,
-                teamMemberId: m.id,
+                teamMemberId: memberId,
               })),
             });
           }
@@ -186,8 +190,8 @@ export const arrangementRouter = createTRPCRouter({
           where: { projectId: input.projectId },
           orderBy: { name: "asc" },
         });
-        const members = await tx.teamMember.findMany({
-          where: { projectId: input.projectId, teamId: { not: null } },
+        const memberships = await tx.teamMembership.findMany({
+          where: { team: { projectId: input.projectId } },
         });
 
         for (const [i, team] of teams.entries()) {
@@ -199,12 +203,14 @@ export const arrangementRouter = createTRPCRouter({
               liveTeamId: team.id,
             },
           });
-          const teamMembers = members.filter((m) => m.teamId === team.id);
-          if (teamMembers.length > 0) {
+          const teamMemberIds = memberships
+            .filter((m) => m.teamId === team.id)
+            .map((m) => m.teamMemberId);
+          if (teamMemberIds.length > 0) {
             await tx.arrangementAssignment.createMany({
-              data: teamMembers.map((m) => ({
+              data: teamMemberIds.map((memberId) => ({
                 arrangementTeamId: arrTeam.id,
-                teamMemberId: m.id,
+                teamMemberId: memberId,
               })),
             });
           }
@@ -252,7 +258,7 @@ export const arrangementRouter = createTRPCRouter({
           data: { isActive: true },
         });
 
-        // Delete all existing live Team records (cascades TeamMember.teamId to null)
+        // Delete all existing live Team records (cascades TeamMembership via onDelete: Cascade)
         await tx.team.deleteMany({
           where: { projectId: arrangement.projectId },
         });
@@ -272,26 +278,17 @@ export const arrangementRouter = createTRPCRouter({
             data: { liveTeamId: newTeam.id },
           });
 
+          // Create team memberships for assigned members
           const memberIds = arrTeam.assignments.map((a) => a.teamMemberId);
           if (memberIds.length > 0) {
-            await tx.teamMember.updateMany({
-              where: { id: { in: memberIds } },
-              data: { teamId: newTeam.id },
+            await tx.teamMembership.createMany({
+              data: memberIds.map((memberId) => ({
+                teamId: newTeam.id,
+                teamMemberId: memberId,
+              })),
             });
           }
         }
-
-        // Set unassigned members' teamId to null
-        const allAssignedIds = arrangement.teams.flatMap((t) =>
-          t.assignments.map((a) => a.teamMemberId),
-        );
-        await tx.teamMember.updateMany({
-          where: {
-            projectId: arrangement.projectId,
-            id: { notIn: allAssignedIds },
-          },
-          data: { teamId: null },
-        });
       });
     }),
 
@@ -416,9 +413,18 @@ export const arrangementRouter = createTRPCRouter({
 
         // Sync to live team if arrangement is active
         if (arrTeam.arrangement.isActive && arrTeam.liveTeamId) {
-          await tx.teamMember.update({
-            where: { id: input.teamMemberId },
-            data: { teamId: arrTeam.liveTeamId },
+          // Remove existing memberships for this member in this project
+          await tx.teamMembership.deleteMany({
+            where: {
+              teamMemberId: input.teamMemberId,
+              team: { projectId: arrTeam.arrangement.projectId },
+            },
+          });
+          await tx.teamMembership.create({
+            data: {
+              teamId: arrTeam.liveTeamId,
+              teamMemberId: input.teamMemberId,
+            },
           });
         }
 
@@ -448,10 +454,12 @@ export const arrangementRouter = createTRPCRouter({
         });
 
         // Sync to live team if arrangement is active
-        if (arrTeam.arrangement.isActive) {
-          await tx.teamMember.update({
-            where: { id: input.teamMemberId },
-            data: { teamId: null },
+        if (arrTeam.arrangement.isActive && arrTeam.liveTeamId) {
+          await tx.teamMembership.deleteMany({
+            where: {
+              teamMemberId: input.teamMemberId,
+              teamId: arrTeam.liveTeamId,
+            },
           });
         }
       });
@@ -482,16 +490,36 @@ export const arrangementRouter = createTRPCRouter({
         });
 
         // Sync to live team if arrangement is active
-        const toArrTeam = await tx.arrangementTeam.findUniqueOrThrow({
-          where: { id: input.toTeamId },
-          include: { arrangement: true },
-        });
+        const [fromArrTeam, toArrTeam] = await Promise.all([
+          tx.arrangementTeam.findUniqueOrThrow({
+            where: { id: input.fromTeamId },
+            include: { arrangement: true },
+          }),
+          tx.arrangementTeam.findUniqueOrThrow({
+            where: { id: input.toTeamId },
+            include: { arrangement: true },
+          }),
+        ]);
 
-        if (toArrTeam.arrangement.isActive && toArrTeam.liveTeamId) {
-          await tx.teamMember.update({
-            where: { id: input.teamMemberId },
-            data: { teamId: toArrTeam.liveTeamId },
-          });
+        if (toArrTeam.arrangement.isActive) {
+          // Remove membership from old live team
+          if (fromArrTeam.liveTeamId) {
+            await tx.teamMembership.deleteMany({
+              where: {
+                teamMemberId: input.teamMemberId,
+                teamId: fromArrTeam.liveTeamId,
+              },
+            });
+          }
+          // Add membership to new live team
+          if (toArrTeam.liveTeamId) {
+            await tx.teamMembership.create({
+              data: {
+                teamId: toArrTeam.liveTeamId,
+                teamMemberId: input.teamMemberId,
+              },
+            });
+          }
         }
 
         return assignment;

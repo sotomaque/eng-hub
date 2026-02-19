@@ -10,7 +10,7 @@ const createTeamMemberSchema = z.object({
   email: z.string().email(),
   titleId: z.string().optional().or(z.literal("")),
   roleId: z.string(),
-  teamId: z.string().optional().or(z.literal("")),
+  teamIds: z.array(z.string()).optional(),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
@@ -23,7 +23,7 @@ const updateTeamMemberSchema = z.object({
   email: z.string().email(),
   titleId: z.string().optional().or(z.literal("")),
   roleId: z.string(),
-  teamId: z.string().optional().or(z.literal("")),
+  teamIds: z.array(z.string()).optional(),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
@@ -35,8 +35,13 @@ export const teamMemberRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.teamMember.findMany({
         where: { projectId: input.projectId },
-        include: { role: true, team: true, title: true },
-        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        include: {
+          person: true,
+          role: true,
+          title: true,
+          teamMemberships: { include: { team: true } },
+        },
+        orderBy: { person: { lastName: "asc" } },
       });
     }),
 
@@ -45,28 +50,55 @@ export const teamMemberRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.teamMember.findUnique({
         where: { id: input.id },
-        include: { role: true, team: true, title: true },
+        include: {
+          person: true,
+          role: true,
+          title: true,
+          teamMemberships: { include: { team: true } },
+        },
       });
     }),
 
   create: protectedProcedure
     .input(createTeamMemberSchema)
     .mutation(async ({ input }) => {
+      const teamIds = input.teamIds?.filter(Boolean) ?? [];
       return db.$transaction(async (tx) => {
+        // Find or create the Person by email
+        let person = await tx.person.findUnique({
+          where: { email: input.email },
+        });
+        if (!person) {
+          person = await tx.person.create({
+            data: {
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: input.email,
+              githubUsername: input.githubUsername || null,
+              gitlabUsername: input.gitlabUsername || null,
+              imageUrl: input.imageUrl || null,
+            },
+          });
+        }
+
         const member = await tx.teamMember.create({
           data: {
+            personId: person.id,
             projectId: input.projectId,
-            firstName: input.firstName,
-            lastName: input.lastName,
-            email: input.email,
-            titleId: input.titleId || null,
             roleId: input.roleId,
-            teamId: input.teamId || null,
-            githubUsername: input.githubUsername || null,
-            gitlabUsername: input.gitlabUsername || null,
-            imageUrl: input.imageUrl || null,
+            titleId: input.titleId || null,
           },
         });
+
+        if (teamIds.length > 0) {
+          await tx.teamMembership.createMany({
+            data: teamIds.map((teamId) => ({
+              teamId,
+              teamMemberId: member.id,
+            })),
+          });
+        }
+
         await syncLiveToActiveArrangement(tx, input.projectId);
         return member;
       });
@@ -75,22 +107,49 @@ export const teamMemberRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateTeamMemberSchema)
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
+      const { id, teamIds: rawTeamIds, ...data } = input;
+      const teamIds = rawTeamIds?.filter(Boolean) ?? [];
       return db.$transaction(async (tx) => {
-        const member = await tx.teamMember.update({
+        // Get the existing member to find the Person
+        const existing = await tx.teamMember.findUniqueOrThrow({
           where: { id },
+        });
+
+        // Update Person identity fields
+        await tx.person.update({
+          where: { id: existing.personId },
           data: {
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
-            titleId: data.titleId || null,
-            roleId: data.roleId,
-            teamId: data.teamId || null,
             githubUsername: data.githubUsername || null,
             gitlabUsername: data.gitlabUsername || null,
             imageUrl: data.imageUrl || null,
           },
         });
+
+        // Update TeamMember project-specific fields
+        const member = await tx.teamMember.update({
+          where: { id },
+          data: {
+            titleId: data.titleId || null,
+            roleId: data.roleId,
+          },
+        });
+
+        // Sync team memberships: delete all, recreate
+        await tx.teamMembership.deleteMany({
+          where: { teamMemberId: id },
+        });
+        if (teamIds.length > 0) {
+          await tx.teamMembership.createMany({
+            data: teamIds.map((teamId) => ({
+              teamId,
+              teamMemberId: id,
+            })),
+          });
+        }
+
         await syncLiveToActiveArrangement(tx, member.projectId);
         return member;
       });

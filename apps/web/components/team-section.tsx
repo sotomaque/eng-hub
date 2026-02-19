@@ -1,6 +1,13 @@
 "use client";
 
-import type { Role, Team, TeamMember, Title } from "@prisma/client";
+import type {
+  Person,
+  Role,
+  Team,
+  TeamMember,
+  TeamMembership,
+  Title,
+} from "@prisma/client";
 import {
   Avatar,
   AvatarFallback,
@@ -22,8 +29,9 @@ import { TeamMembersTable } from "@/components/team-members-table";
 import { buildTitleColorMap } from "@/lib/constants/team";
 
 type MemberWithRelations = TeamMember & {
+  person: Person;
   role: Role;
-  team: Team | null;
+  teamMemberships: (TeamMembership & { team: Team })[];
   title: Title | null;
 };
 
@@ -44,14 +52,18 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
     return buildTitleColorMap(titleNames);
   }, [members]);
 
-  // Group members by team
+  // Group members by team (a member can appear under multiple teams)
   const orderedGroups = useMemo(() => {
-    const membersByTeam = new Map<string | null, MemberWithRelations[]>();
+    const membersByTeam = new Map<string, MemberWithRelations[]>();
+    const assignedMemberIds = new Set<string>();
+
     for (const member of members) {
-      const key = member.teamId;
-      const group = membersByTeam.get(key) ?? [];
-      group.push(member);
-      membersByTeam.set(key, group);
+      for (const membership of member.teamMemberships) {
+        assignedMemberIds.add(member.id);
+        const group = membersByTeam.get(membership.teamId) ?? [];
+        group.push(member);
+        membersByTeam.set(membership.teamId, group);
+      }
     }
 
     const groups: { team: Team | null; members: MemberWithRelations[] }[] = [];
@@ -61,8 +73,8 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
         groups.push({ team, members: teamMembers });
       }
     }
-    const unassigned = membersByTeam.get(null);
-    if (unassigned) {
+    const unassigned = members.filter((m) => !assignedMemberIds.has(m.id));
+    if (unassigned.length > 0) {
       groups.push({ team: null, members: unassigned });
     }
     return groups;

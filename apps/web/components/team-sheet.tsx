@@ -87,7 +87,7 @@ export function TeamSheet({ projectId }: TeamSheetProps) {
                 )}
               </div>
               <span className="text-muted-foreground rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
-                {team._count.members}
+                {team._count.memberships}
               </span>
               <Button
                 variant="ghost"

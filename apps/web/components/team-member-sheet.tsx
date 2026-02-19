@@ -1,7 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Role, Team, TeamMember, Title } from "@prisma/client";
+import type {
+  Person,
+  Role,
+  Team,
+  TeamMember,
+  TeamMembership,
+  Title,
+} from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -21,7 +28,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -35,7 +42,12 @@ import {
 
 interface TeamMemberSheetProps {
   projectId: string;
-  member?: TeamMember & { role: Role; team: Team | null; title: Title | null };
+  member?: TeamMember & {
+    person: Person;
+    role: Role;
+    teamMemberships: (TeamMembership & { team: Team })[];
+    title: Title | null;
+  };
 }
 
 export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
@@ -44,7 +56,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const isEditing = !!member;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(
-    member?.imageUrl ?? null,
+    member?.person.imageUrl ?? null,
   );
   const emailManuallyEdited = useRef(isEditing);
 
@@ -66,14 +78,14 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     resolver: zodResolver(createTeamMemberSchema),
     defaultValues: {
       projectId,
-      firstName: member?.firstName ?? "",
-      lastName: member?.lastName ?? "",
-      email: member?.email ?? "",
+      firstName: member?.person.firstName ?? "",
+      lastName: member?.person.lastName ?? "",
+      email: member?.person.email ?? "",
       titleId: member?.titleId ?? "",
       roleId: member?.roleId ?? "",
-      teamId: member?.teamId ?? "",
-      githubUsername: member?.githubUsername ?? "",
-      gitlabUsername: member?.gitlabUsername ?? "",
+      teamIds: member?.teamMemberships.map((m) => m.teamId) ?? [],
+      githubUsername: member?.person.githubUsername ?? "",
+      gitlabUsername: member?.person.gitlabUsername ?? "",
     },
   });
 
@@ -156,7 +168,9 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
             onUploadComplete={(url) => setImageUrl(url)}
             onRemove={() => setImageUrl(null)}
             fallbackText={
-              member ? `${member.firstName[0]}${member.lastName[0]}` : ""
+              member
+                ? `${member.person.firstName[0]}${member.person.lastName[0]}`
+                : ""
             }
             shape="circle"
           />
@@ -292,30 +306,39 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
 
           {teams.length > 0 && (
             <div className="space-y-2">
-              <Label>Team</Label>
+              <Label>Teams</Label>
               <Controller
-                name="teamId"
+                name="teamIds"
                 control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
-                    value={field.value || "__none__"}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="No team (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">No team</SelectItem>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                render={({ field }) => {
+                  const selected = field.value ?? [];
+                  const toggle = (teamId: string) => {
+                    const next = selected.includes(teamId)
+                      ? selected.filter((id) => id !== teamId)
+                      : [...selected, teamId];
+                    field.onChange(next);
+                  };
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      {teams.map((team) => {
+                        const isSelected = selected.includes(team.id);
+                        return (
+                          <Button
+                            key={team.id}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggle(team.id)}
+                            className="gap-1"
+                          >
+                            {isSelected && <Check className="size-3" />}
+                            {team.name}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  );
+                }}
               />
             </div>
           )}
