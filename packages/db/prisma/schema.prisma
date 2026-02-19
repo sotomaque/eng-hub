@@ -109,6 +109,7 @@ model Person {
   managerChanges        ManagerChange[] @relation("PersonManagerChanges")
   oldManagerOfChanges   ManagerChange[] @relation("OldManagerChanges")
   newManagerOfChanges   ManagerChange[] @relation("NewManagerChanges")
+  meetings              Meeting[]
 
   @@map("people")
 }
@@ -266,4 +267,33 @@ model ContributorStats {
 
   @@unique([projectId, githubUsername, period])
   @@map("contributor_stats")
+}
+
+model MeetingTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  content     Json     @default("{}")
+  authorId    String   @map("author_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  meetings Meeting[]
+
+  @@map("meeting_templates")
+}
+
+model Meeting {
+  id         String            @id @default(cuid())
+  date       DateTime
+  content    Json              @default("{}")
+  authorId   String            @map("author_id")
+  personId   String            @map("person_id")
+  person     Person            @relation(fields: [personId], references: [id], onDelete: Cascade)
+  templateId String?           @map("template_id")
+  template   MeetingTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  @@map("meetings")
 }

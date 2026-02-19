@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Projects" },
   { href: "/people", label: "People" },
   { href: "/org-chart", label: "Org Chart" },
+  { href: "/me", label: "My Dashboard" },
 ];
 
 export function MainNav() {

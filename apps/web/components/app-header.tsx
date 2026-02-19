@@ -1,4 +1,5 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { shadcn } from "@clerk/themes";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { MainNav } from "@/components/main-nav";
@@ -24,7 +25,14 @@ export function AppHeader() {
             </SignInButton>
           </SignedOut>
           <SignedIn>
-            <UserButton />
+            <UserButton
+              appearance={{
+                theme: shadcn,
+                elements: {
+                  userButtonPopoverFooter: { display: "none" },
+                },
+              }}
+            />
           </SignedIn>
         </div>
       </div>

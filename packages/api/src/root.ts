@@ -2,6 +2,8 @@ import { arrangementRouter } from "./routers/arrangement";
 import { githubStatsRouter } from "./routers/github-stats";
 import { healthRouter } from "./routers/health";
 import { managerChangeRouter } from "./routers/manager-change";
+import { meetingRouter } from "./routers/meeting";
+import { meetingTemplateRouter } from "./routers/meeting-template";
 import { milestoneRouter } from "./routers/milestone";
 import { personRouter } from "./routers/person";
 import { projectRouter } from "./routers/project";
@@ -19,6 +21,8 @@ export const appRouter = createTRPCRouter({
   githubStats: githubStatsRouter,
   health: healthRouter,
   managerChange: managerChangeRouter,
+  meeting: meetingRouter,
+  meetingTemplate: meetingTemplateRouter,
   milestone: milestoneRouter,
   person: personRouter,
   project: projectRouter,
