@@ -14,6 +14,7 @@ import { StatusUpdateSheet } from "@/components/status-update-sheet";
 import { TeamMemberSheet } from "@/components/team-member-sheet";
 import { TeamSection } from "@/components/team-section";
 import { TeamSheet } from "@/components/team-sheet";
+import { TitleSheet } from "@/components/title-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ interface PageProps {
     editLink?: string;
     manageTeams?: string;
     manageRoles?: string;
+    manageTitles?: string;
   }>;
 }
 
@@ -169,6 +171,7 @@ export default async function ProjectDetailPage({
 
       {sp.manageTeams === "true" && <TeamSheet projectId={id} />}
       {sp.manageRoles === "true" && <RoleSheet projectId={id} />}
+      {sp.manageTitles === "true" && <TitleSheet projectId={id} />}
     </div>
   );
 }

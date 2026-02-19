@@ -17,8 +17,9 @@ import { DraggableMemberChip } from "@/components/draggable-member-chip";
 
 interface TeamMemberData {
   id: string;
-  name: string;
-  title: string | null;
+  firstName: string;
+  lastName: string;
+  title: { name: string } | null;
   role: Role;
 }
 
@@ -128,7 +129,8 @@ export function DroppableTeamCard({
               <DraggableMemberChip
                 key={member.id}
                 id={member.id}
-                name={member.name}
+                firstName={member.firstName}
+                lastName={member.lastName}
                 title={member.title}
                 role={member.role}
                 sourceTeamId={teamId}

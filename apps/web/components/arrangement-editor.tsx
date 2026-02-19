@@ -14,7 +14,10 @@ import { TableTeamView } from "@/components/table-team-view";
 import { VisualTeamEditor } from "@/components/visual-team-editor";
 import { useTRPC } from "@/lib/trpc/client";
 
-type MemberWithRole = TeamMember & { role: Role };
+type MemberWithRole = TeamMember & {
+  role: Role;
+  title: { name: string } | null;
+};
 
 interface AssignmentData {
   id: string;

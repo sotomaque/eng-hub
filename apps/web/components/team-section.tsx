@@ -108,10 +108,14 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
   function renderMemberRow(member: MemberWithRelations) {
     return (
       <TableRow key={member.id}>
-        <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
+        <TableCell className="font-medium">
+          {member.firstName} {member.lastName}
+        </TableCell>
         <TableCell className="hidden sm:table-cell">{member.email}</TableCell>
         <TableCell className="hidden lg:table-cell">
-          {member.title?.name || <span className="text-muted-foreground">—</span>}
+          {member.title?.name || (
+            <span className="text-muted-foreground">—</span>
+          )}
         </TableCell>
         <TableCell>{member.role.name}</TableCell>
         <TableCell className="hidden md:table-cell">
@@ -145,8 +149,8 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Remove team member?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will remove &quot;{member.firstName} {member.lastName}&quot; from the project
-                    team.
+                    This will remove &quot;{member.firstName} {member.lastName}
+                    &quot; from the project team.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

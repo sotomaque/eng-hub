@@ -9,8 +9,9 @@ import { DraggableMemberChip } from "@/components/draggable-member-chip";
 
 interface MemberData {
   id: string;
-  name: string;
-  title: string | null;
+  firstName: string;
+  lastName: string;
+  title: { name: string } | null;
   role: Role;
 }
 
@@ -29,9 +30,11 @@ export function MemberPool({ members }: MemberPoolProps) {
   const filtered = search
     ? members.filter(
         (m) =>
-          m.name.toLowerCase().includes(search.toLowerCase()) ||
+          `${m.firstName} ${m.lastName}`
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
           m.role.name.toLowerCase().includes(search.toLowerCase()) ||
-          (m.title ?? "").toLowerCase().includes(search.toLowerCase()),
+          (m.title?.name ?? "").toLowerCase().includes(search.toLowerCase()),
       )
     : members;
 
@@ -86,7 +89,8 @@ export function MemberPool({ members }: MemberPoolProps) {
                   <DraggableMemberChip
                     key={member.id}
                     id={member.id}
-                    name={member.name}
+                    firstName={member.firstName}
+                    lastName={member.lastName}
                     title={member.title}
                     role={member.role}
                     sourceTeamId={null}

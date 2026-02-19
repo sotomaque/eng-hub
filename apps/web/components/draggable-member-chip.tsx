@@ -12,22 +12,29 @@ const ROLE_COLORS: Record<string, string> = {
 
 interface DraggableMemberChipProps {
   id: string;
-  name: string;
-  title: string | null;
+  firstName: string;
+  lastName: string;
+  title: { name: string } | null;
   role: Role;
   sourceTeamId: string | null;
 }
 
 export function DraggableMemberChip({
   id,
-  name,
+  firstName,
+  lastName,
   title,
   role,
   sourceTeamId,
 }: DraggableMemberChipProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `member-${id}`,
-    data: { memberId: id, memberName: name, sourceTeamId },
+    data: {
+      memberId: id,
+      memberFirstName: firstName,
+      memberLastName: lastName,
+      sourceTeamId,
+    },
   });
 
   const borderColor = ROLE_COLORS[role.name] ?? "border-l-gray-400";
@@ -43,10 +50,12 @@ export function DraggableMemberChip({
         isDragging && "opacity-50",
       )}
     >
-      <span className="truncate font-medium">{name}</span>
+      <span className="truncate font-medium">
+        {firstName} {lastName}
+      </span>
       {title && (
         <span className="text-muted-foreground hidden truncate text-xs sm:inline">
-          {title}
+          {title.name}
         </span>
       )}
       <span className="text-muted-foreground ml-auto shrink-0 text-xs">

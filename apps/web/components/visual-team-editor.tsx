@@ -21,8 +21,9 @@ import { useTRPC } from "@/lib/trpc/client";
 
 interface MemberData {
   id: string;
-  name: string;
-  title: string | null;
+  firstName: string;
+  lastName: string;
+  title: { name: string } | null;
   role: Role;
 }
 
@@ -53,7 +54,8 @@ export function VisualTeamEditor({
   const trpc = useTRPC();
   const [activeMember, setActiveMember] = useState<{
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
   } | null>(null);
 
   const sensors = useSensors(
@@ -83,11 +85,17 @@ export function VisualTeamEditor({
   );
 
   function handleDragStart(event: DragStartEvent) {
-    const { memberId, memberName } = event.active.data.current as {
+    const { memberId, memberFirstName, memberLastName } = event.active.data
+      .current as {
       memberId: string;
-      memberName: string;
+      memberFirstName: string;
+      memberLastName: string;
     };
-    setActiveMember({ id: memberId, name: memberName });
+    setActiveMember({
+      id: memberId,
+      firstName: memberFirstName,
+      lastName: memberLastName,
+    });
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -164,7 +172,7 @@ export function VisualTeamEditor({
       <DragOverlay>
         {activeMember && (
           <div className="rounded-md border border-l-4 border-l-primary bg-background px-3 py-1.5 text-sm font-medium shadow-lg">
-            {activeMember.name}
+            {activeMember.firstName} {activeMember.lastName}
           </div>
         )}
       </DragOverlay>
