@@ -44,7 +44,7 @@ type ManagerChange = {
   newManagerId: string | null;
   oldManager: { id: string; firstName: string; lastName: string } | null;
   newManager: { id: string; firstName: string; lastName: string } | null;
-  createdAt: Date;
+  createdAt: string;
 };
 
 interface OrgChartProps {
@@ -234,7 +234,7 @@ function ExternalManagerGroup({
   );
 }
 
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(date: string): string {
   const now = new Date();
   const diffMs = now.getTime() - new Date(date).getTime();
   const diffMins = Math.floor(diffMs / 60000);

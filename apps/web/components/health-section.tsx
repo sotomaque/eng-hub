@@ -1,6 +1,6 @@
 "use client";
 
-import type { HealthStatus, StatusUpdate } from "@prisma/client";
+import type { HealthStatus } from "@prisma/client";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -11,6 +11,13 @@ import {
 } from "@workspace/ui/components/card";
 import { Activity, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+type StatusUpdateItem = {
+  id: string;
+  status: HealthStatus;
+  description: string | null;
+  createdAt: string;
+};
 
 const HEALTH_STYLES: Record<
   HealthStatus,
@@ -34,7 +41,7 @@ const HEALTH_STYLES: Record<
 
 interface HealthSectionProps {
   projectId: string;
-  statusUpdates: StatusUpdate[];
+  statusUpdates: StatusUpdateItem[];
 }
 
 export function HealthSection({
@@ -89,7 +96,7 @@ export function HealthSection({
                     <div className="flex items-center gap-2">
                       <Badge className={style.className}>{update.status}</Badge>
                       <span className="text-muted-foreground text-xs">
-                        {update.createdAt.toLocaleDateString()}
+                        {new Date(update.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     {update.description && (

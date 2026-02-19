@@ -15,7 +15,17 @@ async function HealthContent({ id }: { id: string }) {
   const project = await getCachedProject(id);
   if (!project) notFound();
 
-  return <HealthSection projectId={id} statusUpdates={project.statusUpdates} />;
+  return (
+    <HealthSection
+      projectId={id}
+      statusUpdates={project.statusUpdates.map((u) => ({
+        id: u.id,
+        status: u.status,
+        description: u.description,
+        createdAt: u.createdAt.toISOString(),
+      }))}
+    />
+  );
 }
 
 export default async function HealthPage({ params, searchParams }: PageProps) {

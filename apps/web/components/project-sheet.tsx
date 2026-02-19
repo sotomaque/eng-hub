@@ -54,7 +54,6 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
     },
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(
     project?.imageUrl ?? null,
   );
@@ -69,7 +68,6 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
       onError: (error) => {
         toast.error(error.message);
       },
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -83,9 +81,10 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
       onError: (error) => {
         toast.error(error.message);
       },
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
     const params = new URLSearchParams(searchParams.toString());
@@ -96,7 +95,6 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
   }
 
   function onSubmit(data: CreateProjectInput) {
-    setIsSubmitting(true);
     const withImage = { ...data, imageUrl: imageUrl || "" };
     if (isEditing && project) {
       updateMutation.mutate({ ...withImage, id: project.id });

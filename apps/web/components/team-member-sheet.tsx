@@ -25,7 +25,7 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Check, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
@@ -47,7 +47,6 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!member;
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(
     member?.person.imageUrl ?? null,
   );
@@ -66,7 +65,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     control,
     handleSubmit,
     reset,
-    watch,
+    getValues,
     setValue,
     formState: { errors, isDirty },
   } = useForm<CreateTeamMemberInput>({
@@ -86,16 +85,17 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     },
   });
 
-  const firstName = watch("firstName");
-  const lastName = watch("lastName");
-
-  useEffect(() => {
+  function updateDerivedEmail() {
     if (emailManuallyEdited.current) return;
-    if (firstName && lastName) {
-      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@hypergiant.com`;
-      setValue("email", email);
+    const fn = getValues("firstName");
+    const ln = getValues("lastName");
+    if (fn && ln) {
+      setValue(
+        "email",
+        `${fn.toLowerCase()}.${ln.toLowerCase()}@hypergiant.com`,
+      );
     }
-  }, [firstName, lastName, setValue]);
+  }
 
   const createMutation = useMutation(
     trpc.teamMember.create.mutationOptions({
@@ -105,7 +105,6 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -117,9 +116,10 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
     router.push(`/projects/${projectId}/team`, { scroll: false });
@@ -127,7 +127,6 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   }
 
   function onSubmit(data: CreateTeamMemberInput) {
-    setIsSubmitting(true);
     const withImage = { ...data, imageUrl: imageUrl || "" };
     if (isEditing && member) {
       const { projectId: _, ...rest } = withImage;
@@ -245,7 +244,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 <Input
                   id="firstName"
                   placeholder="Jane"
-                  {...register("firstName")}
+                  {...register("firstName", { onChange: updateDerivedEmail })}
                   aria-invalid={!!errors.firstName}
                   disabled={!!selectedPersonId}
                 />
@@ -261,7 +260,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 <Input
                   id="lastName"
                   placeholder="Smith"
-                  {...register("lastName")}
+                  {...register("lastName", { onChange: updateDerivedEmail })}
                   aria-invalid={!!errors.lastName}
                   disabled={!!selectedPersonId}
                 />

@@ -16,7 +16,6 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
@@ -34,8 +33,6 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!link;
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -58,7 +55,6 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -70,9 +66,10 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
     router.push(`/projects/${projectId}`, { scroll: false });
@@ -80,7 +77,6 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
   }
 
   function onSubmit(data: CreateProjectLinkInput) {
-    setIsSubmitting(true);
     if (isEditing && link) {
       const { projectId: _, ...rest } = data;
       updateMutation.mutate({ ...rest, id: link.id });

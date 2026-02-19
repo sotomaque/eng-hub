@@ -28,7 +28,10 @@ async function OrgChartContent() {
   return (
     <OrgChart
       members={orgMembers}
-      recentChanges={recentChanges}
+      recentChanges={recentChanges.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+      }))}
       emptyMessage="No people yet. Add people from the People page to see the org chart."
     />
   );

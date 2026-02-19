@@ -22,7 +22,6 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
@@ -38,8 +37,6 @@ interface StatusUpdateSheetProps {
 export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     control,
     register,
@@ -63,9 +60,10 @@ export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending;
 
   function handleClose() {
     router.push(`/projects/${projectId}`, { scroll: false });
@@ -73,7 +71,6 @@ export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
   }
 
   function onSubmit(data: CreateStatusUpdateInput) {
-    setIsSubmitting(true);
     createMutation.mutate(data);
   }
 

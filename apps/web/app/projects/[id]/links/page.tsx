@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LinksSection } from "@/components/links-section";
 import { ProjectLinkSheet } from "@/components/project-link-sheet";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +16,7 @@ interface PageProps {
 }
 
 async function LinksContent({ id }: { id: string }) {
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   return (

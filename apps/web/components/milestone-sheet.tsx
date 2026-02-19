@@ -32,7 +32,6 @@ import { cn } from "@workspace/ui/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
@@ -50,8 +49,6 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!milestone;
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     control,
     register,
@@ -77,7 +74,6 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -89,9 +85,10 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
     router.push(`/projects/${projectId}`, { scroll: false });
@@ -99,7 +96,6 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
   }
 
   function onSubmit(data: CreateMilestoneInput) {
-    setIsSubmitting(true);
     if (isEditing && milestone) {
       const { projectId: _, ...rest } = data;
       updateMutation.mutate({ ...rest, id: milestone.id });

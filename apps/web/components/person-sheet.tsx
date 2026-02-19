@@ -25,7 +25,7 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
@@ -52,7 +52,6 @@ export function PersonSheet({ person }: PersonSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!person;
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(
     person?.imageUrl ?? null,
   );
@@ -72,7 +71,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     control,
     handleSubmit,
     reset,
-    watch,
+    getValues,
     setValue,
     formState: { errors, isDirty },
   } = useForm<CreatePersonInput>({
@@ -90,17 +89,17 @@ export function PersonSheet({ person }: PersonSheetProps) {
     },
   });
 
-  const firstName = watch("firstName");
-  const lastName = watch("lastName");
-  useEffect(() => {
+  function updateDerivedEmail() {
     if (emailManuallyEdited.current) return;
-    if (firstName && lastName) {
+    const fn = getValues("firstName");
+    const ln = getValues("lastName");
+    if (fn && ln) {
       setValue(
         "email",
-        `${firstName.toLowerCase()}.${lastName.toLowerCase()}@hypergiant.com`,
+        `${fn.toLowerCase()}.${ln.toLowerCase()}@hypergiant.com`,
       );
     }
-  }, [firstName, lastName, setValue]);
+  }
 
   const createMutation = useMutation(
     trpc.person.create.mutationOptions({
@@ -110,7 +109,6 @@ export function PersonSheet({ person }: PersonSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -122,9 +120,10 @@ export function PersonSheet({ person }: PersonSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
     router.push("/people", { scroll: false });
@@ -132,7 +131,6 @@ export function PersonSheet({ person }: PersonSheetProps) {
   }
 
   function onSubmit(data: CreatePersonInput) {
-    setIsSubmitting(true);
     const withImage = { ...data, imageUrl: imageUrl || "" };
     if (isEditing && person) {
       updateMutation.mutate({ ...withImage, id: person.id });
@@ -175,7 +173,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                 <Input
                   id="firstName"
                   placeholder="Jane"
-                  {...register("firstName")}
+                  {...register("firstName", { onChange: updateDerivedEmail })}
                   aria-invalid={!!errors.firstName}
                 />
                 {errors.firstName && (
@@ -189,7 +187,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                 <Input
                   id="lastName"
                   placeholder="Smith"
-                  {...register("lastName")}
+                  {...register("lastName", { onChange: updateDerivedEmail })}
                   aria-invalid={!!errors.lastName}
                 />
                 {errors.lastName && (

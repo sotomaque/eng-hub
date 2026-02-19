@@ -39,8 +39,6 @@ export function CreateArrangementDialog({
   const trpc = useTRPC();
   const [name, setName] = useState("");
   const [source, setSource] = useState<CloneSource>("empty");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const createMutation = useMutation(
     trpc.arrangement.create.mutationOptions({
       onSuccess: (data) => {
@@ -51,7 +49,6 @@ export function CreateArrangementDialog({
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -65,7 +62,6 @@ export function CreateArrangementDialog({
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -79,16 +75,19 @@ export function CreateArrangementDialog({
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting =
+    createMutation.isPending ||
+    cloneMutation.isPending ||
+    cloneFromLiveMutation.isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    setIsSubmitting(true);
     if (source === "active" && activeArrangement) {
       cloneMutation.mutate({
         sourceArrangementId: activeArrangement.id,

@@ -21,7 +21,6 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Check, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -47,8 +46,6 @@ export function AddToProjectDialog({
 }: AddToProjectDialogProps) {
   const router = useRouter();
   const trpc = useTRPC();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const projectsQuery = useQuery(trpc.project.getAll.queryOptions());
 
   const availableProjects = (projectsQuery.data ?? []).filter(
@@ -82,16 +79,16 @@ export function AddToProjectDialog({
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = joinMutation.isPending;
 
   function handleClose() {
     router.push("/people", { scroll: false });
   }
 
   function onSubmit(data: AddToProjectInput) {
-    setIsSubmitting(true);
     joinMutation.mutate({
       personId,
       projectId: data.projectId,

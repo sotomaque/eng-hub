@@ -19,13 +19,15 @@ async function OverviewContent({ id }: { id: string }) {
       projectId={id}
       description={project.description}
       latestStatus={project.statusUpdates[0] ?? null}
-      teamMembers={project.teamMembers}
-      teams={project.teams}
+      memberCount={project.teamMembers.length}
+      teamCount={project.teams.length}
       milestones={project.milestones}
       quarterlyGoals={project.quarterlyGoals}
-      links={project.links}
-      githubUrl={project.githubUrl}
-      gitlabUrl={project.gitlabUrl}
+      linkCount={
+        project.links.length +
+        (project.githubUrl ? 1 : 0) +
+        (project.gitlabUrl ? 1 : 0)
+      }
     />
   );
 }

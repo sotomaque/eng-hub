@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -43,7 +44,9 @@ export const arrangementRouter = createTRPCRouter({
         },
       });
 
-      if (!arrangement) return null;
+      if (!arrangement) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Arrangement not found" });
+      }
 
       // Get all project members to determine unassigned ones
       const allMembers = await db.teamMember.findMany({

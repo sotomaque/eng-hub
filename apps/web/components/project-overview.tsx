@@ -1,14 +1,4 @@
-"use client";
-
-import type {
-  HealthStatus,
-  Milestone,
-  ProjectLink,
-  QuarterlyGoal,
-  RoadmapStatus,
-  StatusUpdate,
-  Team,
-} from "@prisma/client";
+import type { HealthStatus, RoadmapStatus } from "@prisma/client";
 import { Badge } from "@workspace/ui/components/badge";
 import {
   Card,
@@ -41,14 +31,12 @@ const HEALTH_LABEL: Record<HealthStatus, string> = {
 interface ProjectOverviewProps {
   projectId: string;
   description: string | null;
-  latestStatus: StatusUpdate | null;
-  teamMembers: { id: string }[];
-  teams: Team[];
-  milestones: Milestone[];
-  quarterlyGoals: QuarterlyGoal[];
-  links: ProjectLink[];
-  githubUrl: string | null;
-  gitlabUrl: string | null;
+  latestStatus: { status: HealthStatus } | null;
+  memberCount: number;
+  teamCount: number;
+  milestones: { status: RoadmapStatus }[];
+  quarterlyGoals: { status: RoadmapStatus }[];
+  linkCount: number;
 }
 
 function countByStatus(items: { status: RoadmapStatus }[]) {
@@ -66,18 +54,15 @@ export function ProjectOverview({
   projectId,
   description,
   latestStatus,
-  teamMembers,
-  teams,
+  memberCount,
+  teamCount,
   milestones,
   quarterlyGoals,
-  links,
-  githubUrl,
-  gitlabUrl,
+  linkCount,
 }: ProjectOverviewProps) {
   const basePath = `/projects/${projectId}`;
   const milestoneStats = countByStatus(milestones);
   const goalStats = countByStatus(quarterlyGoals);
-  const linkCount = links.length + (githubUrl ? 1 : 0) + (gitlabUrl ? 1 : 0);
 
   return (
     <div className="space-y-6">
@@ -120,11 +105,11 @@ export function ProjectOverview({
               <Users className="text-muted-foreground size-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{teamMembers.length}</div>
+              <div className="text-2xl font-bold">{memberCount}</div>
               <p className="text-muted-foreground text-xs">
-                {teamMembers.length === 1 ? "member" : "members"}
-                {teams.length > 0 &&
-                  ` across ${teams.length} ${teams.length === 1 ? "team" : "teams"}`}
+                {memberCount === 1 ? "member" : "members"}
+                {teamCount > 0 &&
+                  ` across ${teamCount} ${teamCount === 1 ? "team" : "teams"}`}
               </p>
             </CardContent>
           </Card>
@@ -222,9 +207,9 @@ export function ProjectOverview({
               <Layers className="text-muted-foreground size-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{teams.length}</div>
+              <div className="text-2xl font-bold">{teamCount}</div>
               <p className="text-muted-foreground text-xs">
-                {teams.length === 1 ? "team" : "teams"} configured
+                {teamCount === 1 ? "team" : "teams"} configured
               </p>
             </CardContent>
           </Card>

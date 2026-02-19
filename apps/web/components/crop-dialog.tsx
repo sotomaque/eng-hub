@@ -14,6 +14,7 @@ import { Minus, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 import type { Area } from "react-easy-crop";
 import Cropper from "react-easy-crop";
+import { toast } from "sonner";
 import { getCroppedImage } from "@/lib/crop-image";
 
 interface CropDialogProps {
@@ -44,7 +45,10 @@ export function CropDialog({
     try {
       const blob = await getCroppedImage(imageSrc, croppedAreaPixels);
       onConfirm(blob);
-    } catch {
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to crop image",
+      );
       setIsProcessing(false);
     }
   }

@@ -33,7 +33,6 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!team;
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(
     team?.imageUrl ?? null,
   );
@@ -60,7 +59,6 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
 
@@ -72,9 +70,10 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setIsSubmitting(false),
     }),
   );
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
     router.push(`/projects/${projectId}/team`, { scroll: false });
@@ -82,7 +81,6 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
   }
 
   function onSubmit(data: CreateTeamInput) {
-    setIsSubmitting(true);
     const withImage = { ...data, imageUrl: imageUrl || "" };
     if (isEditing && team) {
       const { projectId: _, ...rest } = withImage;

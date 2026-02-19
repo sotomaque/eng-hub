@@ -156,11 +156,14 @@ export async function fetchPRStats(
     return [];
   }
 
+  const MAX_PAGES = 100;
   const allPRs: PRData[] = [];
   let cursor: string | null = null;
   let hasNextPage = true;
+  let pageCount = 0;
 
-  while (hasNextPage) {
+  while (hasNextPage && pageCount < MAX_PAGES) {
+    pageCount++;
     const response = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: {

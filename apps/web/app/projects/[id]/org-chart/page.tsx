@@ -32,7 +32,15 @@ async function OrgChartContent({ projectId }: { projectId: string }) {
     titleName: m.person.title?.name ?? null,
   }));
 
-  return <OrgChart members={orgMembers} recentChanges={recentChanges} />;
+  return (
+    <OrgChart
+      members={orgMembers}
+      recentChanges={recentChanges.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+      }))}
+    />
+  );
 }
 
 export default async function OrgChartPage({ params }: PageProps) {

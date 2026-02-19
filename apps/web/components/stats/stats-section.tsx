@@ -54,27 +54,30 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
   );
 
   // Auto-sync if data is stale (GitHub projects only)
+  const syncLastSyncAt = statsQuery.data?.sync?.lastSyncAt;
+  const syncStatus = statsQuery.data?.sync?.syncStatus;
+  const { mutate: triggerSync } = syncMutation;
+
   useEffect(() => {
     if (!hasGithubUrl) return;
     if (autoSyncTriggered.current) return;
     if (statsQuery.isLoading) return;
 
-    const sync = statsQuery.data?.sync;
     const isStale =
-      !sync?.lastSyncAt ||
-      Date.now() - new Date(sync.lastSyncAt).getTime() > STALE_THRESHOLD_MS;
-    const isSyncing = sync?.syncStatus === "syncing";
+      !syncLastSyncAt ||
+      Date.now() - new Date(syncLastSyncAt).getTime() > STALE_THRESHOLD_MS;
 
-    if (isStale && !isSyncing) {
+    if (isStale && syncStatus !== "syncing") {
       autoSyncTriggered.current = true;
-      syncMutation.mutate({ projectId });
+      triggerSync({ projectId });
     }
   }, [
     hasGithubUrl,
     statsQuery.isLoading,
-    statsQuery.data?.sync,
+    syncLastSyncAt,
+    syncStatus,
     projectId,
-    syncMutation,
+    triggerSync,
   ]);
 
   if (statsQuery.isLoading) {
