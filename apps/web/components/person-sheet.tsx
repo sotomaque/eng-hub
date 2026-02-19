@@ -74,7 +74,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreatePersonInput>({
     resolver: zodResolver(createPersonSchema),
     defaultValues: {
@@ -144,7 +144,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Person" : "Add Person"}</SheetTitle>
           <SheetDescription>
@@ -156,219 +156,222 @@ export function PersonSheet({ person }: PersonSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 px-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <ImageUploader
-            label="Photo"
-            currentImageUrl={imageUrl}
-            onUploadComplete={(url) => setImageUrl(url)}
-            onRemove={() => setImageUrl(null)}
-            fallbackText={
-              person ? `${person.firstName[0]}${person.lastName[0]}` : ""
-            }
-            shape="circle"
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                placeholder="Jane"
-                {...register("firstName")}
-                aria-invalid={!!errors.firstName}
-              />
-              {errors.firstName && (
-                <p className="text-destructive text-sm">
-                  {errors.firstName.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                placeholder="Smith"
-                {...register("lastName")}
-                aria-invalid={!!errors.lastName}
-              />
-              {errors.lastName && (
-                <p className="text-destructive text-sm">
-                  {errors.lastName.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="callsign">Preferred Name</Label>
-            <Input
-              id="callsign"
-              placeholder="e.g. JJ, Bobby"
-              {...register("callsign")}
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <ImageUploader
+              label="Photo"
+              currentImageUrl={imageUrl}
+              onUploadComplete={(url) => setImageUrl(url)}
+              onRemove={() => setImageUrl(null)}
+              fallbackText={
+                person ? `${person.firstName[0]}${person.lastName[0]}` : ""
+              }
+              shape="circle"
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="jane.smith@hypergiant.com"
-              {...register("email", {
-                onChange: () => {
-                  emailManuallyEdited.current = true;
-                },
-              })}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && (
-              <p className="text-destructive text-sm">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Reports To</Label>
-            <Controller
-              name="managerId"
-              control={control}
-              render={({ field }) => (
-                <Combobox
-                  options={[
-                    { value: "__none__", label: "No manager" },
-                    ...people.map((p) => ({
-                      value: p.id,
-                      label: `${p.firstName}${p.callsign ? ` ${p.callsign}` : ""} ${p.lastName}`,
-                    })),
-                  ]}
-                  value={field.value || "__none__"}
-                  onValueChange={(val) =>
-                    field.onChange(val === "__none__" ? "" : val)
-                  }
-                  placeholder="Select manager..."
-                  searchPlaceholder="Search people..."
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  placeholder="Jane"
+                  {...register("firstName")}
+                  aria-invalid={!!errors.firstName}
                 />
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Controller
-                name="titleId"
-                control={control}
-                render={({ field }) => (
-                  <Combobox
-                    options={[
-                      { value: "__none__", label: "No title" },
-                      ...titles.map((t) => ({
-                        value: t.id,
-                        label: t.name,
-                      })),
-                    ]}
-                    value={field.value || "__none__"}
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
-                    placeholder="Select title..."
-                    searchPlaceholder="Search titles..."
-                  />
+                {errors.firstName && (
+                  <p className="text-destructive text-sm">
+                    {errors.firstName.message}
+                  </p>
                 )}
-              />
-              <Button
-                type="button"
-                variant="link"
-                className="h-auto p-0 text-xs"
-                onClick={() => {
-                  const personParam = isEditing
-                    ? `edit=${person.id}`
-                    : "create=true";
-                  router.push(`/people?${personParam}&manageTitles=true`, {
-                    scroll: false,
-                  });
-                }}
-              >
-                Manage Titles
-              </Button>
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Controller
-                name="roleId"
-                control={control}
-                render={({ field }) => (
-                  <Combobox
-                    options={[
-                      { value: "__none__", label: "No role" },
-                      ...roles.map((r) => ({
-                        value: r.id,
-                        label: r.name,
-                      })),
-                    ]}
-                    value={field.value || "__none__"}
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
-                    placeholder="Select role..."
-                    searchPlaceholder="Search roles..."
-                  />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Smith"
+                  {...register("lastName")}
+                  aria-invalid={!!errors.lastName}
+                />
+                {errors.lastName && (
+                  <p className="text-destructive text-sm">
+                    {errors.lastName.message}
+                  </p>
                 )}
-              />
-              <Button
-                type="button"
-                variant="link"
-                className="h-auto p-0 text-xs"
-                onClick={() => {
-                  const personParam = isEditing
-                    ? `edit=${person.id}`
-                    : "create=true";
-                  router.push(`/people?${personParam}&manageRoles=true`, {
-                    scroll: false,
-                  });
-                }}
-              >
-                Manage Roles
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="githubUsername">GitHub Username</Label>
-              <Input
-                id="githubUsername"
-                placeholder="janesmith"
-                {...register("githubUsername")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gitlabUsername">GitLab Username</Label>
-              <Input
-                id="gitlabUsername"
-                placeholder="janesmith"
-                {...register("gitlabUsername")}
-              />
-            </div>
-          </div>
-
-          {isEditing && person && person.projectMemberships.length > 0 && (
-            <div className="space-y-2">
-              <Label>Projects</Label>
-              <div className="flex flex-wrap gap-1">
-                {person.projectMemberships.map((m) => (
-                  <span
-                    key={m.id}
-                    className="rounded-md bg-muted px-2 py-1 text-xs font-medium"
-                  >
-                    {m.project.name} ({m.role.name})
-                  </span>
-                ))}
               </div>
             </div>
-          )}
 
-          <SheetFooter className="pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="callsign">Preferred Name</Label>
+              <Input
+                id="callsign"
+                placeholder="e.g. JJ, Bobby"
+                {...register("callsign")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="jane.smith@hypergiant.com"
+                {...register("email", {
+                  onChange: () => {
+                    emailManuallyEdited.current = true;
+                  },
+                })}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
+                <p className="text-destructive text-sm">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Reports To</Label>
+              <Controller
+                name="managerId"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "No manager" },
+                      ...people.map((p) => ({
+                        value: p.id,
+                        label: `${p.firstName}${p.callsign ? ` ${p.callsign}` : ""} ${p.lastName}`,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    placeholder="Select manager..."
+                    searchPlaceholder="Search people..."
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Controller
+                  name="titleId"
+                  control={control}
+                  render={({ field }) => (
+                    <Combobox
+                      options={[
+                        { value: "__none__", label: "No title" },
+                        ...titles.map((t) => ({
+                          value: t.id,
+                          label: t.name,
+                        })),
+                      ]}
+                      value={field.value || "__none__"}
+                      onValueChange={(val) =>
+                        field.onChange(val === "__none__" ? "" : val)
+                      }
+                      placeholder="Select title..."
+                      searchPlaceholder="Search titles..."
+                    />
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-xs"
+                  onClick={() => {
+                    const personParam = isEditing
+                      ? `edit=${person.id}`
+                      : "create=true";
+                    router.push(`/people?${personParam}&manageTitles=true`, {
+                      scroll: false,
+                    });
+                  }}
+                >
+                  Manage Titles
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Controller
+                  name="roleId"
+                  control={control}
+                  render={({ field }) => (
+                    <Combobox
+                      options={[
+                        { value: "__none__", label: "No role" },
+                        ...roles.map((r) => ({
+                          value: r.id,
+                          label: r.name,
+                        })),
+                      ]}
+                      value={field.value || "__none__"}
+                      onValueChange={(val) =>
+                        field.onChange(val === "__none__" ? "" : val)
+                      }
+                      placeholder="Select role..."
+                      searchPlaceholder="Search roles..."
+                    />
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-xs"
+                  onClick={() => {
+                    const personParam = isEditing
+                      ? `edit=${person.id}`
+                      : "create=true";
+                    router.push(`/people?${personParam}&manageRoles=true`, {
+                      scroll: false,
+                    });
+                  }}
+                >
+                  Manage Roles
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="githubUsername">GitHub Username</Label>
+                <Input
+                  id="githubUsername"
+                  placeholder="janesmith"
+                  {...register("githubUsername")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gitlabUsername">GitLab Username</Label>
+                <Input
+                  id="gitlabUsername"
+                  placeholder="janesmith"
+                  {...register("gitlabUsername")}
+                />
+              </div>
+            </div>
+
+            {isEditing && person && person.projectMemberships.length > 0 && (
+              <div className="space-y-2">
+                <Label>Projects</Label>
+                <div className="flex flex-wrap gap-1">
+                  {person.projectMemberships.map((m) => (
+                    <span
+                      key={m.id}
+                      className="rounded-md bg-muted px-2 py-1 text-xs font-medium"
+                    >
+                      {m.project.name} ({m.role.name})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -377,7 +380,13 @@ export function PersonSheet({ person }: PersonSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (!isDirty && imageUrl === (person?.imageUrl ?? null))
+              }
+            >
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Add Person"}
             </Button>

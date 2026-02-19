@@ -43,7 +43,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
@@ -107,7 +107,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Project" : "New Project"}</SheetTitle>
           <SheetDescription>
@@ -119,72 +119,75 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 px-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <ImageUploader
-            label="Logo"
-            currentImageUrl={imageUrl}
-            onUploadComplete={(url) => setImageUrl(url)}
-            onRemove={() => setImageUrl(null)}
-            fallbackText={project?.name?.[0] ?? ""}
-            shape="square"
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="My Project"
-              {...register("name")}
-              aria-invalid={!!errors.name}
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <ImageUploader
+              label="Logo"
+              currentImageUrl={imageUrl}
+              onUploadComplete={(url) => setImageUrl(url)}
+              onRemove={() => setImageUrl(null)}
+              fallbackText={project?.name?.[0] ?? ""}
+              shape="square"
             />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="A brief description of the project..."
-              {...register("description")}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="My Project"
+                {...register("name")}
+                aria-invalid={!!errors.name}
+              />
+              {errors.name && (
+                <p className="text-destructive text-sm">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="githubUrl">GitHub URL</Label>
-            <Input
-              id="githubUrl"
-              type="url"
-              placeholder="https://github.com/org/repo"
-              {...register("githubUrl")}
-              aria-invalid={!!errors.githubUrl}
-            />
-            {errors.githubUrl && (
-              <p className="text-destructive text-sm">
-                {errors.githubUrl.message}
-              </p>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="A brief description of the project..."
+                {...register("description")}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="gitlabUrl">GitLab URL</Label>
-            <Input
-              id="gitlabUrl"
-              type="url"
-              placeholder="https://gitlab.com/org/repo"
-              {...register("gitlabUrl")}
-              aria-invalid={!!errors.gitlabUrl}
-            />
-            {errors.gitlabUrl && (
-              <p className="text-destructive text-sm">
-                {errors.gitlabUrl.message}
-              </p>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="githubUrl">GitHub URL</Label>
+              <Input
+                id="githubUrl"
+                type="url"
+                placeholder="https://github.com/org/repo"
+                {...register("githubUrl")}
+                aria-invalid={!!errors.githubUrl}
+              />
+              {errors.githubUrl && (
+                <p className="text-destructive text-sm">
+                  {errors.githubUrl.message}
+                </p>
+              )}
+            </div>
 
-          <SheetFooter className="pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="gitlabUrl">GitLab URL</Label>
+              <Input
+                id="gitlabUrl"
+                type="url"
+                placeholder="https://gitlab.com/org/repo"
+                {...register("gitlabUrl")}
+                aria-invalid={!!errors.gitlabUrl}
+              />
+              {errors.gitlabUrl && (
+                <p className="text-destructive text-sm">
+                  {errors.gitlabUrl.message}
+                </p>
+              )}
+            </div>
+          </div>
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -193,7 +196,13 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (!isDirty && imageUrl === (project?.imageUrl ?? null))
+              }
+            >
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Create Project"}
             </Button>

@@ -20,10 +20,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Pencil, Plus, Settings, Users } from "lucide-react";
+import { Input } from "@workspace/ui/components/input";
+import { Pencil, Plus, Search, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
 import { TeamMembersTable } from "@/components/team-members-table";
 import { buildTitleColorMap } from "@/lib/constants/team";
@@ -44,6 +45,7 @@ interface TeamSectionProps {
 export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
   const router = useRouter();
   const hasTeams = teams.length > 0;
+  const [search, setSearch] = useState("");
 
   const titleColorMap = useMemo(() => {
     const titleNames = members
@@ -52,12 +54,27 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
     return buildTitleColorMap(titleNames);
   }, [members]);
 
+  const filteredMembers = useMemo(() => {
+    if (!search) return members;
+    const q = search.toLowerCase();
+    return members.filter((m) => {
+      const name =
+        `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`.toLowerCase();
+      return (
+        name.includes(q) ||
+        m.person.email.toLowerCase().includes(q) ||
+        m.role.name.toLowerCase().includes(q) ||
+        (m.title?.name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [members, search]);
+
   // Group members by team (a member can appear under multiple teams)
   const orderedGroups = useMemo(() => {
     const membersByTeam = new Map<string, MemberWithRelations[]>();
     const assignedMemberIds = new Set<string>();
 
-    for (const member of members) {
+    for (const member of filteredMembers) {
       for (const membership of member.teamMemberships) {
         assignedMemberIds.add(member.id);
         const group = membersByTeam.get(membership.teamId) ?? [];
@@ -73,12 +90,14 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
         groups.push({ team, members: teamMembers });
       }
     }
-    const unassigned = members.filter((m) => !assignedMemberIds.has(m.id));
+    const unassigned = filteredMembers.filter(
+      (m) => !assignedMemberIds.has(m.id),
+    );
     if (unassigned.length > 0) {
       groups.push({ team: null, members: unassigned });
     }
     return groups;
-  }, [members, teams]);
+  }, [filteredMembers, teams]);
 
   return (
     <Card>
@@ -123,6 +142,19 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
           </div>
         </div>
       </CardHeader>
+      {members.length > 0 && (
+        <div className="px-6 pb-2">
+          <div className="relative">
+            <Search className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
+            <Input
+              placeholder="Search across all teams..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-9"
+            />
+          </div>
+        </div>
+      )}
       <CardContent>
         {members.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">

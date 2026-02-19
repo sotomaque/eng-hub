@@ -45,7 +45,7 @@ export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateStatusUpdateInput>({
     resolver: zodResolver(createStatusUpdateSchema),
     defaultValues: {
@@ -79,7 +79,7 @@ export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>Add Status Update</SheetTitle>
           <SheetDescription>
@@ -89,43 +89,44 @@ export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GREEN">Green — Healthy</SelectItem>
-                    <SelectItem value="YELLOW">Yellow — At Risk</SelectItem>
-                    <SelectItem value="RED">Red — Critical</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GREEN">Green — Healthy</SelectItem>
+                      <SelectItem value="YELLOW">Yellow — At Risk</SelectItem>
+                      <SelectItem value="RED">Red — Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.status && (
+                <p className="text-destructive text-sm">
+                  {errors.status.message}
+                </p>
               )}
-            />
-            {errors.status && (
-              <p className="text-destructive text-sm">
-                {errors.status.message}
-              </p>
-            )}
-          </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
-            <Textarea
-              id="description"
-              placeholder="What's the current situation? Any course of action?"
-              {...register("description")}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="What's the current situation? Any course of action?"
+                {...register("description")}
+              />
+            </div>
           </div>
-
-          <SheetFooter className="pt-4">
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -134,7 +135,7 @@ export function StatusUpdateSheet({ projectId }: StatusUpdateSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isDirty}>
               {isSubmitting && <Loader2 className="animate-spin" />}
               Add Update
             </Button>

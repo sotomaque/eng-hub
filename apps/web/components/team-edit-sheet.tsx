@@ -42,7 +42,7 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateTeamInput>({
     resolver: zodResolver(createTeamSchema),
     defaultValues: {
@@ -94,7 +94,7 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Team" : "Create Team"}</SheetTitle>
           <SheetDescription>
@@ -106,40 +106,43 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 px-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <ImageUploader
-            label="Team Logo"
-            currentImageUrl={imageUrl}
-            onUploadComplete={(url) => setImageUrl(url)}
-            onRemove={() => setImageUrl(null)}
-            fallbackText={team?.name?.[0] ?? ""}
-            shape="square"
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="e.g. Platform Team"
-              {...register("name")}
-              aria-invalid={!!errors.name}
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <ImageUploader
+              label="Team Logo"
+              currentImageUrl={imageUrl}
+              onUploadComplete={(url) => setImageUrl(url)}
+              onRemove={() => setImageUrl(null)}
+              fallbackText={team?.name?.[0] ?? ""}
+              shape="square"
             />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="What does this team focus on?"
-              {...register("description")}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="e.g. Platform Team"
+                {...register("name")}
+                aria-invalid={!!errors.name}
+              />
+              {errors.name && (
+                <p className="text-destructive text-sm">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
 
-          <SheetFooter className="pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="What does this team focus on?"
+                {...register("description")}
+              />
+            </div>
+          </div>
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -148,7 +151,13 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (!isDirty && imageUrl === (team?.imageUrl ?? null))
+              }
+            >
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Create Team"}
             </Button>

@@ -40,7 +40,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateProjectLinkInput>({
     resolver: zodResolver(createProjectLinkSchema),
     defaultValues: {
@@ -91,7 +91,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Link" : "Add Link"}</SheetTitle>
           <SheetDescription>
@@ -103,36 +103,39 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="space-y-2">
-            <Label htmlFor="label">Label</Label>
-            <Input
-              id="label"
-              placeholder="Figma Designs"
-              {...register("label")}
-              aria-invalid={!!errors.label}
-            />
-            {errors.label && (
-              <p className="text-destructive text-sm">{errors.label.message}</p>
-            )}
-          </div>
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="label">Label</Label>
+              <Input
+                id="label"
+                placeholder="Figma Designs"
+                {...register("label")}
+                aria-invalid={!!errors.label}
+              />
+              {errors.label && (
+                <p className="text-destructive text-sm">
+                  {errors.label.message}
+                </p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="url">URL</Label>
-            <Input
-              id="url"
-              type="url"
-              placeholder="https://figma.com/..."
-              {...register("url")}
-              aria-invalid={!!errors.url}
-            />
-            {errors.url && (
-              <p className="text-destructive text-sm">{errors.url.message}</p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="url">URL</Label>
+              <Input
+                id="url"
+                type="url"
+                placeholder="https://figma.com/..."
+                {...register("url")}
+                aria-invalid={!!errors.url}
+              />
+              {errors.url && (
+                <p className="text-destructive text-sm">{errors.url.message}</p>
+              )}
+            </div>
           </div>
-
-          <SheetFooter className="pt-4">
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -141,7 +144,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isDirty}>
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Add Link"}
             </Button>

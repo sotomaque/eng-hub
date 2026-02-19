@@ -68,7 +68,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateTeamMemberInput>({
     resolver: zodResolver(createTeamMemberSchema),
     defaultValues: {
@@ -146,7 +146,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
             {isEditing ? "Edit Team Member" : "Add Team Member"}
@@ -160,245 +160,248 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 px-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <ImageUploader
-            label="Photo"
-            currentImageUrl={imageUrl}
-            onUploadComplete={(url) => setImageUrl(url)}
-            onRemove={() => setImageUrl(null)}
-            fallbackText={
-              member
-                ? `${member.person.firstName[0]}${member.person.lastName[0]}`
-                : ""
-            }
-            shape="circle"
-          />
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <ImageUploader
+              label="Photo"
+              currentImageUrl={imageUrl}
+              onUploadComplete={(url) => setImageUrl(url)}
+              onRemove={() => setImageUrl(null)}
+              fallbackText={
+                member
+                  ? `${member.person.firstName[0]}${member.person.lastName[0]}`
+                  : ""
+              }
+              shape="circle"
+            />
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  placeholder="Jane"
+                  {...register("firstName")}
+                  aria-invalid={!!errors.firstName}
+                />
+                {errors.firstName && (
+                  <p className="text-destructive text-sm">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Smith"
+                  {...register("lastName")}
+                  aria-invalid={!!errors.lastName}
+                />
+                {errors.lastName && (
+                  <p className="text-destructive text-sm">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="callsign">Preferred Name</Label>
               <Input
-                id="firstName"
-                placeholder="Jane"
-                {...register("firstName")}
-                aria-invalid={!!errors.firstName}
+                id="callsign"
+                placeholder="e.g. JJ, Bobby"
+                {...register("callsign")}
               />
-              {errors.firstName && (
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="jane.smith@hypergiant.com"
+                {...register("email", {
+                  onChange: () => {
+                    emailManuallyEdited.current = true;
+                  },
+                })}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
                 <p className="text-destructive text-sm">
-                  {errors.firstName.message}
+                  {errors.email.message}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                placeholder="Smith"
-                {...register("lastName")}
-                aria-invalid={!!errors.lastName}
-              />
-              {errors.lastName && (
-                <p className="text-destructive text-sm">
-                  {errors.lastName.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="callsign">Preferred Name</Label>
-            <Input
-              id="callsign"
-              placeholder="e.g. JJ, Bobby"
-              {...register("callsign")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="jane.smith@hypergiant.com"
-              {...register("email", {
-                onChange: () => {
-                  emailManuallyEdited.current = true;
-                },
-              })}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && (
-              <p className="text-destructive text-sm">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Title</Label>
-            <Controller
-              name="titleId"
-              control={control}
-              render={({ field }) => (
-                <Combobox
-                  options={[
-                    { value: "__none__", label: "No title" },
-                    ...titles.map((t) => ({
-                      value: t.id,
-                      label: t.name,
-                    })),
-                  ]}
-                  value={field.value || "__none__"}
-                  onValueChange={(val) =>
-                    field.onChange(val === "__none__" ? "" : val)
-                  }
-                  placeholder="Select title..."
-                  searchPlaceholder="Search titles..."
-                />
-              )}
-            />
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0 text-xs"
-              onClick={() => {
-                const memberParam = isEditing
-                  ? `editMember=${member.id}`
-                  : "addMember=true";
-                router.push(
-                  `/projects/${projectId}/team?${memberParam}&manageTitles=true`,
-                  { scroll: false },
-                );
-              }}
-            >
-              Manage Titles
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Role</Label>
-            <Controller
-              name="roleId"
-              control={control}
-              render={({ field }) => (
-                <Combobox
-                  options={roles.map((r) => ({
-                    value: r.id,
-                    label: r.name,
-                  }))}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="Select role..."
-                  searchPlaceholder="Search roles..."
-                />
-              )}
-            />
-            {errors.roleId && (
-              <p className="text-destructive text-sm">
-                {errors.roleId.message}
-              </p>
-            )}
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0 text-xs"
-              onClick={() => {
-                const memberParam = isEditing
-                  ? `editMember=${member.id}`
-                  : "addMember=true";
-                router.push(
-                  `/projects/${projectId}/team?${memberParam}&manageRoles=true`,
-                  { scroll: false },
-                );
-              }}
-            >
-              Manage Roles
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Reports To</Label>
-            <Controller
-              name="managerId"
-              control={control}
-              render={({ field }) => (
-                <Combobox
-                  options={[
-                    { value: "__none__", label: "No manager" },
-                    ...people.map((p) => ({
-                      value: p.id,
-                      label: `${p.firstName}${p.callsign ? ` ${p.callsign}` : ""} ${p.lastName}`,
-                    })),
-                  ]}
-                  value={field.value || "__none__"}
-                  onValueChange={(val) =>
-                    field.onChange(val === "__none__" ? "" : val)
-                  }
-                  placeholder="Select manager..."
-                  searchPlaceholder="Search people..."
-                />
-              )}
-            />
-          </div>
-
-          {teams.length > 0 && (
-            <div className="space-y-2">
-              <Label>Teams</Label>
+              <Label>Title</Label>
               <Controller
-                name="teamIds"
+                name="titleId"
                 control={control}
-                render={({ field }) => {
-                  const selected = field.value ?? [];
-                  const toggle = (teamId: string) => {
-                    const next = selected.includes(teamId)
-                      ? selected.filter((id) => id !== teamId)
-                      : [...selected, teamId];
-                    field.onChange(next);
-                  };
-                  return (
-                    <div className="flex flex-wrap gap-2">
-                      {teams.map((team) => {
-                        const isSelected = selected.includes(team.id);
-                        return (
-                          <Button
-                            key={team.id}
-                            type="button"
-                            variant={isSelected ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggle(team.id)}
-                            className="gap-1"
-                          >
-                            {isSelected && <Check className="size-3" />}
-                            {team.name}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "No title" },
+                      ...titles.map((t) => ({
+                        value: t.id,
+                        label: t.name,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    placeholder="Select title..."
+                    searchPlaceholder="Search titles..."
+                  />
+                )}
+              />
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 text-xs"
+                onClick={() => {
+                  const memberParam = isEditing
+                    ? `editMember=${member.id}`
+                    : "addMember=true";
+                  router.push(
+                    `/projects/${projectId}/team?${memberParam}&manageTitles=true`,
+                    { scroll: false },
                   );
                 }}
+              >
+                Manage Titles
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Controller
+                name="roleId"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={roles.map((r) => ({
+                      value: r.id,
+                      label: r.name,
+                    }))}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select role..."
+                    searchPlaceholder="Search roles..."
+                  />
+                )}
+              />
+              {errors.roleId && (
+                <p className="text-destructive text-sm">
+                  {errors.roleId.message}
+                </p>
+              )}
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 text-xs"
+                onClick={() => {
+                  const memberParam = isEditing
+                    ? `editMember=${member.id}`
+                    : "addMember=true";
+                  router.push(
+                    `/projects/${projectId}/team?${memberParam}&manageRoles=true`,
+                    { scroll: false },
+                  );
+                }}
+              >
+                Manage Roles
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Reports To</Label>
+              <Controller
+                name="managerId"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "No manager" },
+                      ...people.map((p) => ({
+                        value: p.id,
+                        label: `${p.firstName}${p.callsign ? ` ${p.callsign}` : ""} ${p.lastName}`,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    placeholder="Select manager..."
+                    searchPlaceholder="Search people..."
+                  />
+                )}
               />
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="githubUsername">GitHub Username</Label>
-            <Input
-              id="githubUsername"
-              placeholder="janesmith"
-              {...register("githubUsername")}
-            />
+            {teams.length > 0 && (
+              <div className="space-y-2">
+                <Label>Teams</Label>
+                <Controller
+                  name="teamIds"
+                  control={control}
+                  render={({ field }) => {
+                    const selected = field.value ?? [];
+                    const toggle = (teamId: string) => {
+                      const next = selected.includes(teamId)
+                        ? selected.filter((id) => id !== teamId)
+                        : [...selected, teamId];
+                      field.onChange(next);
+                    };
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        {teams.map((team) => {
+                          const isSelected = selected.includes(team.id);
+                          return (
+                            <Button
+                              key={team.id}
+                              type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggle(team.id)}
+                              className="gap-1"
+                            >
+                              {isSelected && <Check className="size-3" />}
+                              {team.name}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    );
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="githubUsername">GitHub Username</Label>
+              <Input
+                id="githubUsername"
+                placeholder="janesmith"
+                {...register("githubUsername")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gitlabUsername">GitLab Username</Label>
+              <Input
+                id="gitlabUsername"
+                placeholder="janesmith"
+                {...register("gitlabUsername")}
+              />
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="gitlabUsername">GitLab Username</Label>
-            <Input
-              id="gitlabUsername"
-              placeholder="janesmith"
-              {...register("gitlabUsername")}
-            />
-          </div>
-
-          <SheetFooter className="pt-4">
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -407,7 +410,13 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (!isDirty && imageUrl === (member?.person.imageUrl ?? null))
+              }
+            >
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Add Member"}
             </Button>

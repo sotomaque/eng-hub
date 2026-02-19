@@ -60,7 +60,7 @@ export function QuarterlyGoalSheet({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateQuarterlyGoalInput>({
     resolver: zodResolver(createQuarterlyGoalSchema),
     defaultValues: {
@@ -114,7 +114,7 @@ export function QuarterlyGoalSheet({
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>
             {isEditing ? "Edit Quarterly Goal" : "Add Quarterly Goal"}
@@ -128,129 +128,132 @@ export function QuarterlyGoalSheet({
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="Improve test coverage to 80%"
-              {...register("title")}
-              aria-invalid={!!errors.title}
-            />
-            {errors.title && (
-              <p className="text-destructive text-sm">{errors.title.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="What does this goal entail?"
-              {...register("description")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Quarter</Label>
-            <Controller
-              name="quarter"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={(val) =>
-                    field.onChange(val === "__none__" ? "" : val)
-                  }
-                  value={field.value || "__none__"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select quarter..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No quarter</SelectItem>
-                    <SelectItem value="Q1">Q1</SelectItem>
-                    <SelectItem value="Q2">Q2</SelectItem>
-                    <SelectItem value="Q3">Q3</SelectItem>
-                    <SelectItem value="Q4">Q4</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                placeholder="Improve test coverage to 80%"
+                {...register("title")}
+                aria-invalid={!!errors.title}
+              />
+              {errors.title && (
+                <p className="text-destructive text-sm">
+                  {errors.title.message}
+                </p>
               )}
-            />
-          </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label>Target Date (optional)</Label>
-            <Controller
-              name="targetDate"
-              control={control}
-              render={({ field }) => (
-                <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="What does this goal entail?"
+                {...register("description")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Quarter</Label>
+              <Controller
+                name="quarter"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    value={field.value || "__none__"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select quarter..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">No quarter</SelectItem>
+                      <SelectItem value="Q1">Q1</SelectItem>
+                      <SelectItem value="Q2">Q2</SelectItem>
+                      <SelectItem value="Q3">Q3</SelectItem>
+                      <SelectItem value="Q4">Q4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Date (optional)</Label>
+              <Controller
+                name="targetDate"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            field.value ? new Date(field.value) : undefined
+                          }
+                          onSelect={(date) => field.onChange(date ?? null)}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {field.value && (
                       <Button
                         type="button"
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !field.value && "text-muted-foreground",
-                        )}
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => field.onChange(null)}
                       >
-                        <CalendarIcon className="mr-2 size-4" />
-                        {field.value
-                          ? format(field.value, "PPP")
-                          : "Pick a date"}
+                        <X className="size-4" />
+                        <span className="sr-only">Clear date</span>
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={
-                          field.value ? new Date(field.value) : undefined
-                        }
-                        onSelect={(date) => field.onChange(date ?? null)}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {field.value && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={() => field.onChange(null)}
-                    >
-                      <X className="size-4" />
-                      <span className="sr-only">Clear date</span>
-                    </Button>
-                  )}
-                </div>
-              )}
-            />
-          </div>
+                    )}
+                  </div>
+                )}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NOT_STARTED">Not Started</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="AT_RISK">At Risk</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="AT_RISK">At Risk</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
-
-          <SheetFooter className="pt-4">
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -259,7 +262,7 @@ export function QuarterlyGoalSheet({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isDirty}>
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Add Goal"}
             </Button>

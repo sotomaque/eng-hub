@@ -83,7 +83,7 @@ export function RoleSheet({ returnPath }: RoleSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Manage Roles</SheetTitle>
           <SheetDescription>
@@ -92,110 +92,114 @@ export function RoleSheet({ returnPath }: RoleSheetProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col gap-3 px-4 py-4">
-          {roles.map((role) => (
-            <div key={role.id} className="flex items-center gap-2">
-              {editingId === role.id ? (
-                <>
-                  <Input
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleUpdate(role.id)
-                    }
-                    className="flex-1"
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => handleUpdate(role.id)}
-                    disabled={updateMutation.isPending}
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setEditingId(null)}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="flex-1 text-sm">{role.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditingId(role.id);
-                      setEditingName(role.name);
-                    }}
-                  >
-                    <Pencil className="size-4" />
-                    <span className="sr-only">Edit</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate({ id: role.id })}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="size-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </>
-              )}
-            </div>
-          ))}
-
-          {roles.length === 0 && !isAdding && (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              No roles yet. Add a role to categorize team members.
-            </p>
-          )}
-
-          {isAdding ? (
-            <div className="flex items-center gap-2">
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                placeholder="Role name"
-                className="flex-1"
-                autoFocus
-              />
-              <Button
-                size="sm"
-                onClick={handleAdd}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending && (
-                  <Loader2 className="animate-spin" />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            {roles.map((role) => (
+              <div key={role.id} className="flex items-center gap-2">
+                {editingId === role.id ? (
+                  <>
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleUpdate(role.id)
+                      }
+                      className="flex-1"
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdate(role.id)}
+                      disabled={updateMutation.isPending}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-sm">{role.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingId(role.id);
+                        setEditingName(role.name);
+                      }}
+                    >
+                      <Pencil className="size-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteMutation.mutate({ id: role.id })}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="size-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </>
                 )}
-                Add
-              </Button>
+              </div>
+            ))}
+
+            {roles.length === 0 && !isAdding && (
+              <p className="text-muted-foreground py-4 text-center text-sm">
+                No roles yet. Add a role to categorize team members.
+              </p>
+            )}
+          </div>
+
+          <div className="border-t bg-background p-4">
+            {isAdding ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                  placeholder="Role name"
+                  className="flex-1"
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAdd}
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending && (
+                    <Loader2 className="animate-spin" />
+                  )}
+                  Add
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setNewName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
               <Button
-                size="sm"
                 variant="outline"
-                onClick={() => {
-                  setIsAdding(false);
-                  setNewName("");
-                }}
+                className="w-full"
+                onClick={() => setIsAdding(true)}
               >
-                Cancel
+                <Plus className="size-4" />
+                Add Role
               </Button>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setIsAdding(true)}
-            >
-              <Plus className="size-4" />
-              Add Role
-            </Button>
-          )}
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

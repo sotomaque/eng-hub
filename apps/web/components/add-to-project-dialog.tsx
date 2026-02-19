@@ -63,7 +63,7 @@ export function AddToProjectDialog({
     control,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AddToProjectInput>({
     resolver: zodResolver(addToProjectSchema),
     defaultValues: {
@@ -113,7 +113,7 @@ export function AddToProjectDialog({
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Add to Project</SheetTitle>
           <SheetDescription>Add {personName} to a project.</SheetDescription>
@@ -121,136 +121,137 @@ export function AddToProjectDialog({
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 px-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="space-y-2">
-            <Label>Project</Label>
-            <Controller
-              name="projectId"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select project..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableProjects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.projectId && (
-              <p className="text-destructive text-sm">
-                {errors.projectId.message}
-              </p>
-            )}
-            {availableProjects.length === 0 && (
-              <p className="text-muted-foreground text-sm">
-                This person is already on all projects.
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Role</Label>
-            <Controller
-              name="roleId"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.roleId && (
-              <p className="text-destructive text-sm">
-                {errors.roleId.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Title</Label>
-            <Controller
-              name="titleId"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={(val) =>
-                    field.onChange(val === "__none__" ? "" : val)
-                  }
-                  value={field.value || "__none__"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select title..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No title</SelectItem>
-                    {titles.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          {teams.length > 0 && (
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
-              <Label>Teams</Label>
+              <Label>Project</Label>
               <Controller
-                name="teamIds"
+                name="projectId"
                 control={control}
-                render={({ field }) => {
-                  const selected = field.value ?? [];
-                  const toggle = (teamId: string) => {
-                    field.onChange(
-                      selected.includes(teamId)
-                        ? selected.filter((id) => id !== teamId)
-                        : [...selected, teamId],
-                    );
-                  };
-                  return (
-                    <div className="flex flex-wrap gap-2">
-                      {teams.map((team) => {
-                        const isSelected = selected.includes(team.id);
-                        return (
-                          <Button
-                            key={team.id}
-                            type="button"
-                            variant={isSelected ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggle(team.id)}
-                            className="gap-1"
-                          >
-                            {isSelected && <Check className="size-3" />}
-                            {team.name}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  );
-                }}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select project..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableProjects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.projectId && (
+                <p className="text-destructive text-sm">
+                  {errors.projectId.message}
+                </p>
+              )}
+              {availableProjects.length === 0 && (
+                <p className="text-muted-foreground text-sm">
+                  This person is already on all projects.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Controller
+                name="roleId"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.roleId && (
+                <p className="text-destructive text-sm">
+                  {errors.roleId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Controller
+                name="titleId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    value={field.value || "__none__"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select title..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">No title</SelectItem>
+                      {titles.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
             </div>
-          )}
 
-          <SheetFooter className="pt-4">
+            {teams.length > 0 && (
+              <div className="space-y-2">
+                <Label>Teams</Label>
+                <Controller
+                  name="teamIds"
+                  control={control}
+                  render={({ field }) => {
+                    const selected = field.value ?? [];
+                    const toggle = (teamId: string) => {
+                      field.onChange(
+                        selected.includes(teamId)
+                          ? selected.filter((id) => id !== teamId)
+                          : [...selected, teamId],
+                      );
+                    };
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        {teams.map((team) => {
+                          const isSelected = selected.includes(team.id);
+                          return (
+                            <Button
+                              key={team.id}
+                              type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggle(team.id)}
+                              className="gap-1"
+                            >
+                              {isSelected && <Check className="size-3" />}
+                              {team.name}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    );
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -261,7 +262,9 @@ export function AddToProjectDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || availableProjects.length === 0}
+              disabled={
+                isSubmitting || !isDirty || availableProjects.length === 0
+              }
             >
               {isSubmitting && <Loader2 className="animate-spin" />}
               Add to Project

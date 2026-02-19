@@ -57,7 +57,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreateMilestoneInput>({
     resolver: zodResolver(createMilestoneSchema),
     defaultValues: {
@@ -110,7 +110,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>
             {isEditing ? "Edit Milestone" : "Add Milestone"}
@@ -124,102 +124,105 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 py-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="v2.0 Release"
-              {...register("title")}
-              aria-invalid={!!errors.title}
-            />
-            {errors.title && (
-              <p className="text-destructive text-sm">{errors.title.message}</p>
-            )}
-          </div>
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                placeholder="v2.0 Release"
+                {...register("title")}
+                aria-invalid={!!errors.title}
+              />
+              {errors.title && (
+                <p className="text-destructive text-sm">
+                  {errors.title.message}
+                </p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="What does this milestone include?"
-              {...register("description")}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="What does this milestone include?"
+                {...register("description")}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>Target Date (optional)</Label>
-            <Controller
-              name="targetDate"
-              control={control}
-              render={({ field }) => (
-                <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
+            <div className="space-y-2">
+              <Label>Target Date (optional)</Label>
+              <Controller
+                name="targetDate"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            field.value ? new Date(field.value) : undefined
+                          }
+                          onSelect={(date) => field.onChange(date ?? null)}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {field.value && (
                       <Button
                         type="button"
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !field.value && "text-muted-foreground",
-                        )}
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => field.onChange(null)}
                       >
-                        <CalendarIcon className="mr-2 size-4" />
-                        {field.value
-                          ? format(field.value, "PPP")
-                          : "Pick a date"}
+                        <X className="size-4" />
+                        <span className="sr-only">Clear date</span>
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={
-                          field.value ? new Date(field.value) : undefined
-                        }
-                        onSelect={(date) => field.onChange(date ?? null)}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {field.value && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={() => field.onChange(null)}
-                    >
-                      <X className="size-4" />
-                      <span className="sr-only">Clear date</span>
-                    </Button>
-                  )}
-                </div>
-              )}
-            />
-          </div>
+                    )}
+                  </div>
+                )}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NOT_STARTED">Not Started</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="AT_RISK">At Risk</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="AT_RISK">At Risk</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
-
-          <SheetFooter className="pt-4">
+          <SheetFooter>
             <Button
               type="button"
               variant="outline"
@@ -228,7 +231,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isDirty}>
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Add Milestone"}
             </Button>
