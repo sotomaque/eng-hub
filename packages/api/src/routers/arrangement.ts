@@ -165,6 +165,55 @@ export const arrangementRouter = createTRPCRouter({
       });
     }),
 
+  ensureActiveArrangement: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ input }) => {
+      return db.$transaction(async (tx) => {
+        const existing = await tx.teamArrangement.findFirst({
+          where: { projectId: input.projectId, isActive: true },
+        });
+        if (existing) return existing;
+
+        const arrangement = await tx.teamArrangement.create({
+          data: {
+            projectId: input.projectId,
+            name: "Current Teams",
+            isActive: true,
+          },
+        });
+
+        const teams = await tx.team.findMany({
+          where: { projectId: input.projectId },
+          orderBy: { name: "asc" },
+        });
+        const members = await tx.teamMember.findMany({
+          where: { projectId: input.projectId, teamId: { not: null } },
+        });
+
+        for (const [i, team] of teams.entries()) {
+          const arrTeam = await tx.arrangementTeam.create({
+            data: {
+              name: team.name,
+              arrangementId: arrangement.id,
+              sortOrder: i,
+              liveTeamId: team.id,
+            },
+          });
+          const teamMembers = members.filter((m) => m.teamId === team.id);
+          if (teamMembers.length > 0) {
+            await tx.arrangementAssignment.createMany({
+              data: teamMembers.map((m) => ({
+                arrangementTeamId: arrTeam.id,
+                teamMemberId: m.id,
+              })),
+            });
+          }
+        }
+
+        return arrangement;
+      });
+    }),
+
   activate: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
@@ -185,6 +234,18 @@ export const arrangementRouter = createTRPCRouter({
           data: { isActive: false },
         });
 
+        // Clear all liveTeamId links in the project's arrangements
+        const allArrTeamIds = await tx.arrangementTeam.findMany({
+          where: { arrangement: { projectId: arrangement.projectId } },
+          select: { id: true },
+        });
+        if (allArrTeamIds.length > 0) {
+          await tx.arrangementTeam.updateMany({
+            where: { id: { in: allArrTeamIds.map((t) => t.id) } },
+            data: { liveTeamId: null },
+          });
+        }
+
         // Activate this one
         await tx.teamArrangement.update({
           where: { id: input.id },
@@ -196,13 +257,19 @@ export const arrangementRouter = createTRPCRouter({
           where: { projectId: arrangement.projectId },
         });
 
-        // Create new live Team records from arrangement teams
+        // Create new live Team records from arrangement teams and set liveTeamId
         for (const arrTeam of arrangement.teams) {
           const newTeam = await tx.team.create({
             data: {
               name: arrTeam.name,
               projectId: arrangement.projectId,
             },
+          });
+
+          // Link the arrangement team to the new live team
+          await tx.arrangementTeam.update({
+            where: { id: arrTeam.id },
+            data: { liveTeamId: newTeam.id },
           });
 
           const memberIds = arrTeam.assignments.map((a) => a.teamMemberId);
@@ -233,32 +300,69 @@ export const arrangementRouter = createTRPCRouter({
   addTeam: protectedProcedure
     .input(z.object({ arrangementId: z.string(), name: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      const maxSort = await db.arrangementTeam.aggregate({
-        where: { arrangementId: input.arrangementId },
-        _max: { sortOrder: true },
-      });
-      return db.arrangementTeam.create({
-        data: {
-          name: input.name,
-          arrangementId: input.arrangementId,
-          sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
-        },
+      return db.$transaction(async (tx) => {
+        const arrangement = await tx.teamArrangement.findUniqueOrThrow({
+          where: { id: input.arrangementId },
+        });
+
+        const maxSort = await tx.arrangementTeam.aggregate({
+          where: { arrangementId: input.arrangementId },
+          _max: { sortOrder: true },
+        });
+
+        let liveTeamId: string | null = null;
+        if (arrangement.isActive) {
+          const liveTeam = await tx.team.create({
+            data: { name: input.name, projectId: arrangement.projectId },
+          });
+          liveTeamId = liveTeam.id;
+        }
+
+        return tx.arrangementTeam.create({
+          data: {
+            name: input.name,
+            arrangementId: input.arrangementId,
+            sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
+            liveTeamId,
+          },
+        });
       });
     }),
 
   updateTeam: protectedProcedure
     .input(z.object({ teamId: z.string(), name: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      return db.arrangementTeam.update({
-        where: { id: input.teamId },
-        data: { name: input.name },
+      return db.$transaction(async (tx) => {
+        const arrTeam = await tx.arrangementTeam.update({
+          where: { id: input.teamId },
+          data: { name: input.name },
+        });
+
+        if (arrTeam.liveTeamId) {
+          await tx.team.update({
+            where: { id: arrTeam.liveTeamId },
+            data: { name: input.name },
+          });
+        }
+
+        return arrTeam;
       });
     }),
 
   deleteTeam: protectedProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ input }) => {
-      return db.arrangementTeam.delete({ where: { id: input.teamId } });
+      return db.$transaction(async (tx) => {
+        const arrTeam = await tx.arrangementTeam.findUniqueOrThrow({
+          where: { id: input.teamId },
+        });
+
+        if (arrTeam.liveTeamId) {
+          await tx.team.delete({ where: { id: arrTeam.liveTeamId } });
+        }
+
+        return tx.arrangementTeam.delete({ where: { id: input.teamId } });
+      });
     }),
 
   reorderTeams: protectedProcedure
@@ -289,23 +393,36 @@ export const arrangementRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      // Remove any existing assignment for this member in the same arrangement
-      const team = await db.arrangementTeam.findUniqueOrThrow({
-        where: { id: input.arrangementTeamId },
-      });
+      return db.$transaction(async (tx) => {
+        const arrTeam = await tx.arrangementTeam.findUniqueOrThrow({
+          where: { id: input.arrangementTeamId },
+          include: { arrangement: true },
+        });
 
-      await db.arrangementAssignment.deleteMany({
-        where: {
-          teamMemberId: input.teamMemberId,
-          arrangementTeam: { arrangementId: team.arrangementId },
-        },
-      });
+        // Remove any existing assignment for this member in the same arrangement
+        await tx.arrangementAssignment.deleteMany({
+          where: {
+            teamMemberId: input.teamMemberId,
+            arrangementTeam: { arrangementId: arrTeam.arrangementId },
+          },
+        });
 
-      return db.arrangementAssignment.create({
-        data: {
-          arrangementTeamId: input.arrangementTeamId,
-          teamMemberId: input.teamMemberId,
-        },
+        const assignment = await tx.arrangementAssignment.create({
+          data: {
+            arrangementTeamId: input.arrangementTeamId,
+            teamMemberId: input.teamMemberId,
+          },
+        });
+
+        // Sync to live team if arrangement is active
+        if (arrTeam.arrangement.isActive && arrTeam.liveTeamId) {
+          await tx.teamMember.update({
+            where: { id: input.teamMemberId },
+            data: { teamId: arrTeam.liveTeamId },
+          });
+        }
+
+        return assignment;
       });
     }),
 
@@ -317,11 +434,26 @@ export const arrangementRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.arrangementAssignment.deleteMany({
-        where: {
-          teamMemberId: input.teamMemberId,
-          arrangementTeamId: input.arrangementTeamId,
-        },
+      return db.$transaction(async (tx) => {
+        const arrTeam = await tx.arrangementTeam.findUniqueOrThrow({
+          where: { id: input.arrangementTeamId },
+          include: { arrangement: true },
+        });
+
+        await tx.arrangementAssignment.deleteMany({
+          where: {
+            teamMemberId: input.teamMemberId,
+            arrangementTeamId: input.arrangementTeamId,
+          },
+        });
+
+        // Sync to live team if arrangement is active
+        if (arrTeam.arrangement.isActive) {
+          await tx.teamMember.update({
+            where: { id: input.teamMemberId },
+            data: { teamId: null },
+          });
+        }
       });
     }),
 
@@ -342,12 +474,27 @@ export const arrangementRouter = createTRPCRouter({
           },
         });
 
-        return tx.arrangementAssignment.create({
+        const assignment = await tx.arrangementAssignment.create({
           data: {
             arrangementTeamId: input.toTeamId,
             teamMemberId: input.teamMemberId,
           },
         });
+
+        // Sync to live team if arrangement is active
+        const toArrTeam = await tx.arrangementTeam.findUniqueOrThrow({
+          where: { id: input.toTeamId },
+          include: { arrangement: true },
+        });
+
+        if (toArrTeam.arrangement.isActive && toArrTeam.liveTeamId) {
+          await tx.teamMember.update({
+            where: { id: input.teamMemberId },
+            data: { teamId: toArrTeam.liveTeamId },
+          });
+        }
+
+        return assignment;
       });
     }),
 });

@@ -1,6 +1,11 @@
 "use client";
 
 import type { Role, Team, TeamMember, Title } from "@prisma/client";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -8,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Plus, Settings, Users } from "lucide-react";
+import { Pencil, Plus, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -74,7 +79,19 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Link href={`/projects/${projectId}/teams`}>
+            <Button
+              onClick={() =>
+                router.push(`/projects/${projectId}/team?manageTeams=true`, {
+                  scroll: false,
+                })
+              }
+              size="sm"
+              variant="outline"
+            >
+              <Users className="size-4" />
+              <span className="hidden sm:inline">Manage Teams</span>
+            </Button>
+            <Link href={`/projects/${projectId}/arrangements`}>
               <Button size="sm" variant="outline">
                 <Settings className="size-4" />
                 <span className="hidden sm:inline">Manage Arrangements</span>
@@ -82,7 +99,7 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
             </Link>
             <Button
               onClick={() =>
-                router.push(`/projects/${projectId}?addMember=true`, {
+                router.push(`/projects/${projectId}/team?addMember=true`, {
                   scroll: false,
                 })
               }
@@ -108,12 +125,36 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
               <div key={group.team?.id ?? "unassigned"} className="space-y-2">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
+                    {group.team && (
+                      <Avatar className="size-5 shrink-0 rounded-md">
+                        <AvatarImage src={group.team.imageUrl ?? undefined} />
+                        <AvatarFallback className="rounded-md text-[10px]">
+                          {group.team.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                     <h4 className="text-sm font-medium">
                       {group.team?.name ?? "Unassigned"}
                     </h4>
                     <span className="text-muted-foreground rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
                       {group.members.length}
                     </span>
+                    {group.team && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-6"
+                        onClick={() =>
+                          router.push(
+                            `/projects/${projectId}/team?editTeam=${group.team?.id}`,
+                            { scroll: false },
+                          )
+                        }
+                      >
+                        <Pencil className="size-3" />
+                        <span className="sr-only">Edit team</span>
+                      </Button>
+                    )}
                   </div>
                   <TeamCompositionBar
                     members={group.members}

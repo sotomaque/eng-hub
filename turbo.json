@@ -11,7 +11,8 @@
         "DATABASE_URL",
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
         "NEXT_PUBLIC_APP_URL",
-        "SKIP_ENV_VALIDATION"
+        "SKIP_ENV_VALIDATION",
+        "UPLOADTHING_TOKEN"
       ]
     },
     "lint": {

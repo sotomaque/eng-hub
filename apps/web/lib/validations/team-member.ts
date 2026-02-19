@@ -10,6 +10,7 @@ export const createTeamMemberSchema = z.object({
   teamId: z.string().optional().or(z.literal("")),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
+  imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const updateTeamMemberSchema = createTeamMemberSchema

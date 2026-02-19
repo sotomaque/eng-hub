@@ -55,11 +55,13 @@ export function LinksSection({
   );
 
   function handleAdd() {
-    router.push(`/projects/${projectId}?addLink=true`, { scroll: false });
+    router.push(`/projects/${projectId}/links?addLink=true`, { scroll: false });
   }
 
   function handleEdit(id: string) {
-    router.push(`/projects/${projectId}?editLink=${id}`, { scroll: false });
+    router.push(`/projects/${projectId}/links?editLink=${id}`, {
+      scroll: false,
+    });
   }
 
   function handleDelete(id: string) {

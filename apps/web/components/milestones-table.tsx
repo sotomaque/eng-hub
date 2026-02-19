@@ -115,7 +115,7 @@ export function MilestonesTable({
               size="icon"
               onClick={() =>
                 router.push(
-                  `/projects/${projectId}?editMilestone=${milestone.id}`,
+                  `/projects/${projectId}/roadmap?editMilestone=${milestone.id}`,
                   { scroll: false },
                 )
               }

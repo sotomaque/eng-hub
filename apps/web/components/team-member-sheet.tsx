@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   type CreateTeamMemberInput,
@@ -42,6 +43,9 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const trpc = useTRPC();
   const isEditing = !!member;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    member?.imageUrl ?? null,
+  );
   const emailManuallyEdited = useRef(isEditing);
 
   const rolesQuery = useQuery(trpc.role.getAll.queryOptions());
@@ -109,17 +113,18 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   );
 
   function handleClose() {
-    router.push(`/projects/${projectId}`, { scroll: false });
+    router.push(`/projects/${projectId}/team`, { scroll: false });
     reset();
   }
 
   function onSubmit(data: CreateTeamMemberInput) {
     setIsSubmitting(true);
+    const withImage = { ...data, imageUrl: imageUrl || "" };
     if (isEditing && member) {
-      const { projectId: _, ...rest } = data;
+      const { projectId: _, ...rest } = withImage;
       updateMutation.mutate({ ...rest, id: member.id });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(withImage);
     }
   }
 
@@ -129,7 +134,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
             {isEditing ? "Edit Team Member" : "Add Team Member"}
@@ -143,8 +148,19 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 py-4"
+          className="flex flex-col gap-4 px-4 py-4"
         >
+          <ImageUploader
+            label="Photo"
+            currentImageUrl={imageUrl}
+            onUploadComplete={(url) => setImageUrl(url)}
+            onRemove={() => setImageUrl(null)}
+            fallbackText={
+              member ? `${member.firstName[0]}${member.lastName[0]}` : ""
+            }
+            shape="circle"
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -226,7 +242,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               variant="link"
               className="h-auto p-0 text-xs"
               onClick={() =>
-                router.push(`/projects/${projectId}?manageTitles=true`, {
+                router.push(`/projects/${projectId}/team?manageTitles=true`, {
                   scroll: false,
                 })
               }
@@ -265,7 +281,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               variant="link"
               className="h-auto p-0 text-xs"
               onClick={() =>
-                router.push(`/projects/${projectId}?manageRoles=true`, {
+                router.push(`/projects/${projectId}/team?manageRoles=true`, {
                   scroll: false,
                 })
               }

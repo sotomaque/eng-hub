@@ -64,7 +64,7 @@ export function RoleSheet({ projectId }: RoleSheetProps) {
   );
 
   function handleClose() {
-    router.push(`/projects/${projectId}`, { scroll: false });
+    router.push(`/projects/${projectId}/team`, { scroll: false });
   }
 
   function handleAdd() {
@@ -83,7 +83,7 @@ export function RoleSheet({ projectId }: RoleSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Manage Roles</SheetTitle>
           <SheetDescription>
@@ -92,7 +92,7 @@ export function RoleSheet({ projectId }: RoleSheetProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col gap-3 py-4">
+        <div className="flex flex-col gap-3 px-4 py-4">
           {roles.map((role) => (
             <div key={role.id} className="flex items-center gap-2">
               {editingId === role.id ? (

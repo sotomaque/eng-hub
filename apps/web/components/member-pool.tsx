@@ -13,6 +13,7 @@ interface MemberData {
   lastName: string;
   title: { name: string } | null;
   role: Role;
+  imageUrl?: string | null;
 }
 
 interface MemberPoolProps {
@@ -94,6 +95,7 @@ export function MemberPool({ members }: MemberPoolProps) {
                     title={member.title}
                     role={member.role}
                     sourceTeamId={null}
+                    imageUrl={member.imageUrl}
                   />
                 ))}
               </div>

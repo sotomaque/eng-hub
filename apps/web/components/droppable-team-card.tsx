@@ -23,6 +23,7 @@ interface TeamMemberData {
   lastName: string;
   title: { name: string } | null;
   role: Role;
+  imageUrl?: string | null;
 }
 
 interface DroppableTeamCardProps {
@@ -143,6 +144,7 @@ export function DroppableTeamCard({
                 title={member.title}
                 role={member.role}
                 sourceTeamId={teamId}
+                imageUrl={member.imageUrl}
               />
             ))}
           </div>

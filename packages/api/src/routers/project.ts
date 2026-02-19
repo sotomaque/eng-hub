@@ -7,6 +7,7 @@ const createProjectSchema = z.object({
   description: z.string().optional(),
   githubUrl: z.string().url().optional().or(z.literal("")),
   gitlabUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 const updateProjectSchema = createProjectSchema.extend({
@@ -51,6 +52,7 @@ export const projectRouter = createTRPCRouter({
           description: input.description,
           githubUrl: input.githubUrl || null,
           gitlabUrl: input.gitlabUrl || null,
+          imageUrl: input.imageUrl || null,
         },
       });
     }),
@@ -66,6 +68,7 @@ export const projectRouter = createTRPCRouter({
           description: data.description,
           githubUrl: data.githubUrl || null,
           gitlabUrl: data.gitlabUrl || null,
+          imageUrl: data.imageUrl || null,
         },
       });
     }),

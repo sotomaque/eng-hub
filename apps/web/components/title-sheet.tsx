@@ -64,7 +64,7 @@ export function TitleSheet({ projectId }: TitleSheetProps) {
   );
 
   function handleClose() {
-    router.push(`/projects/${projectId}`, { scroll: false });
+    router.push(`/projects/${projectId}/team`, { scroll: false });
   }
 
   function handleAdd() {
@@ -83,7 +83,7 @@ export function TitleSheet({ projectId }: TitleSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Manage Titles</SheetTitle>
           <SheetDescription>
@@ -92,7 +92,7 @@ export function TitleSheet({ projectId }: TitleSheetProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col gap-3 py-4">
+        <div className="flex flex-col gap-3 px-4 py-4">
           {titles.map((title) => (
             <div key={title.id} className="flex items-center gap-2">
               {editingId === title.id ? (

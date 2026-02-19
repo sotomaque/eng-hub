@@ -132,7 +132,7 @@ export function ArrangementEditor({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/projects/${projectId}/teams`}>
+          <Link href={`/projects/${projectId}/arrangements`}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="size-4" />
               <span className="sr-only">Back to arrangements</span>

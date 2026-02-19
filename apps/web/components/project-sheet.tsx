@@ -20,6 +20,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   type CreateProjectInput,
@@ -54,6 +55,9 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    project?.imageUrl ?? null,
+  );
 
   const createMutation = useMutation(
     trpc.project.create.mutationOptions({
@@ -93,16 +97,17 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
 
   function onSubmit(data: CreateProjectInput) {
     setIsSubmitting(true);
+    const withImage = { ...data, imageUrl: imageUrl || "" };
     if (isEditing && project) {
-      updateMutation.mutate({ ...data, id: project.id });
+      updateMutation.mutate({ ...withImage, id: project.id });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(withImage);
     }
   }
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Project" : "New Project"}</SheetTitle>
           <SheetDescription>
@@ -114,8 +119,17 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 py-4"
+          className="flex flex-col gap-4 px-4 py-4"
         >
+          <ImageUploader
+            label="Logo"
+            currentImageUrl={imageUrl}
+            onUploadComplete={(url) => setImageUrl(url)}
+            onRemove={() => setImageUrl(null)}
+            fallbackText={project?.name?.[0] ?? ""}
+            shape="square"
+          />
+
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input

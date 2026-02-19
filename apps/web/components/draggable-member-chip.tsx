@@ -2,6 +2,11 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import type { Role } from "@prisma/client";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import { cn } from "@workspace/ui/lib/utils";
 
 const ROLE_COLORS: Record<string, string> = {
@@ -17,6 +22,7 @@ interface DraggableMemberChipProps {
   title: { name: string } | null;
   role: Role;
   sourceTeamId: string | null;
+  imageUrl?: string | null;
 }
 
 export function DraggableMemberChip({
@@ -26,6 +32,7 @@ export function DraggableMemberChip({
   title,
   role,
   sourceTeamId,
+  imageUrl,
 }: DraggableMemberChipProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `member-${id}`,
@@ -50,6 +57,13 @@ export function DraggableMemberChip({
         isDragging && "opacity-50",
       )}
     >
+      <Avatar className="size-6 shrink-0">
+        <AvatarImage src={imageUrl ?? undefined} />
+        <AvatarFallback className="text-[10px]">
+          {firstName[0]}
+          {lastName[0]}
+        </AvatarFallback>
+      </Avatar>
       <span className="truncate font-medium">
         {firstName} {lastName}
       </span>

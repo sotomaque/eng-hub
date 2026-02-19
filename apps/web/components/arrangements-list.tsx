@@ -20,8 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { ArrowLeft, Pencil, Plus, Trash2, Users } from "lucide-react";
-import Link from "next/link";
+import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -72,20 +71,19 @@ export function ArrangementsList({
 
   const activeArrangement = arrangements.find((a) => a.isActive);
 
+  // Sort active arrangement first, then by updatedAt desc (already sorted from server)
+  const sorted = [...arrangements].sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return 0;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/projects/${projectId}`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="size-4" />
-              <span className="sr-only">Back to project</span>
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold">Team Arrangements</h1>
-            <p className="text-muted-foreground text-sm">{projectName}</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">Team Arrangements</h1>
+          <p className="text-muted-foreground text-sm">{projectName}</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="size-4" />
@@ -93,7 +91,7 @@ export function ArrangementsList({
         </Button>
       </div>
 
-      {arrangements.length === 0 ? (
+      {sorted.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="text-muted-foreground mb-3 size-10" />
@@ -111,7 +109,7 @@ export function ArrangementsList({
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {arrangements.map((arrangement) => {
+          {sorted.map((arrangement) => {
             const teamCount = arrangement.teams.length;
             const assignedCount = arrangement.teams.reduce(
               (sum, t) => sum + t._count.assignments,
@@ -123,7 +121,9 @@ export function ArrangementsList({
                 key={arrangement.id}
                 className="cursor-pointer transition-shadow hover:shadow-md"
                 onClick={() =>
-                  router.push(`/projects/${projectId}/teams/${arrangement.id}`)
+                  router.push(
+                    `/projects/${projectId}/arrangements/${arrangement.id}`,
+                  )
                 }
               >
                 <CardHeader className="pb-2">
@@ -132,7 +132,7 @@ export function ArrangementsList({
                       {arrangement.name}
                     </CardTitle>
                     {arrangement.isActive && (
-                      <Badge variant="default">Active</Badge>
+                      <Badge variant="default">Live</Badge>
                     )}
                   </div>
                 </CardHeader>
@@ -152,7 +152,7 @@ export function ArrangementsList({
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(
-                          `/projects/${projectId}/teams/${arrangement.id}`,
+                          `/projects/${projectId}/arrangements/${arrangement.id}`,
                         );
                       }}
                     >

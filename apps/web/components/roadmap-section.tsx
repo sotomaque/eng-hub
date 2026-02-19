@@ -44,9 +44,12 @@ export function RoadmapSection({
             </div>
             <Button
               onClick={() =>
-                router.push(`/projects/${projectId}?addMilestone=true`, {
-                  scroll: false,
-                })
+                router.push(
+                  `/projects/${projectId}/roadmap?addMilestone=true`,
+                  {
+                    scroll: false,
+                  },
+                )
               }
               size="sm"
               variant="outline"
@@ -81,7 +84,7 @@ export function RoadmapSection({
             </div>
             <Button
               onClick={() =>
-                router.push(`/projects/${projectId}?addGoal=true`, {
+                router.push(`/projects/${projectId}/roadmap?addGoal=true`, {
                   scroll: false,
                 })
               }

@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 const createTeamMemberSchema = z.object({
@@ -12,6 +13,7 @@ const createTeamMemberSchema = z.object({
   teamId: z.string().optional().or(z.literal("")),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
+  imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 const updateTeamMemberSchema = z.object({
@@ -24,6 +26,7 @@ const updateTeamMemberSchema = z.object({
   teamId: z.string().optional().or(z.literal("")),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
+  imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const teamMemberRouter = createTRPCRouter({
@@ -49,18 +52,23 @@ export const teamMemberRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createTeamMemberSchema)
     .mutation(async ({ input }) => {
-      return db.teamMember.create({
-        data: {
-          projectId: input.projectId,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          email: input.email,
-          titleId: input.titleId || null,
-          roleId: input.roleId,
-          teamId: input.teamId || null,
-          githubUsername: input.githubUsername || null,
-          gitlabUsername: input.gitlabUsername || null,
-        },
+      return db.$transaction(async (tx) => {
+        const member = await tx.teamMember.create({
+          data: {
+            projectId: input.projectId,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            email: input.email,
+            titleId: input.titleId || null,
+            roleId: input.roleId,
+            teamId: input.teamId || null,
+            githubUsername: input.githubUsername || null,
+            gitlabUsername: input.gitlabUsername || null,
+            imageUrl: input.imageUrl || null,
+          },
+        });
+        await syncLiveToActiveArrangement(tx, input.projectId);
+        return member;
       });
     }),
 
@@ -68,26 +76,35 @@ export const teamMemberRouter = createTRPCRouter({
     .input(updateTeamMemberSchema)
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      return db.teamMember.update({
-        where: { id },
-        data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          titleId: data.titleId || null,
-          roleId: data.roleId,
-          teamId: data.teamId || null,
-          githubUsername: data.githubUsername || null,
-          gitlabUsername: data.gitlabUsername || null,
-        },
+      return db.$transaction(async (tx) => {
+        const member = await tx.teamMember.update({
+          where: { id },
+          data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            titleId: data.titleId || null,
+            roleId: data.roleId,
+            teamId: data.teamId || null,
+            githubUsername: data.githubUsername || null,
+            gitlabUsername: data.gitlabUsername || null,
+            imageUrl: data.imageUrl || null,
+          },
+        });
+        await syncLiveToActiveArrangement(tx, member.projectId);
+        return member;
       });
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.teamMember.delete({
-        where: { id: input.id },
+      return db.$transaction(async (tx) => {
+        const member = await tx.teamMember.delete({
+          where: { id: input.id },
+        });
+        await syncLiveToActiveArrangement(tx, member.projectId);
+        return member;
       });
     }),
 });

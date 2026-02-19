@@ -14,6 +14,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -81,9 +86,21 @@ export function TeamMembersTable({
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Name" />
       ),
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("name")}</span>
-      ),
+      cell: ({ row }) => {
+        const member = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <Avatar className="size-7 shrink-0">
+              <AvatarImage src={member.imageUrl ?? undefined} />
+              <AvatarFallback className="text-xs">
+                {member.firstName[0]}
+                {member.lastName[0]}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-medium">{row.getValue("name")}</span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "email",
@@ -193,9 +210,12 @@ export function TeamMembersTable({
               variant="ghost"
               size="icon"
               onClick={() =>
-                router.push(`/projects/${projectId}?editMember=${member.id}`, {
-                  scroll: false,
-                })
+                router.push(
+                  `/projects/${projectId}/team?editMember=${member.id}`,
+                  {
+                    scroll: false,
+                  },
+                )
               }
             >
               <Pencil className="size-4" />

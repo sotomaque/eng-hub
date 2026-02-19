@@ -13,6 +13,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Empty,
@@ -142,8 +147,14 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
                   <TableCell className="font-medium">
                     <Link
                       href={`/projects/${project.id}`}
-                      className="hover:underline"
+                      className="flex items-center gap-2 hover:underline"
                     >
+                      <Avatar className="size-7 shrink-0 rounded-md">
+                        <AvatarImage src={project.imageUrl ?? undefined} />
+                        <AvatarFallback className="rounded-md text-xs">
+                          {project.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
                       {project.name}
                     </Link>
                   </TableCell>

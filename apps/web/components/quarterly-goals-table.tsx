@@ -138,9 +138,12 @@ export function QuarterlyGoalsTable({
               variant="ghost"
               size="icon"
               onClick={() =>
-                router.push(`/projects/${projectId}?editGoal=${goal.id}`, {
-                  scroll: false,
-                })
+                router.push(
+                  `/projects/${projectId}/roadmap?editGoal=${goal.id}`,
+                  {
+                    scroll: false,
+                  },
+                )
               }
             >
               <Pencil className="size-4" />

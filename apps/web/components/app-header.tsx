@@ -1,6 +1,7 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function AppHeader() {
   return (
@@ -9,16 +10,19 @@ export function AppHeader() {
         <Link href="/" className="text-xl font-bold">
           Eng Hub
         </Link>
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button variant="outline" size="sm">
-              Sign In
-            </Button>
-          </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
+        <div className="flex items-center gap-2">
+          <ModeToggle />
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button variant="outline" size="sm">
+                Sign In
+              </Button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
+        </div>
       </div>
     </header>
   );

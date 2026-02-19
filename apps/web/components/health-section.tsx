@@ -44,7 +44,9 @@ export function HealthSection({
   const router = useRouter();
 
   function handleAdd() {
-    router.push(`/projects/${projectId}?addStatus=true`, { scroll: false });
+    router.push(`/projects/${projectId}/health?addStatus=true`, {
+      scroll: false,
+    });
   }
 
   return (

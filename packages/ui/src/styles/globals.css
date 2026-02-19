@@ -8,33 +8,33 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Clean neutral palette for a professional dashboard */
-  --background: oklch(0.98 0.002 250);
-  --foreground: oklch(0.15 0.01 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 250);
+  /* Soft, muted light theme — warm stone tones */
+  --background: oklch(0.94 0.005 260);
+  --foreground: oklch(0.18 0.01 250);
+  --card: oklch(0.97 0.003 260);
+  --card-foreground: oklch(0.18 0.01 250);
+  --popover: oklch(0.97 0.003 260);
+  --popover-foreground: oklch(0.18 0.01 250);
 
   /* Blue primary for professional feel */
   --primary: oklch(0.55 0.15 250);
-  --primary-foreground: oklch(0.99 0.002 250);
+  --primary-foreground: oklch(0.97 0.003 260);
 
   /* Neutral secondary */
-  --secondary: oklch(0.95 0.005 250);
+  --secondary: oklch(0.90 0.008 260);
   --secondary-foreground: oklch(0.25 0.01 250);
-  --muted: oklch(0.96 0.003 250);
-  --muted-foreground: oklch(0.5 0.01 250);
+  --muted: oklch(0.91 0.006 260);
+  --muted-foreground: oklch(0.45 0.01 250);
 
   /* Subtle blue accent */
-  --accent: oklch(0.93 0.02 250);
-  --accent-foreground: oklch(0.15 0.01 250);
+  --accent: oklch(0.88 0.02 250);
+  --accent-foreground: oklch(0.18 0.01 250);
 
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.99 0.002 250);
+  --destructive-foreground: oklch(0.97 0.003 260);
 
-  --border: oklch(0.91 0.005 250);
-  --input: oklch(0.91 0.005 250);
+  --border: oklch(0.87 0.008 260);
+  --input: oklch(0.87 0.008 260);
   --ring: oklch(0.55 0.15 250);
 
   --chart-1: oklch(0.55 0.15 250);
@@ -45,13 +45,13 @@
 
   --radius: 0.5rem;
 
-  --sidebar: oklch(0.98 0.002 250);
-  --sidebar-foreground: oklch(0.15 0.01 250);
+  --sidebar: oklch(0.92 0.006 260);
+  --sidebar-foreground: oklch(0.18 0.01 250);
   --sidebar-primary: oklch(0.55 0.15 250);
-  --sidebar-primary-foreground: oklch(0.99 0.002 250);
-  --sidebar-accent: oklch(0.95 0.005 250);
+  --sidebar-primary-foreground: oklch(0.97 0.003 260);
+  --sidebar-accent: oklch(0.88 0.01 260);
   --sidebar-accent-foreground: oklch(0.25 0.01 250);
-  --sidebar-border: oklch(0.91 0.005 250);
+  --sidebar-border: oklch(0.87 0.008 260);
   --sidebar-ring: oklch(0.55 0.15 250);
 }
 

@@ -26,6 +26,7 @@ model Project {
   description String?
   githubUrl   String?  @map("github_url")
   gitlabUrl   String?  @map("gitlab_url")
+  imageUrl    String?  @map("image_url")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -49,11 +50,15 @@ model Role {
 }
 
 model Team {
-  id        String       @id @default(cuid())
-  name      String
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?      @map("image_url")
   projectId String       @map("project_id")
   project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   members   TeamMember[]
+
+  arrangementTeam ArrangementTeam?
 
   @@map("teams")
 }
@@ -87,6 +92,7 @@ model TeamMember {
   title          Title?  @relation(fields: [titleId], references: [id], onDelete: SetNull)
   githubUsername  String? @map("github_username")
   gitlabUsername  String? @map("gitlab_username")
+  imageUrl       String? @map("image_url")
   projectId      String  @map("project_id")
   project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   roleId         String  @map("role_id")
@@ -158,6 +164,8 @@ model ArrangementTeam {
   arrangementId String          @map("arrangement_id")
   arrangement   TeamArrangement @relation(fields: [arrangementId], references: [id], onDelete: Cascade)
   sortOrder     Int             @default(0) @map("sort_order")
+  liveTeamId    String?         @unique @map("live_team_id")
+  liveTeam      Team?           @relation(fields: [liveTeamId], references: [id], onDelete: SetNull)
 
   assignments ArrangementAssignment[]
 

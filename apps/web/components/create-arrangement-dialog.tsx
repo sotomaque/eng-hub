@@ -47,7 +47,7 @@ export function CreateArrangementDialog({
         toast.success("Arrangement created");
         onOpenChange(false);
         setName("");
-        router.push(`/projects/${projectId}/teams/${data.id}`);
+        router.push(`/projects/${projectId}/arrangements/${data.id}`);
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
@@ -61,7 +61,7 @@ export function CreateArrangementDialog({
         toast.success("Arrangement cloned");
         onOpenChange(false);
         setName("");
-        router.push(`/projects/${projectId}/teams/${data.id}`);
+        router.push(`/projects/${projectId}/arrangements/${data.id}`);
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
@@ -75,7 +75,7 @@ export function CreateArrangementDialog({
         toast.success("Arrangement created from live teams");
         onOpenChange(false);
         setName("");
-        router.push(`/projects/${projectId}/teams/${data.id}`);
+        router.push(`/projects/${projectId}/arrangements/${data.id}`);
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
