@@ -1,0 +1,183 @@
+"use client";
+
+import type { Milestone, RoadmapStatus } from "@prisma/client";
+import { useMutation } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
+import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
+import { Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
+import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
+import { useTRPC } from "@/lib/trpc/client";
+
+const statusOptions = [
+  { label: "Not Started", value: "NOT_STARTED" },
+  { label: "In Progress", value: "IN_PROGRESS" },
+  { label: "Completed", value: "COMPLETED" },
+  { label: "At Risk", value: "AT_RISK" },
+];
+
+interface MilestonesTableProps {
+  projectId: string;
+  milestones: Milestone[];
+}
+
+export function MilestonesTable({
+  projectId,
+  milestones,
+}: MilestonesTableProps) {
+  const router = useRouter();
+  const trpc = useTRPC();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteMutation = useMutation(
+    trpc.milestone.delete.mutationOptions({
+      onSuccess: () => {
+        toast.success("Milestone deleted");
+        router.refresh();
+      },
+      onError: (error) => toast.error(error.message),
+      onSettled: () => setDeletingId(null),
+    }),
+  );
+
+  const columns: ColumnDef<Milestone>[] = [
+    {
+      accessorKey: "title",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Title" />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.getValue("title")}</span>
+      ),
+    },
+    {
+      accessorKey: "targetDate",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Target Date"
+          className="hidden sm:flex"
+        />
+      ),
+      cell: ({ row }) => {
+        const date = row.getValue("targetDate") as Date | null;
+        return (
+          <span className="hidden text-muted-foreground sm:inline">
+            {date ? new Date(date).toLocaleDateString() : "\u2014"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Status" />
+      ),
+      cell: ({ row }) => {
+        const status = row.getValue("status") as RoadmapStatus;
+        return (
+          <Badge className={STATUS_STYLES[status]}>
+            {STATUS_LABELS[status]}
+          </Badge>
+        );
+      },
+      filterFn: (row, id, value: string[]) => {
+        return value.includes(row.getValue(id));
+      },
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      cell: ({ row }) => {
+        const milestone = row.original;
+        return (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                router.push(
+                  `/projects/${projectId}?editMilestone=${milestone.id}`,
+                  { scroll: false },
+                )
+              }
+            >
+              <Pencil className="size-4" />
+              <span className="sr-only">Edit</span>
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="size-4" />
+                  <span className="sr-only">Delete</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete milestone?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete &quot;{milestone.title}&quot;.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      setDeletingId(milestone.id);
+                      deleteMutation.mutate({ id: milestone.id });
+                    }}
+                    disabled={deletingId === milestone.id}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    {deletingId === milestone.id ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        );
+      },
+      enableSorting: false,
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      data={milestones}
+      toolbar={(table) => (
+        <DataTableToolbar
+          table={table}
+          searchColumn="title"
+          searchPlaceholder="Filter milestones..."
+        >
+          {table.getColumn("status") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("status")}
+              title="Status"
+              options={statusOptions}
+            />
+          )}
+        </DataTableToolbar>
+      )}
+    />
+  );
+}

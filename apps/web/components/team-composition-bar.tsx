@@ -1,0 +1,97 @@
+"use client";
+
+import { cn } from "@workspace/ui/lib/utils";
+import type { TitleColorMap } from "@/lib/constants/team";
+import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
+
+interface MemberWithTitle {
+  title: { name: string } | null;
+}
+
+interface TeamCompositionBarProps {
+  members: MemberWithTitle[];
+  titleColorMap: TitleColorMap;
+  className?: string;
+}
+
+export function TeamCompositionBar({
+  members,
+  titleColorMap,
+  className,
+}: TeamCompositionBarProps) {
+  if (members.length === 0) return null;
+
+  // Group members by title name
+  const counts = new Map<string | null, number>();
+  for (const m of members) {
+    const key = m.title?.name ?? null;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  // Sort: titled entries alphabetically, then null (no title) last
+  const entries = [...counts.entries()].sort((a, b) => {
+    if (a[0] === null) return 1;
+    if (b[0] === null) return -1;
+    return a[0].localeCompare(b[0]);
+  });
+
+  const total = members.length;
+
+  return (
+    <div
+      className={cn(
+        "flex h-1.5 w-full overflow-hidden rounded-full",
+        className,
+      )}
+    >
+      {entries.map(([titleName, count]) => (
+        <div
+          key={titleName ?? "__none__"}
+          style={{
+            width: `${(count / total) * 100}%`,
+            backgroundColor:
+              titleName === null
+                ? TITLE_NO_TITLE_COLOR
+                : (titleColorMap.get(titleName) ?? TITLE_NO_TITLE_COLOR),
+          }}
+          title={`${titleName ?? "No title"}: ${count}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface TeamCompositionLegendProps {
+  titleColorMap: TitleColorMap;
+  showNoTitle?: boolean;
+  className?: string;
+}
+
+export function TeamCompositionLegend({
+  titleColorMap,
+  showNoTitle = false,
+  className,
+}: TeamCompositionLegendProps) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-3", className)}>
+      {[...titleColorMap.entries()].map(([name, color]) => (
+        <div key={name} className="flex items-center gap-1.5">
+          <span
+            className="size-2.5 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          <span className="text-muted-foreground text-xs">{name}</span>
+        </div>
+      ))}
+      {showNoTitle && (
+        <div className="flex items-center gap-1.5">
+          <span
+            className="size-2.5 rounded-full"
+            style={{ backgroundColor: TITLE_NO_TITLE_COLOR }}
+          />
+          <span className="text-muted-foreground text-xs">No title</span>
+        </div>
+      )}
+    </div>
+  );
+}

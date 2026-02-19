@@ -19,6 +19,8 @@ import {
 import { Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { TeamCompositionBar } from "@/components/team-composition-bar";
+import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface MemberData {
@@ -44,6 +46,7 @@ interface TableTeamViewProps {
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
   onDeleteTeam: (teamId: string) => void;
+  titleColorMap: TitleColorMap;
 }
 
 export function TableTeamView({
@@ -51,6 +54,7 @@ export function TableTeamView({
   unassignedMembers,
   onRenameTeam,
   onDeleteTeam,
+  titleColorMap,
 }: TableTeamViewProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -165,6 +169,13 @@ export function TableTeamView({
                   </Button>
                 </div>
               </div>
+              {team.assignments.length > 0 && (
+                <TeamCompositionBar
+                  members={team.assignments.map((a) => a.teamMember)}
+                  titleColorMap={titleColorMap}
+                  className="mt-2"
+                />
+              )}
             </CardHeader>
             <CardContent>
               {team.assignments.length === 0 ? (

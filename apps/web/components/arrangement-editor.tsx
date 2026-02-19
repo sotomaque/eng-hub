@@ -7,11 +7,12 @@ import { Input } from "@workspace/ui/components/input";
 import { ArrowLeft, Check, Loader2, Plus, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ActivateArrangementDialog } from "@/components/activate-arrangement-dialog";
 import { TableTeamView } from "@/components/table-team-view";
 import { VisualTeamEditor } from "@/components/visual-team-editor";
+import { buildTitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRole = TeamMember & {
@@ -57,6 +58,19 @@ export function ArrangementEditor({
   const [newTeamName, setNewTeamName] = useState("");
   const [isAddingTeam, setIsAddingTeam] = useState(false);
   const [activateOpen, setActivateOpen] = useState(false);
+
+  const titleColorMap = useMemo(() => {
+    const allMembers = [
+      ...arrangement.unassignedMembers,
+      ...arrangement.teams.flatMap((t) =>
+        t.assignments.map((a) => a.teamMember),
+      ),
+    ];
+    const titleNames = allMembers
+      .map((m) => m.title?.name)
+      .filter((n): n is string => n != null);
+    return buildTitleColorMap(titleNames);
+  }, [arrangement]);
 
   const totalMembers =
     arrangement.unassignedMembers.length +
@@ -232,6 +246,7 @@ export function ArrangementEditor({
           unassignedMembers={arrangement.unassignedMembers}
           onRenameTeam={handleRenameTeam}
           onDeleteTeam={handleDeleteTeam}
+          titleColorMap={titleColorMap}
         />
       ) : (
         <TableTeamView
@@ -239,6 +254,7 @@ export function ArrangementEditor({
           unassignedMembers={arrangement.unassignedMembers}
           onRenameTeam={handleRenameTeam}
           onDeleteTeam={handleDeleteTeam}
+          titleColorMap={titleColorMap}
         />
       )}
 

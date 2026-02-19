@@ -14,6 +14,8 @@ import { cn } from "@workspace/ui/lib/utils";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { DraggableMemberChip } from "@/components/draggable-member-chip";
+import { TeamCompositionBar } from "@/components/team-composition-bar";
+import type { TitleColorMap } from "@/lib/constants/team";
 
 interface TeamMemberData {
   id: string;
@@ -29,6 +31,7 @@ interface DroppableTeamCardProps {
   members: TeamMemberData[];
   onRename: (teamId: string, name: string) => void;
   onDelete: (teamId: string) => void;
+  titleColorMap: TitleColorMap;
 }
 
 export function DroppableTeamCard({
@@ -37,6 +40,7 @@ export function DroppableTeamCard({
   members,
   onRename,
   onDelete,
+  titleColorMap,
 }: DroppableTeamCardProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: `team-${teamId}`,
@@ -118,6 +122,11 @@ export function DroppableTeamCard({
           )}
         </div>
       </CardHeader>
+      {members.length > 0 && (
+        <div className="px-6 pb-2">
+          <TeamCompositionBar members={members} titleColorMap={titleColorMap} />
+        </div>
+      )}
       <CardContent>
         {members.length === 0 ? (
           <p className="text-muted-foreground py-4 text-center text-xs">

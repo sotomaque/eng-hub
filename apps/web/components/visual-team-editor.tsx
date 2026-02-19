@@ -17,6 +17,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { DroppableTeamCard } from "@/components/droppable-team-card";
 import { MemberPool } from "@/components/member-pool";
+import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface MemberData {
@@ -42,6 +43,7 @@ interface VisualTeamEditorProps {
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
   onDeleteTeam: (teamId: string) => void;
+  titleColorMap: TitleColorMap;
 }
 
 export function VisualTeamEditor({
@@ -49,6 +51,7 @@ export function VisualTeamEditor({
   unassignedMembers,
   onRenameTeam,
   onDeleteTeam,
+  titleColorMap,
 }: VisualTeamEditorProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -158,6 +161,7 @@ export function VisualTeamEditor({
               members={team.assignments.map((a) => a.teamMember)}
               onRename={onRenameTeam}
               onDelete={onDeleteTeam}
+              titleColorMap={titleColorMap}
             />
           ))}
 
