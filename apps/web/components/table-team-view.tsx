@@ -29,9 +29,9 @@ interface MemberData {
     firstName: string;
     lastName: string;
     callsign: string | null;
+    role: Role | null;
+    title: { name: string } | null;
   };
-  title: { name: string } | null;
-  role: Role;
 }
 
 interface AssignmentData {
@@ -120,8 +120,10 @@ export function TableTeamView({
                       {member.person.lastName}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      {member.role.name}
-                      {member.title ? ` · ${member.title.name}` : ""}
+                      {member.person.role?.name ?? "—"}
+                      {member.person.title
+                        ? ` · ${member.person.title.name}`
+                        : ""}
                     </p>
                   </div>
                   <Select
@@ -178,7 +180,9 @@ export function TableTeamView({
               </div>
               {team.assignments.length > 0 && (
                 <TeamCompositionBar
-                  members={team.assignments.map((a) => a.teamMember)}
+                  members={team.assignments.map((a) => ({
+                    title: a.teamMember.person.title,
+                  }))}
                   titleColorMap={titleColorMap}
                   className="mt-2"
                 />
@@ -204,9 +208,11 @@ export function TableTeamView({
                             : ""}{" "}
                           {a.teamMember.person.lastName}
                         </span>
-                        <span className="text-muted-foreground ml-2 text-xs">
-                          {a.teamMember.role.name}
-                        </span>
+                        {a.teamMember.person.role && (
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            {a.teamMember.person.role.name}
+                          </span>
+                        )}
                       </div>
                       <Button
                         variant="ghost"

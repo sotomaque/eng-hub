@@ -20,6 +20,7 @@ import {
 import {
   Activity,
   ArrowLeft,
+  BarChart3,
   Flag,
   Layers,
   LayoutDashboard,
@@ -45,6 +46,7 @@ const navItems = [
   { label: "Roadmap", icon: Flag, path: "/roadmap" },
   { label: "Links", icon: LinkIcon, path: "/links" },
   { label: "Arrangements", icon: Layers, path: "/arrangements" },
+  { label: "Stats", icon: BarChart3, path: "/stats" },
 ];
 
 export function ProjectSidebar({

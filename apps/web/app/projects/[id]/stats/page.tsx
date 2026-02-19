@@ -1,0 +1,42 @@
+import { AlertCircle } from "lucide-react";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { StatsSection } from "@/components/stats/stats-section";
+import { createServerCaller } from "@/lib/trpc/server";
+
+export const dynamic = "force-dynamic";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+async function StatsContent({ id }: { id: string }) {
+  const trpc = await createServerCaller();
+  const project = await trpc.project.getById({ id });
+  if (!project) notFound();
+
+  if (!project.githubUrl) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+        <AlertCircle className="text-muted-foreground size-10" />
+        <h2 className="text-lg font-semibold">No GitHub Repository</h2>
+        <p className="text-muted-foreground max-w-md text-sm">
+          Add a GitHub URL to this project&apos;s settings to see contributor
+          stats and analytics.
+        </p>
+      </div>
+    );
+  }
+
+  return <StatsSection projectId={id} />;
+}
+
+export default async function StatsPage({ params }: PageProps) {
+  const { id } = await params;
+
+  return (
+    <Suspense fallback={null}>
+      <StatsContent id={id} />
+    </Suspense>
+  );
+}

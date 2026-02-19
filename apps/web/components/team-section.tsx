@@ -30,10 +30,8 @@ import { TeamMembersTable } from "@/components/team-members-table";
 import { buildTitleColorMap } from "@/lib/constants/team";
 
 type MemberWithRelations = TeamMember & {
-  person: Person;
-  role: Role;
+  person: Person & { role: Role | null; title: Title | null };
   teamMemberships: (TeamMembership & { team: Team })[];
-  title: Title | null;
 };
 
 interface TeamSectionProps {
@@ -49,7 +47,7 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
 
   const titleColorMap = useMemo(() => {
     const titleNames = members
-      .map((m) => m.title?.name)
+      .map((m) => m.person.title?.name)
       .filter((n): n is string => n != null);
     return buildTitleColorMap(titleNames);
   }, [members]);
@@ -63,8 +61,8 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
       return (
         name.includes(q) ||
         m.person.email.toLowerCase().includes(q) ||
-        m.role.name.toLowerCase().includes(q) ||
-        (m.title?.name ?? "").toLowerCase().includes(q)
+        (m.person.role?.name ?? "").toLowerCase().includes(q) ||
+        (m.person.title?.name ?? "").toLowerCase().includes(q)
       );
     });
   }, [members, search]);
@@ -201,7 +199,9 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
                     )}
                   </div>
                   <TeamCompositionBar
-                    members={group.members}
+                    members={group.members.map((m) => ({
+                      title: m.person.title,
+                    }))}
                     titleColorMap={titleColorMap}
                   />
                 </div>

@@ -15,10 +15,10 @@ const memberInclude = {
   person: {
     include: {
       manager: { select: managerSelect },
+      role: true,
+      title: true,
     },
   },
-  role: true,
-  title: true,
   teamMemberships: { include: { team: true } },
 } as const;
 
@@ -81,10 +81,10 @@ export const teamMemberRouter = createTRPCRouter({
           person: {
             include: {
               manager: { select: managerSelect },
+              role: true,
+              title: true,
             },
           },
-          role: true,
-          title: true,
         },
         orderBy: { person: { lastName: "asc" } },
       });
@@ -146,8 +146,6 @@ export const teamMemberRouter = createTRPCRouter({
           data: {
             personId: person.id,
             projectId: input.projectId,
-            roleId: input.roleId,
-            titleId: input.titleId || null,
           },
         });
 
@@ -208,15 +206,6 @@ export const teamMemberRouter = createTRPCRouter({
           });
         }
 
-        // Update TeamMember project-specific fields
-        const member = await tx.teamMember.update({
-          where: { id },
-          data: {
-            titleId: data.titleId || null,
-            roleId: data.roleId,
-          },
-        });
-
         // Sync team memberships
         await tx.teamMembership.deleteMany({
           where: { teamMemberId: id },
@@ -230,6 +219,9 @@ export const teamMemberRouter = createTRPCRouter({
           });
         }
 
+        const member = await tx.teamMember.findUniqueOrThrow({
+          where: { id },
+        });
         await syncLiveToActiveArrangement(tx, member.projectId);
         return member;
       });

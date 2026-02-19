@@ -16,9 +16,7 @@ import { buildTitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRole = TeamMember & {
-  person: Person;
-  role: Role;
-  title: { name: string } | null;
+  person: Person & { role: Role | null; title: { name: string } | null };
 };
 
 interface AssignmentData {
@@ -68,7 +66,7 @@ export function ArrangementEditor({
       ),
     ];
     const titleNames = allMembers
-      .map((m) => m.title?.name)
+      .map((m) => m.person.title?.name)
       .filter((n): n is string => n != null);
     return buildTitleColorMap(titleNames);
   }, [arrangement]);

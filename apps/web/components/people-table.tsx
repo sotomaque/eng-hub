@@ -41,8 +41,6 @@ import { useTRPC } from "@/lib/trpc/client";
 
 type MembershipWithRelations = TeamMember & {
   project: Project;
-  role: Role;
-  title: Title | null;
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
@@ -99,9 +97,6 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
     const roleNames = new Set<string>();
     for (const p of people) {
       if (p.role) roleNames.add(p.role.name);
-      for (const m of p.projectMemberships) {
-        roleNames.add(m.role.name);
-      }
     }
     const sorted = [...roleNames].sort();
     return sorted.map((r) => ({ label: r, value: r }));
@@ -184,35 +179,20 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
     },
     {
       id: "roles",
-      accessorFn: (row) => {
-        if (row.role) return row.role.name;
-        const fromMemberships = [
-          ...new Set(row.projectMemberships.map((m) => m.role.name)),
-        ];
-        return fromMemberships.join(", ");
-      },
+      accessorFn: (row) => row.role?.name ?? "",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Role" />
       ),
       cell: ({ row }) => {
-        const person = row.original;
-        const roleName =
-          person.role?.name ??
-          [...new Set(person.projectMemberships.map((m) => m.role.name))].join(
-            ", ",
-          );
-        if (!roleName) {
+        const val = row.getValue("roles") as string;
+        if (!val) {
           return <span className="text-muted-foreground">{"\u2014"}</span>;
         }
-        return <span>{roleName}</span>;
+        return <span>{val}</span>;
       },
       filterFn: (row, _id, value: string[]) => {
         const personRole = row.original.role?.name;
-        if (personRole) return value.includes(personRole);
-        const roleNames = row.original.projectMemberships.map(
-          (m) => m.role.name,
-        );
-        return value.some((v) => roleNames.includes(v));
+        return personRole ? value.includes(personRole) : false;
       },
     },
     {

@@ -14,9 +14,9 @@ interface MemberData {
     lastName: string;
     callsign: string | null;
     imageUrl?: string | null;
+    role: Role | null;
+    title: { name: string } | null;
   };
-  title: { name: string } | null;
-  role: Role;
 }
 
 interface MemberPoolProps {
@@ -37,15 +37,19 @@ export function MemberPool({ members }: MemberPoolProps) {
           `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`
             .toLowerCase()
             .includes(search.toLowerCase()) ||
-          m.role.name.toLowerCase().includes(search.toLowerCase()) ||
-          (m.title?.name ?? "").toLowerCase().includes(search.toLowerCase()),
+          (m.person.role?.name ?? "")
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+          (m.person.title?.name ?? "")
+            .toLowerCase()
+            .includes(search.toLowerCase()),
       )
     : members;
 
   // Group by role
   const byRole = new Map<string, MemberData[]>();
   for (const member of filtered) {
-    const roleName = member.role.name;
+    const roleName = member.person.role?.name ?? "No Role";
     const group = byRole.get(roleName) ?? [];
     group.push(member);
     byRole.set(roleName, group);
@@ -96,8 +100,8 @@ export function MemberPool({ members }: MemberPoolProps) {
                     firstName={member.person.firstName}
                     lastName={member.person.lastName}
                     callsign={member.person.callsign}
-                    title={member.title}
-                    role={member.role}
+                    title={member.person.title}
+                    role={member.person.role}
                     sourceTeamId={null}
                     imageUrl={member.person.imageUrl}
                   />

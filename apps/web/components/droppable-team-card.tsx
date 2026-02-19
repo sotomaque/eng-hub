@@ -24,9 +24,9 @@ interface TeamMemberData {
     lastName: string;
     callsign: string | null;
     imageUrl?: string | null;
+    role: Role | null;
+    title: { name: string } | null;
   };
-  title: { name: string } | null;
-  role: Role;
 }
 
 interface DroppableTeamCardProps {
@@ -128,7 +128,10 @@ export function DroppableTeamCard({
       </CardHeader>
       {members.length > 0 && (
         <div className="px-6 pb-2">
-          <TeamCompositionBar members={members} titleColorMap={titleColorMap} />
+          <TeamCompositionBar
+            members={members.map((m) => ({ title: m.person.title }))}
+            titleColorMap={titleColorMap}
+          />
         </div>
       )}
       <CardContent>
@@ -145,8 +148,8 @@ export function DroppableTeamCard({
                 firstName={member.person.firstName}
                 lastName={member.person.lastName}
                 callsign={member.person.callsign}
-                title={member.title}
-                role={member.role}
+                title={member.person.title}
+                role={member.person.role}
                 sourceTeamId={teamId}
                 imageUrl={member.person.imageUrl}
               />

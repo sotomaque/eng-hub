@@ -27,9 +27,9 @@ interface MemberData {
     lastName: string;
     callsign: string | null;
     imageUrl?: string | null;
+    role: Role | null;
+    title: { name: string } | null;
   };
-  title: { name: string } | null;
-  role: Role;
 }
 
 interface AssignmentData {

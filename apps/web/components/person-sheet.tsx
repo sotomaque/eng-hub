@@ -23,7 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -36,10 +36,10 @@ import {
 } from "@/lib/validations/person";
 
 type PersonWithMemberships = Person & {
+  role: Role | null;
+  title: Title | null;
   projectMemberships: (TeamMember & {
     project: Project;
-    role: Role;
-    title: Title | null;
     teamMemberships: (TeamMembership & { team: Team })[];
   })[];
 };
@@ -85,9 +85,8 @@ export function PersonSheet({ person }: PersonSheetProps) {
       githubUsername: person?.githubUsername ?? "",
       gitlabUsername: person?.gitlabUsername ?? "",
       managerId: person?.managerId ?? "",
-      roleId: person?.roleId ?? person?.projectMemberships[0]?.role?.id ?? "",
-      titleId:
-        person?.titleId ?? person?.projectMemberships[0]?.title?.id ?? "",
+      roleId: person?.roleId ?? "",
+      titleId: person?.titleId ?? "",
     },
   });
 
@@ -355,19 +354,35 @@ export function PersonSheet({ person }: PersonSheetProps) {
               </div>
             </div>
 
-            {isEditing && person && person.projectMemberships.length > 0 && (
+            {isEditing && person && (
               <div className="space-y-2">
                 <Label>Projects</Label>
-                <div className="flex flex-wrap gap-1">
-                  {person.projectMemberships.map((m) => (
-                    <span
-                      key={m.id}
-                      className="rounded-md bg-muted px-2 py-1 text-xs font-medium"
-                    >
-                      {m.project.name} ({m.role.name})
-                    </span>
-                  ))}
-                </div>
+                {person.projectMemberships.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {person.projectMemberships.map((m) => (
+                      <span
+                        key={m.id}
+                        className="rounded-md bg-muted px-2 py-1 text-xs font-medium"
+                      >
+                        {m.project.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() =>
+                    router.push(`/people?addToProject=${person.id}`, {
+                      scroll: false,
+                    })
+                  }
+                >
+                  <Plus className="size-3" />
+                  Add to project
+                </Button>
               </div>
             )}
           </div>

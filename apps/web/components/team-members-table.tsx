@@ -41,10 +41,8 @@ import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRelations = TeamMember & {
-  person: Person;
-  role: Role;
+  person: Person & { role: Role | null; title: Title | null };
   teamMemberships: (TeamMembership & { team: Team })[];
-  title: Title | null;
 };
 
 interface TeamMembersTableProps {
@@ -75,14 +73,18 @@ export function TeamMembersTable({
 
   const titleOptions = useMemo(() => {
     const titles = [
-      ...new Set(members.map((m) => m.title?.name).filter(Boolean)),
+      ...new Set(members.map((m) => m.person.title?.name).filter(Boolean)),
     ];
     titles.sort();
     return titles.map((t) => ({ label: t as string, value: t as string }));
   }, [members]);
 
   const roleOptions = useMemo(() => {
-    const roles = [...new Set(members.map((m) => m.role.name))];
+    const roles = [
+      ...new Set(
+        members.map((m) => m.person.role?.name).filter(Boolean) as string[],
+      ),
+    ];
     roles.sort();
     return roles.map((r) => ({ label: r, value: r }));
   }, [members]);
@@ -129,7 +131,7 @@ export function TeamMembersTable({
     },
     {
       id: "titleName",
-      accessorFn: (row) => row.title?.name ?? "",
+      accessorFn: (row) => row.person.title?.name ?? "",
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -164,11 +166,18 @@ export function TeamMembersTable({
     },
     {
       id: "roleName",
-      accessorFn: (row) => row.role.name,
+      accessorFn: (row) => row.person.role?.name ?? "",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Role" />
       ),
-      cell: ({ row }) => <span>{row.getValue("roleName")}</span>,
+      cell: ({ row }) => {
+        const val = row.getValue("roleName") as string;
+        return val ? (
+          <span>{val}</span>
+        ) : (
+          <span className="text-muted-foreground">{"\u2014"}</span>
+        );
+      },
       filterFn: (row, id, value: string[]) => {
         return value.includes(row.getValue(id) as string);
       },

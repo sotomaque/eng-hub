@@ -21,7 +21,7 @@ interface DraggableMemberChipProps {
   lastName: string;
   callsign?: string | null;
   title: { name: string } | null;
-  role: Role;
+  role: Role | null;
   sourceTeamId: string | null;
   imageUrl?: string | null;
 }
@@ -47,7 +47,8 @@ export function DraggableMemberChip({
     },
   });
 
-  const borderColor = ROLE_COLORS[role.name] ?? "border-l-gray-400";
+  const borderColor =
+    (role ? ROLE_COLORS[role.name] : undefined) ?? "border-l-gray-400";
 
   return (
     <div
@@ -73,9 +74,11 @@ export function DraggableMemberChip({
           {title.name}
         </span>
       )}
-      <span className="text-muted-foreground ml-auto shrink-0 text-xs">
-        {role.name}
-      </span>
+      {role && (
+        <span className="text-muted-foreground ml-auto shrink-0 text-xs">
+          {role.name}
+        </span>
+      )}
     </div>
   );
 }

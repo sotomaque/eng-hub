@@ -20,8 +20,6 @@ const personInclude = {
   projectMemberships: {
     include: {
       project: true,
-      role: true,
-      title: true,
       teamMemberships: { include: { team: true } },
     },
   },
@@ -176,8 +174,6 @@ export const personRouter = createTRPCRouter({
       z.object({
         personId: z.string(),
         projectId: z.string(),
-        roleId: z.string(),
-        titleId: z.string().optional().or(z.literal("")),
         teamIds: z.array(z.string()).optional(),
       }),
     )
@@ -187,8 +183,6 @@ export const personRouter = createTRPCRouter({
           data: {
             personId: input.personId,
             projectId: input.projectId,
-            roleId: input.roleId,
-            titleId: input.titleId || null,
           },
         });
 
@@ -213,8 +207,6 @@ export const personRouter = createTRPCRouter({
         personId: z.string(),
         fromProjectId: z.string(),
         toProjectId: z.string(),
-        roleId: z.string(),
-        titleId: z.string().optional().or(z.literal("")),
         teamIds: z.array(z.string()).optional(),
       }),
     )
@@ -234,8 +226,6 @@ export const personRouter = createTRPCRouter({
           data: {
             personId: input.personId,
             projectId: input.toProjectId,
-            roleId: input.roleId,
-            titleId: input.titleId || null,
           },
         });
 

@@ -27,8 +27,8 @@ async function OrgChartContent({ projectId }: { projectId: string }) {
     imageUrl: m.person.imageUrl,
     managerId: m.person.managerId,
     manager: m.person.manager,
-    roleName: m.role.name,
-    titleName: m.title?.name ?? null,
+    roleName: m.person.role?.name ?? null,
+    titleName: m.person.title?.name ?? null,
   }));
 
   return <OrgChart members={orgMembers} recentChanges={recentChanges} />;

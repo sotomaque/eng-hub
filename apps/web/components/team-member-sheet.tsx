@@ -9,6 +9,7 @@ import type {
   TeamMembership,
   Title,
 } from "@prisma/client";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Combobox } from "@workspace/ui/components/combobox";
@@ -37,10 +38,8 @@ import {
 interface TeamMemberSheetProps {
   projectId: string;
   member?: TeamMember & {
-    person: Person;
-    role: Role;
+    person: Person & { role: Role | null; title: Title | null };
     teamMemberships: (TeamMembership & { team: Team })[];
-    title: Title | null;
   };
 }
 
@@ -53,6 +52,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     member?.person.imageUrl ?? null,
   );
   const emailManuallyEdited = useRef(isEditing);
+  const [selectedPersonId, setSelectedPersonId] = useState("");
 
   const rolesQuery = useQuery(trpc.role.getAll.queryOptions());
   const teamsQuery = useQuery(
@@ -77,8 +77,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       lastName: member?.person.lastName ?? "",
       callsign: member?.person.callsign ?? "",
       email: member?.person.email ?? "",
-      titleId: member?.titleId ?? "",
-      roleId: member?.roleId ?? "",
+      titleId: member?.person.title?.id ?? "",
+      roleId: member?.person.role?.id ?? "",
       teamIds: member?.teamMemberships.map((m) => m.teamId) ?? [],
       githubUsername: member?.person.githubUsername ?? "",
       gitlabUsername: member?.person.gitlabUsername ?? "",
@@ -140,9 +140,51 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const roles = rolesQuery.data ?? [];
   const teams = teamsQuery.data ?? [];
   const titles = titlesQuery.data ?? [];
-  const people = (peopleQuery.data ?? []).filter(
-    (p) => !member || p.id !== member.personId,
+  const allPeople = peopleQuery.data ?? [];
+  const people = allPeople.filter((p) => !member || p.id !== member.personId);
+  const availablePeople = allPeople.filter(
+    (p) => !p.projectMemberships.some((m) => m.projectId === projectId),
   );
+
+  function handlePersonSelect(personId: string) {
+    setSelectedPersonId(personId);
+    if (!personId) {
+      reset({
+        projectId,
+        firstName: "",
+        lastName: "",
+        callsign: "",
+        email: "",
+        titleId: "",
+        roleId: "",
+        teamIds: [],
+        githubUsername: "",
+        gitlabUsername: "",
+        managerId: "",
+      });
+      emailManuallyEdited.current = false;
+      setImageUrl(null);
+      return;
+    }
+    const person = availablePeople.find((p) => p.id === personId);
+    if (!person) return;
+    setValue("firstName", person.firstName, { shouldDirty: true });
+    setValue("lastName", person.lastName, { shouldDirty: true });
+    setValue("callsign", person.callsign ?? "", { shouldDirty: true });
+    setValue("email", person.email, { shouldDirty: true });
+    setValue("githubUsername", person.githubUsername ?? "", {
+      shouldDirty: true,
+    });
+    setValue("gitlabUsername", person.gitlabUsername ?? "", {
+      shouldDirty: true,
+    });
+    setValue("managerId", person.managerId ?? "", { shouldDirty: true });
+    if (person.roleId) setValue("roleId", person.roleId, { shouldDirty: true });
+    if (person.titleId)
+      setValue("titleId", person.titleId, { shouldDirty: true });
+    emailManuallyEdited.current = true;
+    setImageUrl(person.imageUrl);
+  }
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
@@ -163,6 +205,27 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            {!isEditing && (
+              <div className="space-y-2">
+                <Label>Existing Person</Label>
+                <Combobox
+                  options={availablePeople.map((p) => ({
+                    value: p.id,
+                    label: `${p.firstName}${p.callsign ? ` "${p.callsign}"` : ""} ${p.lastName}`,
+                  }))}
+                  value={selectedPersonId}
+                  onValueChange={handlePersonSelect}
+                  placeholder="Search existing people..."
+                  searchPlaceholder="Search by name..."
+                  emptyMessage="No people available."
+                />
+                <p className="text-muted-foreground text-xs">
+                  Select an existing person, or fill in the details below to
+                  create a new one.
+                </p>
+              </div>
+            )}
+
             <ImageUploader
               label="Photo"
               currentImageUrl={imageUrl}
@@ -184,6 +247,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   placeholder="Jane"
                   {...register("firstName")}
                   aria-invalid={!!errors.firstName}
+                  disabled={!!selectedPersonId}
                 />
                 {errors.firstName && (
                   <p className="text-destructive text-sm">
@@ -199,6 +263,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   placeholder="Smith"
                   {...register("lastName")}
                   aria-invalid={!!errors.lastName}
+                  disabled={!!selectedPersonId}
                 />
                 {errors.lastName && (
                   <p className="text-destructive text-sm">
@@ -214,6 +279,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 id="callsign"
                 placeholder="e.g. JJ, Bobby"
                 {...register("callsign")}
+                disabled={!!selectedPersonId}
               />
             </div>
 
@@ -229,6 +295,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   },
                 })}
                 aria-invalid={!!errors.email}
+                disabled={!!selectedPersonId}
               />
               {errors.email && (
                 <p className="text-destructive text-sm">
@@ -389,6 +456,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 id="githubUsername"
                 placeholder="janesmith"
                 {...register("githubUsername")}
+                disabled={!!selectedPersonId}
               />
             </div>
 
@@ -398,6 +466,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 id="gitlabUsername"
                 placeholder="janesmith"
                 {...register("gitlabUsername")}
+                disabled={!!selectedPersonId}
               />
             </div>
           </div>

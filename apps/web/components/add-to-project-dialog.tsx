@@ -29,8 +29,6 @@ import { useTRPC } from "@/lib/trpc/client";
 
 const addToProjectSchema = z.object({
   projectId: z.string().min(1, "Project is required"),
-  roleId: z.string().min(1, "Role is required"),
-  titleId: z.string().optional().or(z.literal("")),
   teamIds: z.array(z.string()).optional(),
 });
 
@@ -52,8 +50,6 @@ export function AddToProjectDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const projectsQuery = useQuery(trpc.project.getAll.queryOptions());
-  const rolesQuery = useQuery(trpc.role.getAll.queryOptions());
-  const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
 
   const availableProjects = (projectsQuery.data ?? []).filter(
     (p) => !existingProjectIds.includes(p.id),
@@ -68,8 +64,6 @@ export function AddToProjectDialog({
     resolver: zodResolver(addToProjectSchema),
     defaultValues: {
       projectId: "",
-      roleId: "",
-      titleId: "",
       teamIds: [],
     },
   });
@@ -101,14 +95,10 @@ export function AddToProjectDialog({
     joinMutation.mutate({
       personId,
       projectId: data.projectId,
-      roleId: data.roleId,
-      titleId: data.titleId,
       teamIds: data.teamIds,
     });
   }
 
-  const roles = rolesQuery.data ?? [];
-  const titles = titlesQuery.data ?? [];
   const teams = teamsQuery.data ?? [];
 
   return (
@@ -154,61 +144,6 @@ export function AddToProjectDialog({
                   This person is already on all projects.
                 </p>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Controller
-                name="roleId"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.roleId && (
-                <p className="text-destructive text-sm">
-                  {errors.roleId.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Controller
-                name="titleId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
-                    value={field.value || "__none__"}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select title..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">No title</SelectItem>
-                      {titles.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
             </div>
 
             {teams.length > 0 && (
