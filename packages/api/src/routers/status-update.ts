@@ -1,9 +1,9 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const statusUpdateRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.statusUpdate.findMany({

@@ -1,10 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const arrangementRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.teamArrangement.findMany({
@@ -20,7 +20,7 @@ export const arrangementRouter = createTRPCRouter({
       });
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       const arrangement = await db.teamArrangement.findUnique({
@@ -45,7 +45,10 @@ export const arrangementRouter = createTRPCRouter({
       });
 
       if (!arrangement) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Arrangement not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Arrangement not found",
+        });
       }
 
       // Get all project members to determine unassigned ones

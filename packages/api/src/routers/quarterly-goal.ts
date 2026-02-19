@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const roadmapStatusEnum = z.enum([
   "NOT_STARTED",
@@ -28,7 +28,7 @@ const updateQuarterlyGoalSchema = z.object({
 });
 
 export const quarterlyGoalRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.quarterlyGoal.findMany({
@@ -37,7 +37,7 @@ export const quarterlyGoalRouter = createTRPCRouter({
       });
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.quarterlyGoal.findUnique({

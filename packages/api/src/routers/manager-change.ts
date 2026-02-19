@@ -1,9 +1,9 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const managerChangeRouter = createTRPCRouter({
-  getByPersonId: publicProcedure
+  getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
     .query(async ({ input }) => {
       return db.managerChange.findMany({
@@ -12,7 +12,7 @@ export const managerChangeRouter = createTRPCRouter({
       });
     }),
 
-  getRecent: publicProcedure
+  getRecent: protectedProcedure
     .input(z.object({ limit: z.number().optional() }))
     .query(async ({ input }) => {
       return db.managerChange.findMany({
@@ -30,7 +30,7 @@ export const managerChangeRouter = createTRPCRouter({
       });
     }),
 
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string(), limit: z.number().optional() }))
     .query(async ({ input }) => {
       const members = await db.teamMember.findMany({

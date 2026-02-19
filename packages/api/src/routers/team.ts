@@ -1,10 +1,10 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const teamRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.team.findMany({
@@ -14,7 +14,7 @@ export const teamRouter = createTRPCRouter({
       });
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.team.findUnique({ where: { id: input.id } });

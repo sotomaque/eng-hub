@@ -7,10 +7,10 @@ import {
   fetchPRStats,
   parseGitHubUrl,
 } from "../lib/github";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const githubStatsRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       const [stats, sync, teamMembers] = await Promise.all([
@@ -68,7 +68,7 @@ export const githubStatsRouter = createTRPCRouter({
       return { stats, sync, memberMap };
     }),
 
-  getSyncStatus: publicProcedure
+  getSyncStatus: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.gitHubSync.findUnique({

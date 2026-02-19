@@ -1,7 +1,7 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const managerSelect = {
   id: true,
@@ -53,7 +53,7 @@ const updateTeamMemberSchema = z.object({
 });
 
 export const teamMemberRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.teamMember.findMany({
@@ -63,7 +63,7 @@ export const teamMemberRouter = createTRPCRouter({
       });
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.teamMember.findUnique({
@@ -72,7 +72,7 @@ export const teamMemberRouter = createTRPCRouter({
       });
     }),
 
-  getOrgTree: publicProcedure
+  getOrgTree: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.teamMember.findMany({

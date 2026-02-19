@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const managerSelect = {
   id: true,
@@ -64,14 +64,14 @@ async function detectCycle(
 }
 
 export const personRouter = createTRPCRouter({
-  getAll: publicProcedure.query(async () => {
+  getAll: protectedProcedure.query(async () => {
     return db.person.findMany({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       include: personInclude,
     });
   }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.person.findUnique({

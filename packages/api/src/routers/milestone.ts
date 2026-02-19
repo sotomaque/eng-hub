@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const roadmapStatusEnum = z.enum([
   "NOT_STARTED",
@@ -26,7 +26,7 @@ const updateMilestoneSchema = z.object({
 });
 
 export const milestoneRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.milestone.findMany({
@@ -35,7 +35,7 @@ export const milestoneRouter = createTRPCRouter({
       });
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.milestone.findUnique({

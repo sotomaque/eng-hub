@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectLinkSchema = z.object({
   projectId: z.string(),
@@ -15,7 +15,7 @@ const updateProjectLinkSchema = z.object({
 });
 
 export const projectLinkRouter = createTRPCRouter({
-  getByProjectId: publicProcedure
+  getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.projectLink.findMany({
@@ -23,7 +23,7 @@ export const projectLinkRouter = createTRPCRouter({
       });
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.projectLink.findUnique({

@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectSchema = z.object({
   name: z.string().min(1),
@@ -15,7 +15,7 @@ const updateProjectSchema = createProjectSchema.extend({
 });
 
 export const projectRouter = createTRPCRouter({
-  getAll: publicProcedure.query(async () => {
+  getAll: protectedProcedure.query(async () => {
     return db.project.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -24,7 +24,7 @@ export const projectRouter = createTRPCRouter({
     });
   }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       return db.project.findUnique({
