@@ -6,6 +6,7 @@ import { TeamMemberSheet } from "@/components/team-member-sheet";
 import { TeamSection } from "@/components/team-section";
 import { TeamSheet } from "@/components/team-sheet";
 import { TitleSheet } from "@/components/title-sheet";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +35,7 @@ interface PageProps {
 }
 
 async function TeamContent({ id }: { id: string }) {
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   return (

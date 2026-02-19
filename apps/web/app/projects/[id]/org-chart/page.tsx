@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { OrgChart, type OrgMember } from "@/components/org-chart";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ interface PageProps {
 async function OrgChartContent({ projectId }: { projectId: string }) {
   const trpc = await createServerCaller();
   const [project, members, recentChanges] = await Promise.all([
-    trpc.project.getById({ id: projectId }),
+    getCachedProject(projectId),
     trpc.teamMember.getOrgTree({ projectId }),
     trpc.managerChange.getByProjectId({ projectId, limit: 20 }),
   ]);

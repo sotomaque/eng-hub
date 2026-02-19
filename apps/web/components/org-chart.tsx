@@ -105,6 +105,13 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   const hasChildren = node.children.length > 0;
   const m = node.member;
   const displayName = `${m.firstName}${m.callsign ? ` ${m.callsign}` : ""} ${m.lastName}`;
+  const sortedChildren = useMemo(
+    () =>
+      [...node.children].sort((a, b) =>
+        a.member.lastName.localeCompare(b.member.lastName),
+      ),
+    [node.children],
+  );
 
   return (
     <div className={depth > 0 ? "ml-6 border-l pl-4" : ""}>
@@ -157,11 +164,9 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
       </button>
       {hasChildren && expanded && (
         <div className="mt-0.5">
-          {node.children
-            .sort((a, b) => a.member.lastName.localeCompare(b.member.lastName))
-            .map((child) => (
-              <OrgNode key={child.member.id} node={child} depth={depth + 1} />
-            ))}
+          {sortedChildren.map((child) => (
+            <OrgNode key={child.member.id} node={child} depth={depth + 1} />
+          ))}
         </div>
       )}
     </div>
@@ -177,6 +182,13 @@ function ExternalManagerGroup({
 }) {
   const [expanded, setExpanded] = useState(true);
   const displayName = `${manager.firstName}${manager.callsign ? ` ${manager.callsign}` : ""} ${manager.lastName}`;
+  const sortedReports = useMemo(
+    () =>
+      [...reports].sort((a, b) =>
+        a.member.lastName.localeCompare(b.member.lastName),
+      ),
+    [reports],
+  );
 
   return (
     <div className="rounded-md border border-dashed p-2">
@@ -213,11 +225,9 @@ function ExternalManagerGroup({
       </button>
       {expanded && (
         <div className="ml-6 mt-1 border-l pl-4">
-          {reports
-            .sort((a, b) => a.member.lastName.localeCompare(b.member.lastName))
-            .map((child) => (
-              <OrgNode key={child.member.id} node={child} depth={1} />
-            ))}
+          {sortedReports.map((child) => (
+            <OrgNode key={child.member.id} node={child} depth={1} />
+          ))}
         </div>
       )}
     </div>
@@ -247,6 +257,14 @@ export function OrgChart({
     [members],
   );
 
+  const sortedRoots = useMemo(
+    () =>
+      [...roots].sort((a, b) =>
+        a.member.lastName.localeCompare(b.member.lastName),
+      ),
+    [roots],
+  );
+
   if (members.length === 0) {
     return (
       <Card>
@@ -269,13 +287,9 @@ export function OrgChart({
         </CardHeader>
         <CardContent>
           <div className="space-y-1">
-            {roots
-              .sort((a, b) =>
-                a.member.lastName.localeCompare(b.member.lastName),
-              )
-              .map((node) => (
-                <OrgNode key={node.member.id} node={node} />
-              ))}
+            {sortedRoots.map((node) => (
+              <OrgNode key={node.member.id} node={node} />
+            ))}
 
             {Array.from(externalManagers.entries()).map(
               ([managerId, { manager, children: reports }]) => (

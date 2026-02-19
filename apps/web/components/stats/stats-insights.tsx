@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Eye, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ContributorStatsData } from "@/lib/tiers";
 
 interface StatsInsightsProps {
@@ -39,33 +39,40 @@ function pctChange(avg: number, recent: number): number {
 export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
   const [threshold, setThreshold] = useState(20);
 
-  const trendingUp = stats
-    .filter((s) => {
-      const pct = pctChange(s.avgWeeklyCommits, s.recentWeeklyCommits);
-      return pct >= threshold;
-    })
-    .sort((a, b) => b.recentWeeklyCommits - a.recentWeeklyCommits);
+  const { trendingUp, needsAttention, teamAvg, teamRecent, reviewers } =
+    useMemo(() => {
+      const up: ContributorStatsData[] = [];
+      const down: ContributorStatsData[] = [];
+      const revs: ContributorStatsData[] = [];
+      let avgSum = 0;
+      let recentSum = 0;
 
-  const needsAttention = stats
-    .filter((s) => {
-      const pct = pctChange(s.avgWeeklyCommits, s.recentWeeklyCommits);
-      return (
-        pct <= -threshold || (s.commits > 0 && s.recentWeeklyCommits === 0)
-      );
-    })
-    .sort((a, b) => a.recentWeeklyCommits - b.recentWeeklyCommits);
+      for (const s of stats) {
+        const pct = pctChange(s.avgWeeklyCommits, s.recentWeeklyCommits);
+        if (pct >= threshold) up.push(s);
+        if (pct <= -threshold || (s.commits > 0 && s.recentWeeklyCommits === 0))
+          down.push(s);
+        if (s.reviewsDone > 0) revs.push(s);
+        avgSum += s.avgWeeklyCommits;
+        recentSum += s.recentWeeklyCommits;
+      }
 
-  // Team velocity
-  const teamAvg = stats.reduce((sum, s) => sum + s.avgWeeklyCommits, 0);
-  const teamRecent = stats.reduce((sum, s) => sum + s.recentWeeklyCommits, 0);
+      up.sort((a, b) => b.recentWeeklyCommits - a.recentWeeklyCommits);
+      down.sort((a, b) => a.recentWeeklyCommits - b.recentWeeklyCommits);
+      revs.sort((a, b) => b.recentWeeklyReviews - a.recentWeeklyReviews);
+
+      return {
+        trendingUp: up,
+        needsAttention: down,
+        teamAvg: avgSum,
+        teamRecent: recentSum,
+        reviewers: revs,
+      };
+    }, [stats, threshold]);
+
   const teamTrendPct = pctChange(teamAvg, teamRecent);
   const teamTrend =
     teamTrendPct >= 20 ? "up" : teamTrendPct <= -20 ? "down" : "stable";
-
-  // Top reviewers
-  const reviewers = stats
-    .filter((s) => s.reviewsDone > 0)
-    .sort((a, b) => b.recentWeeklyReviews - a.recentWeeklyReviews);
 
   if (stats.length === 0) return null;
 

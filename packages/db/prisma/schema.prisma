@@ -105,8 +105,10 @@ model Person {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  projectMemberships TeamMember[]
-  managerChanges     ManagerChange[]
+  projectMemberships    TeamMember[]
+  managerChanges        ManagerChange[] @relation("PersonManagerChanges")
+  oldManagerOfChanges   ManagerChange[] @relation("OldManagerChanges")
+  newManagerOfChanges   ManagerChange[] @relation("NewManagerChanges")
 
   @@map("people")
 }
@@ -114,9 +116,11 @@ model Person {
 model ManagerChange {
   id           String   @id @default(cuid())
   personId     String   @map("person_id")
-  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  person       Person   @relation("PersonManagerChanges", fields: [personId], references: [id], onDelete: Cascade)
   oldManagerId String?  @map("old_manager_id")
+  oldManager   Person?  @relation("OldManagerChanges", fields: [oldManagerId], references: [id])
   newManagerId String?  @map("new_manager_id")
+  newManager   Person?  @relation("NewManagerChanges", fields: [newManagerId], references: [id])
   changedBy    String   @map("changed_by")
   createdAt    DateTime @default(now()) @map("created_at")
 

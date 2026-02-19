@@ -2,7 +2,7 @@ import { AlertCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { StatsSection } from "@/components/stats/stats-section";
-import { createServerCaller } from "@/lib/trpc/server";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +11,7 @@ interface PageProps {
 }
 
 async function StatsContent({ id }: { id: string }) {
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   if (!project.githubUrl && !project.gitlabUrl) {

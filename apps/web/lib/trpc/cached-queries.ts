@@ -1,0 +1,7 @@
+import { cache } from "react";
+import { createServerCaller } from "./server";
+
+export const getCachedProject = cache(async (id: string) => {
+  const trpc = await createServerCaller();
+  return trpc.project.getById({ id });
+});

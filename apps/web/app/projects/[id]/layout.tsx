@@ -5,7 +5,7 @@ import {
 import { notFound } from "next/navigation";
 import { ProjectSidebar } from "@/components/project-sidebar";
 import { ProjectSiteHeader } from "@/components/project-site-header";
-import { createServerCaller } from "@/lib/trpc/server";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +16,7 @@ interface LayoutProps {
 
 export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { id } = await params;
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   return (

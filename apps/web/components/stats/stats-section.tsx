@@ -11,14 +11,22 @@ import {
 } from "@workspace/ui/components/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
-import { StatsBarChart } from "./stats-bar-chart";
 import { StatsDataTable } from "./stats-data-table";
 import { StatsInsights } from "./stats-insights";
 import { StatsKPICards } from "./stats-kpi-cards";
-import { StatsPieChart } from "./stats-pie-chart";
+
+const StatsBarChart = dynamic(
+  () => import("./stats-bar-chart").then((m) => m.StatsBarChart),
+  { ssr: false },
+);
+const StatsPieChart = dynamic(
+  () => import("./stats-pie-chart").then((m) => m.StatsPieChart),
+  { ssr: false },
+);
 
 interface StatsSectionProps {
   projectId: string;

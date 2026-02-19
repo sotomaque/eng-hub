@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { MilestoneSheet } from "@/components/milestone-sheet";
 import { QuarterlyGoalSheet } from "@/components/quarterly-goal-sheet";
 import { RoadmapSection } from "@/components/roadmap-section";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,7 @@ interface PageProps {
 }
 
 async function RoadmapContent({ id }: { id: string }) {
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   return (

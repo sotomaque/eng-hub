@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProjectDetailSkeleton } from "@/components/project-detail-skeleton";
 import { ProjectOverview } from "@/components/project-overview";
-import { createServerCaller } from "@/lib/trpc/server";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +11,7 @@ interface PageProps {
 }
 
 async function OverviewContent({ id }: { id: string }) {
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   return (

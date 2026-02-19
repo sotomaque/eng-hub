@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ArrangementsList } from "@/components/arrangements-list";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export default async function ArrangementsPage({ params }: PageProps) {
   const trpc = await createServerCaller();
 
   const [project, initialArrangements, members] = await Promise.all([
-    trpc.project.getById({ id }),
+    getCachedProject(id),
     trpc.arrangement.getByProjectId({ projectId: id }),
     trpc.teamMember.getByProjectId({ projectId: id }),
   ]);

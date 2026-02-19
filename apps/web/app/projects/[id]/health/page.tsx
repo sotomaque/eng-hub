@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { HealthSection } from "@/components/health-section";
 import { StatusUpdateSheet } from "@/components/status-update-sheet";
-import { createServerCaller } from "@/lib/trpc/server";
+import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +12,7 @@ interface PageProps {
 }
 
 async function HealthContent({ id }: { id: string }) {
-  const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id });
+  const project = await getCachedProject(id);
   if (!project) notFound();
 
   return <HealthSection projectId={id} statusUpdates={project.statusUpdates} />;
