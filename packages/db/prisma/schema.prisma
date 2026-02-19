@@ -45,6 +45,7 @@ model Role {
   id      String       @id @default(cuid())
   name    String       @unique
   members TeamMember[]
+  people  Person[]
 
   @@map("roles")
 }
@@ -79,6 +80,7 @@ model Title {
   id      String       @id @default(cuid())
   name    String       @unique
   members TeamMember[]
+  people  Person[]
 
   @@map("titles")
 }
@@ -92,12 +94,32 @@ model Person {
   gitlabUsername  String?  @map("gitlab_username")
   imageUrl       String?  @map("image_url")
   clerkUserId    String?  @unique @map("clerk_user_id")
+  managerId      String?  @map("manager_id")
+  manager        Person?  @relation("PersonManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports  Person[] @relation("PersonManager")
+  roleId         String?  @map("role_id")
+  role           Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  titleId        String?  @map("title_id")
+  title          Title?   @relation(fields: [titleId], references: [id], onDelete: SetNull)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   projectMemberships TeamMember[]
+  managerChanges     ManagerChange[]
 
   @@map("people")
+}
+
+model ManagerChange {
+  id           String   @id @default(cuid())
+  personId     String   @map("person_id")
+  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  oldManagerId String?  @map("old_manager_id")
+  newManagerId String?  @map("new_manager_id")
+  changedBy    String   @map("changed_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("manager_changes")
 }
 
 model TeamMember {

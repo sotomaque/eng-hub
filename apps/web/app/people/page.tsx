@@ -4,6 +4,8 @@ import { AppHeader } from "@/components/app-header";
 import { PeopleTable } from "@/components/people-table";
 import { PersonSheet } from "@/components/person-sheet";
 import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";
+import { RoleSheet } from "@/components/role-sheet";
+import { TitleSheet } from "@/components/title-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +15,8 @@ interface PageProps {
     create?: string;
     edit?: string;
     addToProject?: string;
+    manageTitles?: string;
+    manageRoles?: string;
   }>;
 }
 
@@ -54,6 +58,12 @@ async function AddToProjectContent({ personId }: { personId: string }) {
   );
 }
 
+function manageReturnPath(params: { create?: string; edit?: string }): string {
+  if (params.edit) return `/people?edit=${params.edit}`;
+  if (params.create === "true") return "/people?create=true";
+  return "/people";
+}
+
 export default async function PeoplePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const isCreating = params.create === "true";
@@ -82,6 +92,13 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         <Suspense fallback={null}>
           <AddToProjectContent personId={addToProjectPersonId} />
         </Suspense>
+      )}
+
+      {params.manageTitles === "true" && (
+        <TitleSheet returnPath={manageReturnPath(params)} />
+      )}
+      {params.manageRoles === "true" && (
+        <RoleSheet returnPath={manageReturnPath(params)} />
       )}
     </div>
   );

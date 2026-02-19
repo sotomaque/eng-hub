@@ -24,6 +24,7 @@ import {
   Layers,
   LayoutDashboard,
   Link as LinkIcon,
+  Network,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -40,6 +41,7 @@ const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "" },
   { label: "Health", icon: Activity, path: "/health" },
   { label: "Team", icon: Users, path: "/team" },
+  { label: "Org Chart", icon: Network, path: "/org-chart" },
   { label: "Roadmap", icon: Flag, path: "/roadmap" },
   { label: "Links", icon: LinkIcon, path: "/links" },
   { label: "Arrangements", icon: Layers, path: "/arrangements" },

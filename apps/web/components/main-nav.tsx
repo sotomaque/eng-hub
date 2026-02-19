@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/", label: "Projects" },
   { href: "/people", label: "People" },
+  { href: "/org-chart", label: "Org Chart" },
 ];
 
 export function MainNav() {

@@ -17,10 +17,10 @@ import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface RoleSheetProps {
-  projectId: string;
+  returnPath: string;
 }
 
-export function RoleSheet({ projectId }: RoleSheetProps) {
+export function RoleSheet({ returnPath }: RoleSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [newName, setNewName] = useState("");
@@ -64,7 +64,7 @@ export function RoleSheet({ projectId }: RoleSheetProps) {
   );
 
   function handleClose() {
-    router.push(`/projects/${projectId}/team`, { scroll: false });
+    router.push(returnPath, { scroll: false });
   }
 
   function handleAdd() {

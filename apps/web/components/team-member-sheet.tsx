@@ -11,15 +11,9 @@ import type {
 } from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import { Combobox } from "@workspace/ui/components/combobox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
 import {
   Sheet,
   SheetContent,
@@ -65,6 +59,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     trpc.team.getByProjectId.queryOptions({ projectId }),
   );
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
+  const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
 
   const {
     register,
@@ -86,6 +81,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       teamIds: member?.teamMemberships.map((m) => m.teamId) ?? [],
       githubUsername: member?.person.githubUsername ?? "",
       gitlabUsername: member?.person.gitlabUsername ?? "",
+      managerId: member?.person.managerId ?? "",
     },
   });
 
@@ -143,6 +139,9 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const roles = rolesQuery.data ?? [];
   const teams = teamsQuery.data ?? [];
   const titles = titlesQuery.data ?? [];
+  const people = (peopleQuery.data ?? []).filter(
+    (p) => !member || p.id !== member.personId,
+  );
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
@@ -231,35 +230,36 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               name="titleId"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
+                  options={[
+                    { value: "__none__", label: "No title" },
+                    ...titles.map((t) => ({
+                      value: t.id,
+                      label: t.name,
+                    })),
+                  ]}
+                  value={field.value || "__none__"}
                   onValueChange={(val) =>
                     field.onChange(val === "__none__" ? "" : val)
                   }
-                  value={field.value || "__none__"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select title..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No title</SelectItem>
-                    {titles.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select title..."
+                  searchPlaceholder="Search titles..."
+                />
               )}
             />
             <Button
               type="button"
               variant="link"
               className="h-auto p-0 text-xs"
-              onClick={() =>
-                router.push(`/projects/${projectId}/team?manageTitles=true`, {
-                  scroll: false,
-                })
-              }
+              onClick={() => {
+                const memberParam = isEditing
+                  ? `editMember=${member.id}`
+                  : "addMember=true";
+                router.push(
+                  `/projects/${projectId}/team?${memberParam}&manageTitles=true`,
+                  { scroll: false },
+                );
+              }}
             >
               Manage Titles
             </Button>
@@ -271,18 +271,16 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               name="roleId"
               control={control}
               render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={roles.map((r) => ({
+                    value: r.id,
+                    label: r.name,
+                  }))}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select role..."
+                  searchPlaceholder="Search roles..."
+                />
               )}
             />
             {errors.roleId && (
@@ -294,14 +292,43 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               type="button"
               variant="link"
               className="h-auto p-0 text-xs"
-              onClick={() =>
-                router.push(`/projects/${projectId}/team?manageRoles=true`, {
-                  scroll: false,
-                })
-              }
+              onClick={() => {
+                const memberParam = isEditing
+                  ? `editMember=${member.id}`
+                  : "addMember=true";
+                router.push(
+                  `/projects/${projectId}/team?${memberParam}&manageRoles=true`,
+                  { scroll: false },
+                );
+              }}
             >
               Manage Roles
             </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Reports To</Label>
+            <Controller
+              name="managerId"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  options={[
+                    { value: "__none__", label: "No manager" },
+                    ...people.map((p) => ({
+                      value: p.id,
+                      label: `${p.firstName} ${p.lastName}`,
+                    })),
+                  ]}
+                  value={field.value || "__none__"}
+                  onValueChange={(val) =>
+                    field.onChange(val === "__none__" ? "" : val)
+                  }
+                  placeholder="Select manager..."
+                  searchPlaceholder="Search people..."
+                />
+              )}
+            />
           </div>
 
           {teams.length > 0 && (

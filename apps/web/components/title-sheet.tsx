@@ -17,10 +17,10 @@ import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface TitleSheetProps {
-  projectId: string;
+  returnPath: string;
 }
 
-export function TitleSheet({ projectId }: TitleSheetProps) {
+export function TitleSheet({ returnPath }: TitleSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [newName, setNewName] = useState("");
@@ -64,7 +64,7 @@ export function TitleSheet({ projectId }: TitleSheetProps) {
   );
 
   function handleClose() {
-    router.push(`/projects/${projectId}/team`, { scroll: false });
+    router.push(returnPath, { scroll: false });
   }
 
   function handleAdd() {

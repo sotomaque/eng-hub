@@ -1,7 +1,30 @@
+import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+
+const managerSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  imageUrl: true,
+} as const;
+
+const personInclude = {
+  manager: { select: managerSelect },
+  directReports: { select: { ...managerSelect, email: true } },
+  role: true,
+  title: true,
+  projectMemberships: {
+    include: {
+      project: true,
+      role: true,
+      title: true,
+      teamMemberships: { include: { team: true } },
+    },
+  },
+} as const;
 
 const createPersonSchema = z.object({
   firstName: z.string().min(1),
@@ -10,26 +33,37 @@ const createPersonSchema = z.object({
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  managerId: z.string().optional().or(z.literal("")),
+  roleId: z.string().optional().or(z.literal("")),
+  titleId: z.string().optional().or(z.literal("")),
 });
 
 const updatePersonSchema = createPersonSchema.extend({
   id: z.string(),
 });
 
+async function detectCycle(personId: string, newManagerId: string): Promise<boolean> {
+  let currentId: string | null = newManagerId;
+  const visited = new Set<string>();
+  while (currentId) {
+    if (currentId === personId) return true;
+    if (visited.has(currentId)) break;
+    visited.add(currentId);
+    const row: { managerId: string | null } | null =
+      await db.person.findUnique({
+        where: { id: currentId },
+        select: { managerId: true },
+      });
+    currentId = row?.managerId ?? null;
+  }
+  return false;
+}
+
 export const personRouter = createTRPCRouter({
   getAll: publicProcedure.query(async () => {
     return db.person.findMany({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      include: {
-        projectMemberships: {
-          include: {
-            project: true,
-            role: true,
-            title: true,
-            teamMemberships: { include: { team: true } },
-          },
-        },
-      },
+      include: personInclude,
     });
   }),
 
@@ -38,23 +72,15 @@ export const personRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.person.findUnique({
         where: { id: input.id },
-        include: {
-          projectMemberships: {
-            include: {
-              project: true,
-              role: true,
-              title: true,
-              teamMemberships: { include: { team: true } },
-            },
-          },
-        },
+        include: personInclude,
       });
     }),
 
   create: protectedProcedure
     .input(createPersonSchema)
-    .mutation(async ({ input }) => {
-      return db.person.create({
+    .mutation(async ({ ctx, input }) => {
+      const managerId = input.managerId || null;
+      const person = await db.person.create({
         data: {
           firstName: input.firstName,
           lastName: input.lastName,
@@ -62,15 +88,50 @@ export const personRouter = createTRPCRouter({
           githubUsername: input.githubUsername || null,
           gitlabUsername: input.gitlabUsername || null,
           imageUrl: input.imageUrl || null,
+          managerId,
+          roleId: input.roleId || null,
+          titleId: input.titleId || null,
         },
       });
+
+      if (managerId) {
+        await db.managerChange.create({
+          data: {
+            personId: person.id,
+            oldManagerId: null,
+            newManagerId: managerId,
+            changedBy: ctx.userId,
+          },
+        });
+      }
+
+      return person;
     }),
 
   update: protectedProcedure
     .input(updatePersonSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return db.person.update({
+      const newManagerId = data.managerId || null;
+
+      // Get current state
+      const current = await db.person.findUniqueOrThrow({
+        where: { id },
+        select: { managerId: true },
+      });
+
+      // Cycle detection
+      if (newManagerId && newManagerId !== current.managerId) {
+        const hasCycle = await detectCycle(id, newManagerId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot set this manager — it would create a circular reporting chain.",
+          });
+        }
+      }
+
+      const person = await db.person.update({
         where: { id },
         data: {
           firstName: data.firstName,
@@ -79,8 +140,25 @@ export const personRouter = createTRPCRouter({
           githubUsername: data.githubUsername || null,
           gitlabUsername: data.gitlabUsername || null,
           imageUrl: data.imageUrl || null,
+          managerId: newManagerId,
+          roleId: data.roleId || null,
+          titleId: data.titleId || null,
         },
       });
+
+      // Log manager change if it changed
+      if (newManagerId !== current.managerId) {
+        await db.managerChange.create({
+          data: {
+            personId: id,
+            oldManagerId: current.managerId,
+            newManagerId,
+            changedBy: ctx.userId,
+          },
+        });
+      }
+
+      return person;
     }),
 
   delete: protectedProcedure
@@ -138,7 +216,6 @@ export const personRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       return db.$transaction(async (tx) => {
-        // Remove from old project
         await tx.teamMember.delete({
           where: {
             personId_projectId: {
@@ -149,7 +226,6 @@ export const personRouter = createTRPCRouter({
         });
         await syncLiveToActiveArrangement(tx, input.fromProjectId);
 
-        // Add to new project
         const member = await tx.teamMember.create({
           data: {
             personId: input.personId,
@@ -198,23 +274,13 @@ export const personRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
     return db.person.findUnique({
       where: { clerkUserId: ctx.userId },
-      include: {
-        projectMemberships: {
-          include: {
-            project: true,
-            role: true,
-            title: true,
-            teamMemberships: { include: { team: true } },
-          },
-        },
-      },
+      include: personInclude,
     });
   }),
 
   claimAsMe: protectedProcedure
     .input(z.object({ personId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Unclaim any previously linked Person for this Clerk user
       await db.person.updateMany({
         where: { clerkUserId: ctx.userId },
         data: { clerkUserId: null },

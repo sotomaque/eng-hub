@@ -10,6 +10,16 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
+function manageReturnPath(
+  projectId: string,
+  sp: { addMember?: string; editMember?: string },
+): string {
+  const base = `/projects/${projectId}/team`;
+  if (sp.editMember) return `${base}?editMember=${sp.editMember}`;
+  if (sp.addMember === "true") return `${base}?addMember=true`;
+  return base;
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
@@ -88,8 +98,12 @@ export default async function TeamPage({ params, searchParams }: PageProps) {
       )}
 
       {sp.manageTeams === "true" && <TeamSheet projectId={id} />}
-      {sp.manageRoles === "true" && <RoleSheet projectId={id} />}
-      {sp.manageTitles === "true" && <TitleSheet projectId={id} />}
+      {sp.manageRoles === "true" && (
+        <RoleSheet returnPath={manageReturnPath(id, sp)} />
+      )}
+      {sp.manageTitles === "true" && (
+        <TitleSheet returnPath={manageReturnPath(id, sp)} />
+      )}
     </>
   );
 }

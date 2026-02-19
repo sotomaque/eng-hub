@@ -7,6 +7,9 @@ export const createPersonSchema = z.object({
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  managerId: z.string().optional().or(z.literal("")),
+  roleId: z.string().optional().or(z.literal("")),
+  titleId: z.string().optional().or(z.literal("")),
 });
 
 export const updatePersonSchema = createPersonSchema.extend({

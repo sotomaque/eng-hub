@@ -47,6 +47,8 @@ type MembershipWithRelations = TeamMember & {
 };
 
 type PersonWithMemberships = Person & {
+  role: Role | null;
+  title: Title | null;
   projectMemberships: MembershipWithRelations[];
 };
 
@@ -94,13 +96,15 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
   }, [projects]);
 
   const roleOptions = useMemo(() => {
-    const roles = [
-      ...new Set(
-        people.flatMap((p) => p.projectMemberships.map((m) => m.role.name)),
-      ),
-    ];
-    roles.sort();
-    return roles.map((r) => ({ label: r, value: r }));
+    const roleNames = new Set<string>();
+    for (const p of people) {
+      if (p.role) roleNames.add(p.role.name);
+      for (const m of p.projectMemberships) {
+        roleNames.add(m.role.name);
+      }
+    }
+    const sorted = [...roleNames].sort();
+    return sorted.map((r) => ({ label: r, value: r }));
   }, [people]);
 
   const columns: ColumnDef<PersonWithMemberships>[] = [
@@ -179,21 +183,31 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
     },
     {
       id: "roles",
-      accessorFn: (row) =>
-        [...new Set(row.projectMemberships.map((m) => m.role.name))].join(", "),
+      accessorFn: (row) => {
+        if (row.role) return row.role.name;
+        const fromMemberships = [
+          ...new Set(row.projectMemberships.map((m) => m.role.name)),
+        ];
+        return fromMemberships.join(", ");
+      },
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Roles" />
+        <DataTableColumnHeader column={column} title="Role" />
       ),
       cell: ({ row }) => {
-        const roles = [
-          ...new Set(row.original.projectMemberships.map((m) => m.role.name)),
-        ];
-        if (roles.length === 0) {
+        const person = row.original;
+        const roleName =
+          person.role?.name ??
+          [...new Set(person.projectMemberships.map((m) => m.role.name))].join(
+            ", ",
+          );
+        if (!roleName) {
           return <span className="text-muted-foreground">{"\u2014"}</span>;
         }
-        return <span>{roles.join(", ")}</span>;
+        return <span>{roleName}</span>;
       },
       filterFn: (row, _id, value: string[]) => {
+        const personRole = row.original.role?.name;
+        if (personRole) return value.includes(personRole);
         const roleNames = row.original.projectMemberships.map(
           (m) => m.role.name,
         );

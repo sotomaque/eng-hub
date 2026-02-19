@@ -3,6 +3,24 @@ import { z } from "zod";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
+const managerSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  imageUrl: true,
+} as const;
+
+const memberInclude = {
+  person: {
+    include: {
+      manager: { select: managerSelect },
+    },
+  },
+  role: true,
+  title: true,
+  teamMemberships: { include: { team: true } },
+} as const;
+
 const createTeamMemberSchema = z.object({
   projectId: z.string(),
   firstName: z.string().min(1),
@@ -14,6 +32,7 @@ const createTeamMemberSchema = z.object({
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  managerId: z.string().optional().or(z.literal("")),
 });
 
 const updateTeamMemberSchema = z.object({
@@ -27,6 +46,7 @@ const updateTeamMemberSchema = z.object({
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  managerId: z.string().optional().or(z.literal("")),
 });
 
 export const teamMemberRouter = createTRPCRouter({
@@ -35,12 +55,7 @@ export const teamMemberRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.teamMember.findMany({
         where: { projectId: input.projectId },
-        include: {
-          person: true,
-          role: true,
-          title: true,
-          teamMemberships: { include: { team: true } },
-        },
+        include: memberInclude,
         orderBy: { person: { lastName: "asc" } },
       });
     }),
@@ -50,19 +65,33 @@ export const teamMemberRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.teamMember.findUnique({
         where: { id: input.id },
+        include: memberInclude,
+      });
+    }),
+
+  getOrgTree: publicProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ input }) => {
+      return db.teamMember.findMany({
+        where: { projectId: input.projectId },
         include: {
-          person: true,
+          person: {
+            include: {
+              manager: { select: managerSelect },
+            },
+          },
           role: true,
           title: true,
-          teamMemberships: { include: { team: true } },
         },
+        orderBy: { person: { lastName: "asc" } },
       });
     }),
 
   create: protectedProcedure
     .input(createTeamMemberSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const teamIds = input.teamIds?.filter(Boolean) ?? [];
+      const managerId = input.managerId || null;
       return db.$transaction(async (tx) => {
         // Find or create the Person by email
         let person = await tx.person.findUnique({
@@ -77,6 +106,34 @@ export const teamMemberRouter = createTRPCRouter({
               githubUsername: input.githubUsername || null,
               gitlabUsername: input.gitlabUsername || null,
               imageUrl: input.imageUrl || null,
+              managerId,
+              roleId: input.roleId,
+              titleId: input.titleId || null,
+            },
+          });
+
+          if (managerId) {
+            await tx.managerChange.create({
+              data: {
+                personId: person.id,
+                oldManagerId: null,
+                newManagerId: managerId,
+                changedBy: ctx.userId,
+              },
+            });
+          }
+        } else if (managerId && person.managerId !== managerId) {
+          const oldManagerId = person.managerId;
+          await tx.person.update({
+            where: { id: person.id },
+            data: { managerId },
+          });
+          await tx.managerChange.create({
+            data: {
+              personId: person.id,
+              oldManagerId,
+              newManagerId: managerId,
+              changedBy: ctx.userId,
             },
           });
         }
@@ -106,27 +163,45 @@ export const teamMemberRouter = createTRPCRouter({
 
   update: protectedProcedure
     .input(updateTeamMemberSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, teamIds: rawTeamIds, ...data } = input;
       const teamIds = rawTeamIds?.filter(Boolean) ?? [];
+      const newManagerId = data.managerId || null;
       return db.$transaction(async (tx) => {
-        // Get the existing member to find the Person
         const existing = await tx.teamMember.findUniqueOrThrow({
           where: { id },
+          include: { person: { select: { managerId: true } } },
         });
 
-        // Update Person identity fields
+        // Update Person identity fields + managerId + role/title
+        const personUpdate: Record<string, unknown> = {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          githubUsername: data.githubUsername || null,
+          gitlabUsername: data.gitlabUsername || null,
+          imageUrl: data.imageUrl || null,
+          managerId: newManagerId,
+          roleId: data.roleId,
+          titleId: data.titleId || null,
+        };
+
         await tx.person.update({
           where: { id: existing.personId },
-          data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            githubUsername: data.githubUsername || null,
-            gitlabUsername: data.gitlabUsername || null,
-            imageUrl: data.imageUrl || null,
-          },
+          data: personUpdate,
         });
+
+        // Log manager change if it changed
+        if (newManagerId !== existing.person.managerId) {
+          await tx.managerChange.create({
+            data: {
+              personId: existing.personId,
+              oldManagerId: existing.person.managerId,
+              newManagerId,
+              changedBy: ctx.userId,
+            },
+          });
+        }
 
         // Update TeamMember project-specific fields
         const member = await tx.teamMember.update({
@@ -137,7 +212,7 @@ export const teamMemberRouter = createTRPCRouter({
           },
         });
 
-        // Sync team memberships: delete all, recreate
+        // Sync team memberships
         await tx.teamMembership.deleteMany({
           where: { teamMemberId: id },
         });

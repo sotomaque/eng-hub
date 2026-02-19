@@ -10,8 +10,9 @@ import type {
   TeamMembership,
   Title,
 } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import { Combobox } from "@workspace/ui/components/combobox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
@@ -25,7 +26,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
@@ -57,8 +58,18 @@ export function PersonSheet({ person }: PersonSheetProps) {
   );
   const emailManuallyEdited = useRef(isEditing);
 
+  const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
+  const rolesQuery = useQuery(trpc.role.getAll.queryOptions());
+  const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
+  const people = (peopleQuery.data ?? []).filter(
+    (p) => !person || p.id !== person.id,
+  );
+  const roles = rolesQuery.data ?? [];
+  const titles = titlesQuery.data ?? [];
+
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -72,6 +83,10 @@ export function PersonSheet({ person }: PersonSheetProps) {
       email: person?.email ?? "",
       githubUsername: person?.githubUsername ?? "",
       gitlabUsername: person?.gitlabUsername ?? "",
+      managerId: person?.managerId ?? "",
+      roleId: person?.roleId ?? person?.projectMemberships[0]?.role?.id ?? "",
+      titleId:
+        person?.titleId ?? person?.projectMemberships[0]?.title?.id ?? "",
     },
   });
 
@@ -200,6 +215,112 @@ export function PersonSheet({ person }: PersonSheetProps) {
             {errors.email && (
               <p className="text-destructive text-sm">{errors.email.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Reports To</Label>
+            <Controller
+              name="managerId"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  options={[
+                    { value: "__none__", label: "No manager" },
+                    ...people.map((p) => ({
+                      value: p.id,
+                      label: `${p.firstName} ${p.lastName}`,
+                    })),
+                  ]}
+                  value={field.value || "__none__"}
+                  onValueChange={(val) =>
+                    field.onChange(val === "__none__" ? "" : val)
+                  }
+                  placeholder="Select manager..."
+                  searchPlaceholder="Search people..."
+                />
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Controller
+                name="titleId"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "No title" },
+                      ...titles.map((t) => ({
+                        value: t.id,
+                        label: t.name,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    placeholder="Select title..."
+                    searchPlaceholder="Search titles..."
+                  />
+                )}
+              />
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 text-xs"
+                onClick={() => {
+                  const personParam = isEditing
+                    ? `edit=${person.id}`
+                    : "create=true";
+                  router.push(`/people?${personParam}&manageTitles=true`, {
+                    scroll: false,
+                  });
+                }}
+              >
+                Manage Titles
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Controller
+                name="roleId"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "No role" },
+                      ...roles.map((r) => ({
+                        value: r.id,
+                        label: r.name,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    placeholder="Select role..."
+                    searchPlaceholder="Search roles..."
+                  />
+                )}
+              />
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 text-xs"
+                onClick={() => {
+                  const personParam = isEditing
+                    ? `edit=${person.id}`
+                    : "create=true";
+                  router.push(`/people?${personParam}&manageRoles=true`, {
+                    scroll: false,
+                  });
+                }}
+              >
+                Manage Roles
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

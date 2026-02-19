@@ -1,5 +1,6 @@
 import { arrangementRouter } from "./routers/arrangement";
 import { healthRouter } from "./routers/health";
+import { managerChangeRouter } from "./routers/manager-change";
 import { milestoneRouter } from "./routers/milestone";
 import { personRouter } from "./routers/person";
 import { projectRouter } from "./routers/project";
@@ -15,6 +16,7 @@ import { createTRPCRouter } from "./trpc";
 export const appRouter = createTRPCRouter({
   arrangement: arrangementRouter,
   health: healthRouter,
+  managerChange: managerChangeRouter,
   milestone: milestoneRouter,
   person: personRouter,
   project: projectRouter,
