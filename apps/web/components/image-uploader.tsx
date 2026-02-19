@@ -60,7 +60,7 @@ export function ImageUploader({
 
   async function handleCropConfirm(blob: Blob) {
     setCropSrc(null);
-    const file = new File([blob], "cropped-image.jpg", { type: "image/jpeg" });
+    const file = new File([blob], `${crypto.randomUUID()}.jpg`, { type: "image/jpeg" });
     await startUpload([file]);
   }
 

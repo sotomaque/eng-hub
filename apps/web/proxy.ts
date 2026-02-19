@@ -1,6 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher(["/api/trpc/health.ping(.*)"]);
+const isPublicRoute = createRouteMatcher([
+  "/api/trpc/health.ping(.*)",
+  "/api/uploadthing(.*)",
+]);
 
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
