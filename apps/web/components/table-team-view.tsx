@@ -28,6 +28,7 @@ interface MemberData {
   person: {
     firstName: string;
     lastName: string;
+    callsign: string | null;
   };
   title: { name: string } | null;
   role: Role;
@@ -112,7 +113,11 @@ export function TableTeamView({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">
-                      {member.person.firstName} {member.person.lastName}
+                      {member.person.firstName}
+                      {member.person.callsign
+                        ? ` ${member.person.callsign}`
+                        : ""}{" "}
+                      {member.person.lastName}
                     </p>
                     <p className="text-muted-foreground text-xs">
                       {member.role.name}
@@ -193,7 +198,10 @@ export function TableTeamView({
                     >
                       <div className="min-w-0">
                         <span className="text-sm">
-                          {a.teamMember.person.firstName}{" "}
+                          {a.teamMember.person.firstName}
+                          {a.teamMember.person.callsign
+                            ? ` ${a.teamMember.person.callsign}`
+                            : ""}{" "}
                           {a.teamMember.person.lastName}
                         </span>
                         <span className="text-muted-foreground ml-2 text-xs">

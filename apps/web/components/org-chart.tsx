@@ -19,6 +19,7 @@ type ManagerInfo = {
   id: string;
   firstName: string;
   lastName: string;
+  callsign: string | null;
   imageUrl: string | null;
 };
 
@@ -27,6 +28,7 @@ export type OrgMember = {
   personId: string;
   firstName: string;
   lastName: string;
+  callsign: string | null;
   imageUrl: string | null;
   managerId: string | null;
   manager: ManagerInfo | null;
@@ -102,6 +104,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
   const m = node.member;
+  const displayName = `${m.firstName}${m.callsign ? ` ${m.callsign}` : ""} ${m.lastName}`;
 
   return (
     <div className={depth > 0 ? "ml-6 border-l pl-4" : ""}>
@@ -129,9 +132,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
           </AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium">
-            {m.firstName} {m.lastName}
-          </span>
+          <span className="truncate text-sm font-medium">{displayName}</span>
           <div className="flex items-center gap-1.5">
             {m.roleName && (
               <span className="truncate text-xs text-muted-foreground">
@@ -175,6 +176,7 @@ function ExternalManagerGroup({
   reports: TreeNode[];
 }) {
   const [expanded, setExpanded] = useState(true);
+  const displayName = `${manager.firstName}${manager.callsign ? ` ${manager.callsign}` : ""} ${manager.lastName}`;
 
   return (
     <div className="rounded-md border border-dashed p-2">
@@ -199,7 +201,7 @@ function ExternalManagerGroup({
         </Avatar>
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium text-muted-foreground">
-            {manager.firstName} {manager.lastName}
+            {displayName}
           </span>
           <span className="text-xs text-muted-foreground/70">
             External manager

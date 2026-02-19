@@ -80,6 +80,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     defaultValues: {
       firstName: person?.firstName ?? "",
       lastName: person?.lastName ?? "",
+      callsign: person?.callsign ?? "",
       email: person?.email ?? "",
       githubUsername: person?.githubUsername ?? "",
       gitlabUsername: person?.gitlabUsername ?? "",
@@ -200,6 +201,15 @@ export function PersonSheet({ person }: PersonSheetProps) {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="callsign">Preferred Name</Label>
+            <Input
+              id="callsign"
+              placeholder="e.g. JJ, Bobby"
+              {...register("callsign")}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -228,7 +238,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                     { value: "__none__", label: "No manager" },
                     ...people.map((p) => ({
                       value: p.id,
-                      label: `${p.firstName} ${p.lastName}`,
+                      label: `${p.firstName}${p.callsign ? ` ${p.callsign}` : ""} ${p.lastName}`,
                     })),
                   ]}
                   value={field.value || "__none__"}

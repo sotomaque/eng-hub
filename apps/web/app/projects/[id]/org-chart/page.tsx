@@ -23,6 +23,7 @@ async function OrgChartContent({ projectId }: { projectId: string }) {
     personId: m.person.id,
     firstName: m.person.firstName,
     lastName: m.person.lastName,
+    callsign: m.person.callsign,
     imageUrl: m.person.imageUrl,
     managerId: m.person.managerId,
     manager: m.person.manager,

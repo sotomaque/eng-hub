@@ -8,6 +8,7 @@ const managerSelect = {
   id: true,
   firstName: true,
   lastName: true,
+  callsign: true,
   imageUrl: true,
 } as const;
 
@@ -29,6 +30,7 @@ const personInclude = {
 const createPersonSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  callsign: z.string().optional().or(z.literal("")),
   email: z.string().email(),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
@@ -84,6 +86,7 @@ export const personRouter = createTRPCRouter({
         data: {
           firstName: input.firstName,
           lastName: input.lastName,
+          callsign: input.callsign || null,
           email: input.email,
           githubUsername: input.githubUsername || null,
           gitlabUsername: input.gitlabUsername || null,
@@ -136,6 +139,7 @@ export const personRouter = createTRPCRouter({
         data: {
           firstName: data.firstName,
           lastName: data.lastName,
+          callsign: data.callsign || null,
           email: data.email,
           githubUsername: data.githubUsername || null,
           gitlabUsername: data.gitlabUsername || null,

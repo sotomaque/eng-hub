@@ -90,7 +90,8 @@ export function TeamMembersTable({
   const columns: ColumnDef<MemberWithRelations>[] = [
     {
       id: "name",
-      accessorFn: (row) => `${row.person.firstName} ${row.person.lastName}`,
+      accessorFn: (row) =>
+        `${row.person.firstName}${row.person.callsign ? ` ${row.person.callsign}` : ""} ${row.person.lastName}`,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Name" />
       ),

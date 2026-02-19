@@ -89,6 +89,7 @@ model Person {
   id             String   @id @default(cuid())
   firstName      String   @map("first_name")
   lastName       String   @map("last_name")
+  callsign       String?
   email          String   @unique
   githubUsername  String?  @map("github_username")
   gitlabUsername  String?  @map("gitlab_username")

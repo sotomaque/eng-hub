@@ -17,6 +17,7 @@ async function OrgChartContent() {
     personId: p.id,
     firstName: p.firstName,
     lastName: p.lastName,
+    callsign: p.callsign,
     imageUrl: p.imageUrl,
     managerId: p.managerId,
     manager: p.manager,

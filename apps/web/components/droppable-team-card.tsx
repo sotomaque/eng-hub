@@ -22,6 +22,7 @@ interface TeamMemberData {
   person: {
     firstName: string;
     lastName: string;
+    callsign: string | null;
     imageUrl?: string | null;
   };
   title: { name: string } | null;
@@ -143,6 +144,7 @@ export function DroppableTeamCard({
                 id={member.id}
                 firstName={member.person.firstName}
                 lastName={member.person.lastName}
+                callsign={member.person.callsign}
                 title={member.title}
                 role={member.role}
                 sourceTeamId={teamId}

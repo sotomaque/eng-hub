@@ -25,6 +25,7 @@ interface MemberData {
   person: {
     firstName: string;
     lastName: string;
+    callsign: string | null;
     imageUrl?: string | null;
   };
   title: { name: string } | null;
@@ -60,7 +61,7 @@ export function VisualTeamEditor({
   const trpc = useTRPC();
   const [activeMember, setActiveMember] = useState<{
     id: string;
-    person: { firstName: string; lastName: string };
+    displayName: string;
   } | null>(null);
 
   const sensors = useSensors(
@@ -90,15 +91,13 @@ export function VisualTeamEditor({
   );
 
   function handleDragStart(event: DragStartEvent) {
-    const { memberId, memberFirstName, memberLastName } = event.active.data
-      .current as {
+    const { memberId, memberDisplayName } = event.active.data.current as {
       memberId: string;
-      memberFirstName: string;
-      memberLastName: string;
+      memberDisplayName: string;
     };
     setActiveMember({
       id: memberId,
-      person: { firstName: memberFirstName, lastName: memberLastName },
+      displayName: memberDisplayName,
     });
   }
 
@@ -177,7 +176,7 @@ export function VisualTeamEditor({
       <DragOverlay>
         {activeMember && (
           <div className="rounded-md border border-l-4 border-l-primary bg-background px-3 py-1.5 text-sm font-medium shadow-lg">
-            {activeMember.person.firstName} {activeMember.person.lastName}
+            {activeMember.displayName}
           </div>
         )}
       </DragOverlay>

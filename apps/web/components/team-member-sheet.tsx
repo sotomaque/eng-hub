@@ -75,6 +75,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       projectId,
       firstName: member?.person.firstName ?? "",
       lastName: member?.person.lastName ?? "",
+      callsign: member?.person.callsign ?? "",
       email: member?.person.email ?? "",
       titleId: member?.titleId ?? "",
       roleId: member?.roleId ?? "",
@@ -207,6 +208,15 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="callsign">Preferred Name</Label>
+            <Input
+              id="callsign"
+              placeholder="e.g. JJ, Bobby"
+              {...register("callsign")}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -317,7 +327,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     { value: "__none__", label: "No manager" },
                     ...people.map((p) => ({
                       value: p.id,
-                      label: `${p.firstName} ${p.lastName}`,
+                      label: `${p.firstName}${p.callsign ? ` ${p.callsign}` : ""} ${p.lastName}`,
                     })),
                   ]}
                   value={field.value || "__none__"}

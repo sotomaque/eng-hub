@@ -110,7 +110,8 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
   const columns: ColumnDef<PersonWithMemberships>[] = [
     {
       id: "name",
-      accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+      accessorFn: (row) =>
+        `${row.firstName}${row.callsign ? ` ${row.callsign}` : ""} ${row.lastName}`,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Name" />
       ),
@@ -242,16 +243,40 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
         return (
           <div className="flex items-center gap-1">
             {!isMe && (
-              <Button
-                variant="ghost"
-                size="icon"
-                title="This is me"
-                onClick={() => claimMutation.mutate({ personId: person.id })}
-                disabled={claimMutation.isPending}
-              >
-                <UserCheck className="size-4" />
-                <span className="sr-only">This is me</span>
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="This is me"
+                    disabled={claimMutation.isPending}
+                  >
+                    <UserCheck className="size-4" />
+                    <span className="sr-only">This is me</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Link as you?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will link your account to &quot;{person.firstName}{" "}
+                      {person.lastName}&quot;.
+                      {myPersonId ? " Your current link will be removed." : ""}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        claimMutation.mutate({ personId: person.id })
+                      }
+                      disabled={claimMutation.isPending}
+                    >
+                      {claimMutation.isPending ? "Linking..." : "Confirm"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             <Button
               variant="ghost"

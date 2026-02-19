@@ -19,6 +19,7 @@ interface DraggableMemberChipProps {
   id: string;
   firstName: string;
   lastName: string;
+  callsign?: string | null;
   title: { name: string } | null;
   role: Role;
   sourceTeamId: string | null;
@@ -29,17 +30,19 @@ export function DraggableMemberChip({
   id,
   firstName,
   lastName,
+  callsign,
   title,
   role,
   sourceTeamId,
   imageUrl,
 }: DraggableMemberChipProps) {
+  const displayName = `${firstName}${callsign ? ` ${callsign}` : ""} ${lastName}`;
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `member-${id}`,
     data: {
       memberId: id,
-      memberFirstName: firstName,
-      memberLastName: lastName,
+      memberDisplayName: displayName,
       sourceTeamId,
     },
   });
@@ -64,9 +67,7 @@ export function DraggableMemberChip({
           {lastName[0]}
         </AvatarFallback>
       </Avatar>
-      <span className="truncate font-medium">
-        {firstName} {lastName}
-      </span>
+      <span className="truncate font-medium">{displayName}</span>
       {title && (
         <span className="text-muted-foreground hidden truncate text-xs sm:inline">
           {title.name}

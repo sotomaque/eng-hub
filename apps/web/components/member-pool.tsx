@@ -12,6 +12,7 @@ interface MemberData {
   person: {
     firstName: string;
     lastName: string;
+    callsign: string | null;
     imageUrl?: string | null;
   };
   title: { name: string } | null;
@@ -33,7 +34,7 @@ export function MemberPool({ members }: MemberPoolProps) {
   const filtered = search
     ? members.filter(
         (m) =>
-          `${m.person.firstName} ${m.person.lastName}`
+          `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`
             .toLowerCase()
             .includes(search.toLowerCase()) ||
           m.role.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -94,6 +95,7 @@ export function MemberPool({ members }: MemberPoolProps) {
                     id={member.id}
                     firstName={member.person.firstName}
                     lastName={member.person.lastName}
+                    callsign={member.person.callsign}
                     title={member.title}
                     role={member.role}
                     sourceTeamId={null}

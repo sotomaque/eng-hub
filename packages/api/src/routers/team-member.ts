@@ -7,6 +7,7 @@ const managerSelect = {
   id: true,
   firstName: true,
   lastName: true,
+  callsign: true,
   imageUrl: true,
 } as const;
 
@@ -25,6 +26,7 @@ const createTeamMemberSchema = z.object({
   projectId: z.string(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  callsign: z.string().optional().or(z.literal("")),
   email: z.string().email(),
   titleId: z.string().optional().or(z.literal("")),
   roleId: z.string(),
@@ -39,6 +41,7 @@ const updateTeamMemberSchema = z.object({
   id: z.string(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  callsign: z.string().optional().or(z.literal("")),
   email: z.string().email(),
   titleId: z.string().optional().or(z.literal("")),
   roleId: z.string(),
@@ -102,6 +105,7 @@ export const teamMemberRouter = createTRPCRouter({
             data: {
               firstName: input.firstName,
               lastName: input.lastName,
+              callsign: input.callsign || null,
               email: input.email,
               githubUsername: input.githubUsername || null,
               gitlabUsername: input.gitlabUsername || null,
@@ -177,6 +181,7 @@ export const teamMemberRouter = createTRPCRouter({
         const personUpdate: Record<string, unknown> = {
           firstName: data.firstName,
           lastName: data.lastName,
+          callsign: data.callsign || null,
           email: data.email,
           githubUsername: data.githubUsername || null,
           gitlabUsername: data.gitlabUsername || null,

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const createPersonSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  callsign: z.string().optional().or(z.literal("")),
   email: z.string().email("Must be a valid email"),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
