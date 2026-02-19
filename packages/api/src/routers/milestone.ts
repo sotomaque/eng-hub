@@ -13,7 +13,7 @@ const createMilestoneSchema = z.object({
   projectId: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
-  targetDate: z.coerce.date(),
+  targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum.default("NOT_STARTED"),
 });
 
@@ -21,7 +21,7 @@ const updateMilestoneSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
-  targetDate: z.coerce.date(),
+  targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum,
 });
 
@@ -51,7 +51,7 @@ export const milestoneRouter = createTRPCRouter({
           projectId: input.projectId,
           title: input.title,
           description: input.description,
-          targetDate: input.targetDate,
+          targetDate: input.targetDate ?? null,
           status: input.status,
         },
       });
@@ -66,7 +66,7 @@ export const milestoneRouter = createTRPCRouter({
         data: {
           title: data.title,
           description: data.description,
-          targetDate: data.targetDate,
+          targetDate: data.targetDate ?? null,
           status: data.status,
         },
       });

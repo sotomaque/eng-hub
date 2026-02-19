@@ -146,8 +146,10 @@ export function RoadmapSection({
                       <TableCell className="font-medium">
                         {milestone.title}
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {milestone.targetDate.toLocaleDateString()}
+                      <TableCell className="hidden text-muted-foreground sm:table-cell">
+                        {milestone.targetDate
+                          ? new Date(milestone.targetDate).toLocaleDateString()
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge className={STATUS_STYLES[milestone.status]}>
@@ -254,6 +256,9 @@ export function RoadmapSection({
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead className="hidden sm:table-cell">
+                      Quarter
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
                       Target Date
                     </TableHead>
                     <TableHead>Status</TableHead>
@@ -267,7 +272,12 @@ export function RoadmapSection({
                         {goal.title}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        {goal.targetDate.toLocaleDateString()}
+                        {goal.quarter || "—"}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground sm:table-cell">
+                        {goal.targetDate
+                          ? new Date(goal.targetDate).toLocaleDateString()
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge className={STATUS_STYLES[goal.status]}>

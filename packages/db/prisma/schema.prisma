@@ -30,12 +30,32 @@ model Project {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   statusUpdates  StatusUpdate[]
+  teams          Team[]
   teamMembers    TeamMember[]
   milestones     Milestone[]
   quarterlyGoals QuarterlyGoal[]
   links          ProjectLink[]
+  arrangements   TeamArrangement[]
 
   @@map("projects")
+}
+
+model Role {
+  id      String       @id @default(cuid())
+  name    String       @unique
+  members TeamMember[]
+
+  @@map("roles")
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  name      String
+  projectId String       @map("project_id")
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+
+  @@map("teams")
 }
 
 model StatusUpdate {
@@ -50,15 +70,31 @@ model StatusUpdate {
   @@map("status_updates")
 }
 
+model Title {
+  id      String       @id @default(cuid())
+  name    String       @unique
+  members TeamMember[]
+
+  @@map("titles")
+}
+
 model TeamMember {
   id             String  @id @default(cuid())
-  name           String
+  firstName      String  @map("first_name")
+  lastName       String  @map("last_name")
   email          String
-  role           String
+  titleId        String? @map("title_id")
+  title          Title?  @relation(fields: [titleId], references: [id], onDelete: SetNull)
   githubUsername  String? @map("github_username")
   gitlabUsername  String? @map("gitlab_username")
   projectId      String  @map("project_id")
   project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  roleId         String  @map("role_id")
+  role           Role    @relation(fields: [roleId], references: [id])
+  teamId         String? @map("team_id")
+  team           Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  arrangementAssignments ArrangementAssignment[]
 
   @@map("team_members")
 }
@@ -67,7 +103,7 @@ model Milestone {
   id          String        @id @default(cuid())
   title       String
   description String?
-  targetDate  DateTime      @map("target_date")
+  targetDate  DateTime?     @map("target_date")
   status      RoadmapStatus @default(NOT_STARTED)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
@@ -81,7 +117,8 @@ model QuarterlyGoal {
   id          String        @id @default(cuid())
   title       String
   description String?
-  targetDate  DateTime      @map("target_date")
+  quarter     String?
+  targetDate  DateTime?     @map("target_date")
   status      RoadmapStatus @default(NOT_STARTED)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
@@ -99,4 +136,41 @@ model ProjectLink {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("project_links")
+}
+
+model TeamArrangement {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(false) @map("is_active")
+  projectId String   @map("project_id")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  teams ArrangementTeam[]
+
+  @@map("team_arrangements")
+}
+
+model ArrangementTeam {
+  id            String          @id @default(cuid())
+  name          String
+  arrangementId String          @map("arrangement_id")
+  arrangement   TeamArrangement @relation(fields: [arrangementId], references: [id], onDelete: Cascade)
+  sortOrder     Int             @default(0) @map("sort_order")
+
+  assignments ArrangementAssignment[]
+
+  @@map("arrangement_teams")
+}
+
+model ArrangementAssignment {
+  id                String          @id @default(cuid())
+  arrangementTeamId String          @map("arrangement_team_id")
+  arrangementTeam   ArrangementTeam @relation(fields: [arrangementTeamId], references: [id], onDelete: Cascade)
+  teamMemberId      String          @map("team_member_id")
+  teamMember        TeamMember      @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([arrangementTeamId, teamMemberId])
+  @@map("arrangement_assignments")
 }

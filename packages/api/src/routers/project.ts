@@ -30,7 +30,11 @@ export const projectRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           statusUpdates: { orderBy: { createdAt: "desc" } },
-          teamMembers: { orderBy: { name: "asc" } },
+          teams: { orderBy: { name: "asc" } },
+          teamMembers: {
+            include: { role: true, team: true, title: true },
+            orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+          },
           milestones: { orderBy: { targetDate: "asc" } },
           quarterlyGoals: { orderBy: { targetDate: "asc" } },
           links: true,

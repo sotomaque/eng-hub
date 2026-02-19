@@ -4,18 +4,24 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 const createTeamMemberSchema = z.object({
   projectId: z.string(),
-  name: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
-  role: z.string().min(1),
+  titleId: z.string().optional().or(z.literal("")),
+  roleId: z.string(),
+  teamId: z.string().optional().or(z.literal("")),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
 });
 
 const updateTeamMemberSchema = z.object({
   id: z.string(),
-  name: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
-  role: z.string().min(1),
+  titleId: z.string().optional().or(z.literal("")),
+  roleId: z.string(),
+  teamId: z.string().optional().or(z.literal("")),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
 });
@@ -26,7 +32,8 @@ export const teamMemberRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.teamMember.findMany({
         where: { projectId: input.projectId },
-        orderBy: { name: "asc" },
+        include: { role: true, team: true, title: true },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       });
     }),
 
@@ -35,6 +42,7 @@ export const teamMemberRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.teamMember.findUnique({
         where: { id: input.id },
+        include: { role: true, team: true, title: true },
       });
     }),
 
@@ -44,9 +52,12 @@ export const teamMemberRouter = createTRPCRouter({
       return db.teamMember.create({
         data: {
           projectId: input.projectId,
-          name: input.name,
+          firstName: input.firstName,
+          lastName: input.lastName,
           email: input.email,
-          role: input.role,
+          titleId: input.titleId || null,
+          roleId: input.roleId,
+          teamId: input.teamId || null,
           githubUsername: input.githubUsername || null,
           gitlabUsername: input.gitlabUsername || null,
         },
@@ -60,9 +71,12 @@ export const teamMemberRouter = createTRPCRouter({
       return db.teamMember.update({
         where: { id },
         data: {
-          name: data.name,
+          firstName: data.firstName,
+          lastName: data.lastName,
           email: data.email,
-          role: data.role,
+          titleId: data.titleId || null,
+          roleId: data.roleId,
+          teamId: data.teamId || null,
           githubUsername: data.githubUsername || null,
           gitlabUsername: data.gitlabUsername || null,
         },

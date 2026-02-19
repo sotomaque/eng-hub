@@ -9,9 +9,11 @@ import { ProjectHeader } from "@/components/project-header";
 import { ProjectLinkSheet } from "@/components/project-link-sheet";
 import { QuarterlyGoalSheet } from "@/components/quarterly-goal-sheet";
 import { RoadmapSection } from "@/components/roadmap-section";
+import { RoleSheet } from "@/components/role-sheet";
 import { StatusUpdateSheet } from "@/components/status-update-sheet";
 import { TeamMemberSheet } from "@/components/team-member-sheet";
 import { TeamSection } from "@/components/team-section";
+import { TeamSheet } from "@/components/team-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +30,8 @@ interface PageProps {
     editGoal?: string;
     addLink?: string;
     editLink?: string;
+    manageTeams?: string;
+    manageRoles?: string;
   }>;
 }
 
@@ -44,7 +48,11 @@ async function ProjectDetailContent({ id }: { id: string }) {
         latestStatus={project.statusUpdates[0] ?? null}
       />
       <HealthSection projectId={id} statusUpdates={project.statusUpdates} />
-      <TeamSection projectId={id} members={project.teamMembers} />
+      <TeamSection
+        projectId={id}
+        members={project.teamMembers}
+        teams={project.teams}
+      />
       <RoadmapSection
         projectId={id}
         milestones={project.milestones}
@@ -158,6 +166,9 @@ export default async function ProjectDetailPage({
           <EditLinkContent projectId={id} linkId={sp.editLink} />
         </Suspense>
       )}
+
+      {sp.manageTeams === "true" && <TeamSheet projectId={id} />}
+      {sp.manageRoles === "true" && <RoleSheet projectId={id} />}
     </div>
   );
 }

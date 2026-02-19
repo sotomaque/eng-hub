@@ -2,9 +2,12 @@ import { z } from "zod";
 
 export const createTeamMemberSchema = z.object({
   projectId: z.string(),
-  name: z.string().min(1, "Name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Must be a valid email"),
-  role: z.string().min(1, "Role is required"),
+  titleId: z.string().optional().or(z.literal("")),
+  roleId: z.string().min(1, "Role is required"),
+  teamId: z.string().optional().or(z.literal("")),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
 });

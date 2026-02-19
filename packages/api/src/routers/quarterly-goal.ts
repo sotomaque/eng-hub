@@ -13,7 +13,8 @@ const createQuarterlyGoalSchema = z.object({
   projectId: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
-  targetDate: z.coerce.date(),
+  quarter: z.string().optional(),
+  targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum.default("NOT_STARTED"),
 });
 
@@ -21,7 +22,8 @@ const updateQuarterlyGoalSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
-  targetDate: z.coerce.date(),
+  quarter: z.string().optional(),
+  targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum,
 });
 
@@ -51,7 +53,8 @@ export const quarterlyGoalRouter = createTRPCRouter({
           projectId: input.projectId,
           title: input.title,
           description: input.description,
-          targetDate: input.targetDate,
+          quarter: input.quarter,
+          targetDate: input.targetDate ?? null,
           status: input.status,
         },
       });
@@ -66,7 +69,8 @@ export const quarterlyGoalRouter = createTRPCRouter({
         data: {
           title: data.title,
           description: data.description,
-          targetDate: data.targetDate,
+          quarter: data.quarter,
+          targetDate: data.targetDate ?? null,
           status: data.status,
         },
       });

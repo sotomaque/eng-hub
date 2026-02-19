@@ -4,8 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { QuarterlyGoal } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import { Calendar } from "@workspace/ui/components/calendar";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -22,7 +28,9 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Textarea } from "@workspace/ui/components/textarea";
-import { Loader2 } from "lucide-react";
+import { cn } from "@workspace/ui/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -32,10 +40,6 @@ import {
   type CreateQuarterlyGoalInput,
   createQuarterlyGoalSchema,
 } from "@/lib/validations/quarterly-goal";
-
-function formatDateForInput(date: Date): string {
-  return date.toISOString().split("T")[0] ?? "";
-}
 
 interface QuarterlyGoalSheetProps {
   projectId: string;
@@ -63,9 +67,8 @@ export function QuarterlyGoalSheet({
       projectId,
       title: goal?.title ?? "",
       description: goal?.description ?? "",
-      targetDate: goal?.targetDate
-        ? (formatDateForInput(goal.targetDate) as unknown as Date)
-        : ("" as unknown as Date),
+      quarter: goal?.quarter ?? "",
+      targetDate: goal?.targetDate ?? undefined,
       status: goal?.status ?? "NOT_STARTED",
     },
   });
@@ -150,18 +153,80 @@ export function QuarterlyGoalSheet({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="targetDate">Target Date</Label>
-            <Input
-              id="targetDate"
-              type="date"
-              {...register("targetDate")}
-              aria-invalid={!!errors.targetDate}
+            <Label>Quarter</Label>
+            <Controller
+              name="quarter"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  onValueChange={(val) =>
+                    field.onChange(val === "__none__" ? "" : val)
+                  }
+                  value={field.value || "__none__"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select quarter..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No quarter</SelectItem>
+                    <SelectItem value="Q1">Q1</SelectItem>
+                    <SelectItem value="Q2">Q2</SelectItem>
+                    <SelectItem value="Q3">Q3</SelectItem>
+                    <SelectItem value="Q4">Q4</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             />
-            {errors.targetDate && (
-              <p className="text-destructive text-sm">
-                {errors.targetDate.message}
-              </p>
-            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Target Date (optional)</Label>
+            <Controller
+              name="targetDate"
+              control={control}
+              render={({ field }) => (
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 size-4" />
+                        {field.value
+                          ? format(field.value, "PPP")
+                          : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) => field.onChange(date ?? null)}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {field.value && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => field.onChange(null)}
+                    >
+                      <X className="size-4" />
+                      <span className="sr-only">Clear date</span>
+                    </Button>
+                  )}
+                </div>
+              )}
+            />
           </div>
 
           <div className="space-y-2">

@@ -11,7 +11,7 @@ export const createMilestoneSchema = z.object({
   projectId: z.string(),
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  targetDate: z.coerce.date(),
+  targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum,
 });
 
