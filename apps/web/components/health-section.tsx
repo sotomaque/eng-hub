@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Separator } from "@workspace/ui/components/separator";
 import { Activity, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,17 +47,22 @@ type AssessmentItem = {
   createdAt: string;
 };
 
-const DIMENSION_LABELS: { key: keyof AssessmentItem; label: string }[] = [
-  { key: "growthStatus", label: "Growth" },
-  { key: "marginStatus", label: "Margin" },
-  { key: "longevityStatus", label: "Longevity" },
-  { key: "clientSatisfactionStatus", label: "Client Sat." },
-];
-
-const VIBE_LABELS: { key: keyof AssessmentItem; label: string }[] = [
-  { key: "engineeringVibeStatus", label: "Engineering" },
-  { key: "productVibeStatus", label: "Product" },
-  { key: "designVibeStatus", label: "Design" },
+const ALL_DIMENSIONS: {
+  key: keyof AssessmentItem;
+  label: string;
+  section: "business" | "vibe";
+}[] = [
+  { key: "growthStatus", label: "Growth", section: "business" },
+  { key: "marginStatus", label: "Margin", section: "business" },
+  { key: "longevityStatus", label: "Longevity", section: "business" },
+  {
+    key: "clientSatisfactionStatus",
+    label: "Client Sat.",
+    section: "business",
+  },
+  { key: "engineeringVibeStatus", label: "Engineering", section: "vibe" },
+  { key: "productVibeStatus", label: "Product", section: "vibe" },
+  { key: "designVibeStatus", label: "Design", section: "vibe" },
 ];
 
 interface HealthSectionProps {
@@ -124,9 +128,9 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
         </Card>
       ) : (
         <>
-          {/* Latest Assessment — Current Status */}
+          {/* Latest Assessment */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Latest Assessment</CardTitle>
                 <Link
@@ -141,55 +145,40 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Overall */}
-              <div className="flex items-center justify-between">
+            <CardContent className="space-y-1">
+              {/* Overall — prominent row */}
+              <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2.5">
                 <span className="text-sm font-medium">Overall</span>
                 <StatusChip status={latest.overallStatus} />
               </div>
 
-              <Separator />
+              {/* All dimensions in a single scannable list */}
+              <div className="divide-y divide-border/50">
+                {ALL_DIMENSIONS.map(({ key, label, section }, i) => {
+                  const prevSection =
+                    i > 0 ? ALL_DIMENSIONS[i - 1]?.section : null;
+                  const isNewSection = section !== prevSection;
 
-              {/* Business Dimensions */}
-              <div className="space-y-3">
-                <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                  Business Dimensions
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {DIMENSION_LABELS.map(({ key, label }) => (
-                    <div
-                      key={key}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-muted-foreground text-sm">
-                        {label}
-                      </span>
-                      <StatusChip status={latest[key] as HealthStatus | null} />
+                  return (
+                    <div key={key}>
+                      {isNewSection && (
+                        <p className="text-muted-foreground px-3 pt-4 pb-1 text-[11px] font-medium uppercase tracking-wider">
+                          {section === "business"
+                            ? "Business Dimensions"
+                            : "Vibe Checks"}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-muted-foreground text-sm">
+                          {label}
+                        </span>
+                        <StatusChip
+                          status={latest[key] as HealthStatus | null}
+                        />
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Vibe Checks */}
-              <div className="space-y-3">
-                <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                  Vibe Checks
-                </p>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {VIBE_LABELS.map(({ key, label }) => (
-                    <div
-                      key={key}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-muted-foreground text-sm">
-                        {label}
-                      </span>
-                      <StatusChip status={latest[key] as HealthStatus | null} />
-                    </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -206,7 +195,7 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
                     <Link
                       key={a.id}
                       href={`/projects/${projectId}/health/${a.id}`}
-                      className="flex items-center justify-between py-3 first:pt-0 last:pb-0 transition-colors hover:bg-muted/30 -mx-2 px-2 rounded-md"
+                      className="-mx-2 flex items-center justify-between rounded-md px-2 py-3 transition-colors first:pt-0 last:pb-0 hover:bg-muted/30"
                     >
                       <div className="flex items-center gap-3">
                         <StatusChip status={a.overallStatus} />
