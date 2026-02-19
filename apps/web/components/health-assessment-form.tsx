@@ -13,7 +13,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Separator } from "@workspace/ui/components/separator";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -92,6 +92,9 @@ const VIBE_CHECKS: {
     description: "Design quality, capacity, and alignment",
   },
 ];
+
+const BUSINESS_KEYS = BUSINESS_DIMENSIONS.map((d) => d.key);
+const VIBE_KEYS = VIBE_CHECKS.map((d) => d.key);
 
 type DimensionState = {
   status: HealthStatus | null;
@@ -250,19 +253,13 @@ export function HealthAssessmentForm({
     }
   }
 
-  const businessCount = dimensionSummary(
-    dimensions,
-    BUSINESS_DIMENSIONS.map((d) => d.key),
-  );
-  const vibeCount = dimensionSummary(
-    dimensions,
-    VIBE_CHECKS.map((d) => d.key),
-  );
+  const businessCount = dimensionSummary(dimensions, BUSINESS_KEYS);
+  const vibeCount = dimensionSummary(dimensions, VIBE_KEYS);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header — matches meeting-form pattern */}
-      <div className="flex items-center justify-between">
+    <form onSubmit={handleSubmit} className="space-y-6 min-h-[400px]">
+      {/* Header — sticky */}
+      <div className="sticky top-0 z-10 -mx-1 flex items-center justify-between border-b border-border/50 bg-background/95 px-1 pb-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild className="size-8">
             <Link href={`/projects/${projectId}/health`}>
@@ -311,17 +308,12 @@ export function HealthAssessmentForm({
               disabled={isSubmitting}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-              Notes
-            </Label>
-            <TiptapEditor
-              initialContent={overallNotes}
-              onChange={setOverallNotes}
-              editable={!isSubmitting}
-              className="min-h-[120px]"
-            />
-          </div>
+          <NotesToggle
+            notes={overallNotes}
+            onChange={setOverallNotes}
+            disabled={isSubmitting}
+            defaultOpen={!!overallNotes}
+          />
         </div>
       </div>
 
@@ -330,8 +322,12 @@ export function HealthAssessmentForm({
         type="multiple"
         value={openSections}
         onValueChange={setOpenSections}
+        className="flex flex-col gap-4 py-4 "
       >
-        <AccordionItem value="business" className="rounded-lg border">
+        <AccordionItem
+          value="business"
+          className="rounded-lg border last:border-b"
+        >
           <AccordionTrigger className="px-5 hover:no-underline">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">Business Dimensions</span>
@@ -364,7 +360,10 @@ export function HealthAssessmentForm({
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="vibes" className="mt-3 rounded-lg border">
+        <AccordionItem
+          value="vibes"
+          className="rounded-lg border last:border-b"
+        >
           <AccordionTrigger className="px-5 hover:no-underline">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">Vibe Checks</span>
@@ -401,6 +400,47 @@ export function HealthAssessmentForm({
   );
 }
 
+interface NotesToggleProps {
+  notes: JSONContent | undefined;
+  onChange: (content: JSONContent) => void;
+  disabled?: boolean;
+  defaultOpen?: boolean;
+}
+
+function NotesToggle({
+  notes,
+  onChange,
+  disabled,
+  defaultOpen = false,
+}: NotesToggleProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ChevronRight
+          className={`size-3.5 transition-transform ${open ? "rotate-90" : ""}`}
+        />
+        {open ? "Hide notes" : "Add notes"}
+      </button>
+      {open && (
+        <div className="mt-2">
+          <TiptapEditor
+            initialContent={notes}
+            onChange={onChange}
+            editable={!disabled}
+            className="min-h-[100px]"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface DimensionSectionProps {
   label: string;
   description: string;
@@ -431,11 +471,11 @@ function DimensionSection({
         onChange={onStatusChange}
         disabled={disabled}
       />
-      <TiptapEditor
-        initialContent={notes}
+      <NotesToggle
+        notes={notes}
         onChange={onNotesChange}
-        editable={!disabled}
-        className="min-h-[100px]"
+        disabled={disabled}
+        defaultOpen={!!notes}
       />
     </div>
   );

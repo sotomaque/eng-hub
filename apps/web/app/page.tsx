@@ -17,7 +17,18 @@ interface PageProps {
 async function ProjectsContent() {
   const trpc = await createServerCaller();
   const projects = await trpc.project.getAll();
-  return <ProjectsTable projects={projects} />;
+  return (
+    <ProjectsTable
+      projects={projects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        imageUrl: p.imageUrl,
+        description: p.description,
+        updatedAt: p.updatedAt.toISOString(),
+        healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
+      }))}
+    />
+  );
 }
 
 async function EditProjectContent({ projectId }: { projectId: string }) {

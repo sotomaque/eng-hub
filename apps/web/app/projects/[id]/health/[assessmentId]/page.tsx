@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { HealthAssessmentForm } from "@/components/health-assessment-form";
 import { createServerCaller } from "@/lib/trpc/server";
 
@@ -8,16 +9,20 @@ interface PageProps {
   params: Promise<{ id: string; assessmentId: string }>;
 }
 
-export default async function HealthAssessmentPage({ params }: PageProps) {
-  const { id, assessmentId } = await params;
+async function AssessmentContent({
+  projectId,
+  assessmentId,
+}: {
+  projectId: string;
+  assessmentId: string;
+}) {
   const trpc = await createServerCaller();
-
   const assessment = await trpc.healthAssessment.getById({ id: assessmentId });
   if (!assessment) notFound();
 
   return (
     <HealthAssessmentForm
-      projectId={id}
+      projectId={projectId}
       assessment={{
         id: assessment.id,
         overallStatus: assessment.overallStatus,
@@ -38,5 +43,15 @@ export default async function HealthAssessmentPage({ params }: PageProps) {
         designVibeNotes: assessment.designVibeNotes,
       }}
     />
+  );
+}
+
+export default async function HealthAssessmentPage({ params }: PageProps) {
+  const { id, assessmentId } = await params;
+
+  return (
+    <Suspense fallback={null}>
+      <AssessmentContent projectId={id} assessmentId={assessmentId} />
+    </Suspense>
   );
 }

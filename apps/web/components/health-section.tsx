@@ -1,5 +1,3 @@
-"use client";
-
 import type { HealthStatus } from "@prisma/client";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -11,27 +9,7 @@ import {
 } from "@workspace/ui/components/card";
 import { Activity, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-const HEALTH_STYLES: Record<
-  HealthStatus,
-  { label: string; className: string }
-> = {
-  GREEN: {
-    label: "Good",
-    className:
-      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  },
-  YELLOW: {
-    label: "Neutral",
-    className:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  },
-  RED: {
-    label: "Bad",
-    className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-  },
-};
+import { HEALTH_STATUS_BADGE, HEALTH_STATUS_LABEL } from "@/lib/health-status";
 
 type AssessmentItem = {
   id: string;
@@ -81,12 +59,14 @@ function StatusChip({ status }: { status: HealthStatus | null }) {
       </Badge>
     );
   }
-  const style = HEALTH_STYLES[status];
-  return <Badge className={style.className}>{style.label}</Badge>;
+  return (
+    <Badge className={HEALTH_STATUS_BADGE[status]}>
+      {HEALTH_STATUS_LABEL[status]}
+    </Badge>
+  );
 }
 
 export function HealthSection({ projectId, assessments }: HealthSectionProps) {
-  const router = useRouter();
   const latest = assessments[0];
 
   return (
@@ -102,12 +82,11 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
             </span>
           )}
         </div>
-        <Button
-          size="sm"
-          onClick={() => router.push(`/projects/${projectId}/health/new`)}
-        >
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">New Assessment</span>
+        <Button size="sm" asChild>
+          <Link href={`/projects/${projectId}/health/new`}>
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">New Assessment</span>
+          </Link>
         </Button>
       </div>
 

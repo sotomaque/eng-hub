@@ -6,27 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import {
-  Activity,
-  Flag,
-  Layers,
-  Link as LinkIcon,
-  Target,
-  Users,
-} from "lucide-react";
+import { Activity, Flag, Link as LinkIcon, Target, Users } from "lucide-react";
 import Link from "next/link";
-
-const HEALTH_DOT: Record<HealthStatus, string> = {
-  GREEN: "bg-green-500",
-  YELLOW: "bg-yellow-500",
-  RED: "bg-red-500",
-};
-
-const HEALTH_LABEL: Record<HealthStatus, string> = {
-  GREEN: "Good",
-  YELLOW: "Neutral",
-  RED: "Bad",
-};
+import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
 
 interface ProjectOverviewProps {
   projectId: string;
@@ -72,8 +54,8 @@ export function ProjectOverview({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Health */}
-        <Link href={`${basePath}/health`}>
-          <Card className="transition-colors hover:bg-muted/50">
+        <Link href={`${basePath}/health`} className="block h-full">
+          <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Health</CardTitle>
               <Activity className="text-muted-foreground size-4" />
@@ -82,10 +64,10 @@ export function ProjectOverview({
               {latestStatus ? (
                 <div className="flex items-center gap-2">
                   <span
-                    className={`size-2.5 rounded-full ${HEALTH_DOT[latestStatus.overallStatus]}`}
+                    className={`size-2.5 rounded-full ${HEALTH_STATUS_DOT[latestStatus.overallStatus]}`}
                   />
                   <span className="text-2xl font-bold">
-                    {HEALTH_LABEL[latestStatus.overallStatus]}
+                    {HEALTH_STATUS_LABEL[latestStatus.overallStatus]}
                   </span>
                 </div>
               ) : (
@@ -98,8 +80,8 @@ export function ProjectOverview({
         </Link>
 
         {/* Team */}
-        <Link href={`${basePath}/team`}>
-          <Card className="transition-colors hover:bg-muted/50">
+        <Link href={`${basePath}/team`} className="block h-full">
+          <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Team</CardTitle>
               <Users className="text-muted-foreground size-4" />
@@ -116,8 +98,8 @@ export function ProjectOverview({
         </Link>
 
         {/* Milestones */}
-        <Link href={`${basePath}/roadmap`}>
-          <Card className="transition-colors hover:bg-muted/50">
+        <Link href={`${basePath}/roadmap`} className="block h-full">
+          <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Milestones</CardTitle>
               <Flag className="text-muted-foreground size-4" />
@@ -148,8 +130,8 @@ export function ProjectOverview({
         </Link>
 
         {/* Quarterly Goals */}
-        <Link href={`${basePath}/roadmap`}>
-          <Card className="transition-colors hover:bg-muted/50">
+        <Link href={`${basePath}/roadmap`} className="block h-full">
+          <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
                 Quarterly Goals
@@ -182,8 +164,8 @@ export function ProjectOverview({
         </Link>
 
         {/* Links */}
-        <Link href={`${basePath}/links`}>
-          <Card className="transition-colors hover:bg-muted/50">
+        <Link href={`${basePath}/links`} className="block h-full">
+          <Card className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Links</CardTitle>
               <LinkIcon className="text-muted-foreground size-4" />
@@ -192,24 +174,6 @@ export function ProjectOverview({
               <div className="text-2xl font-bold">{linkCount}</div>
               <p className="text-muted-foreground text-xs">
                 {linkCount === 1 ? "link" : "links"}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Arrangements */}
-        <Link href={`${basePath}/arrangements`}>
-          <Card className="transition-colors hover:bg-muted/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Arrangements
-              </CardTitle>
-              <Layers className="text-muted-foreground size-4" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{teamCount}</div>
-              <p className="text-muted-foreground text-xs">
-                {teamCount === 1 ? "team" : "teams"} configured
               </p>
             </CardContent>
           </Card>

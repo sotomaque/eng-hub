@@ -9,6 +9,9 @@ jiti("./env");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@workspace/ui"],
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "utfs.io" },
