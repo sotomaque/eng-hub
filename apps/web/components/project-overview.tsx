@@ -23,15 +23,15 @@ const HEALTH_DOT: Record<HealthStatus, string> = {
 };
 
 const HEALTH_LABEL: Record<HealthStatus, string> = {
-  GREEN: "Green",
-  YELLOW: "Yellow",
-  RED: "Red",
+  GREEN: "Good",
+  YELLOW: "Neutral",
+  RED: "Bad",
 };
 
 interface ProjectOverviewProps {
   projectId: string;
   description: string | null;
-  latestStatus: { status: HealthStatus } | null;
+  latestStatus: { overallStatus: HealthStatus } | null;
   memberCount: number;
   teamCount: number;
   milestones: { status: RoadmapStatus }[];
@@ -82,10 +82,10 @@ export function ProjectOverview({
               {latestStatus ? (
                 <div className="flex items-center gap-2">
                   <span
-                    className={`size-2.5 rounded-full ${HEALTH_DOT[latestStatus.status]}`}
+                    className={`size-2.5 rounded-full ${HEALTH_DOT[latestStatus.overallStatus]}`}
                   />
                   <span className="text-2xl font-bold">
-                    {HEALTH_LABEL[latestStatus.status]}
+                    {HEALTH_LABEL[latestStatus.overallStatus]}
                   </span>
                 </div>
               ) : (

@@ -19,7 +19,7 @@ export const projectRouter = createTRPCRouter({
     return db.project.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        statusUpdates: { orderBy: { createdAt: "desc" }, take: 1 },
+        healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
       },
     });
   }),
@@ -30,7 +30,7 @@ export const projectRouter = createTRPCRouter({
       return db.project.findUnique({
         where: { id: input.id },
         include: {
-          statusUpdates: { orderBy: { createdAt: "desc" } },
+          healthAssessments: { orderBy: { createdAt: "desc" } },
           teams: { orderBy: { name: "asc" } },
           teamMembers: {
             include: {

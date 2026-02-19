@@ -1,6 +1,6 @@
 "use client";
 
-import type { HealthStatus, StatusUpdate } from "@prisma/client";
+import type { HealthStatus } from "@prisma/client";
 import { Badge } from "@workspace/ui/components/badge";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -31,7 +31,7 @@ const HEALTH_CONFIG: Record<
 interface ProjectHeaderProps {
   name: string;
   description: string | null;
-  latestStatus: StatusUpdate | null;
+  latestStatus: { overallStatus: HealthStatus } | null;
 }
 
 export function ProjectHeader({
@@ -39,7 +39,9 @@ export function ProjectHeader({
   description,
   latestStatus,
 }: ProjectHeaderProps) {
-  const config = latestStatus ? HEALTH_CONFIG[latestStatus.status] : null;
+  const config = latestStatus
+    ? HEALTH_CONFIG[latestStatus.overallStatus]
+    : null;
 
   return (
     <div className="space-y-2">

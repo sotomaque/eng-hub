@@ -1,6 +1,6 @@
 "use client";
 
-import type { HealthStatus, Project, StatusUpdate } from "@prisma/client";
+import type { HealthAssessment, HealthStatus, Project } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -49,7 +49,7 @@ const STATUS_DOT_COLORS: Record<HealthStatus, string> = {
 };
 
 interface ProjectsTableProps {
-  projects: (Project & { statusUpdates: StatusUpdate[] })[];
+  projects: (Project & { healthAssessments: HealthAssessment[] })[];
 }
 
 export function ProjectsTable({ projects }: ProjectsTableProps) {
@@ -141,7 +141,7 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
           </TableHeader>
           <TableBody>
             {projects.map((project) => {
-              const latestStatus = project.statusUpdates[0];
+              const latestStatus = project.healthAssessments[0];
               return (
                 <TableRow key={project.id}>
                   <TableCell className="font-medium">
@@ -161,8 +161,8 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
                   <TableCell>
                     {latestStatus ? (
                       <span
-                        className={`inline-block size-2.5 rounded-full ${STATUS_DOT_COLORS[latestStatus.status]}`}
-                        title={latestStatus.status}
+                        className={`inline-block size-2.5 rounded-full ${STATUS_DOT_COLORS[latestStatus.overallStatus]}`}
+                        title={latestStatus.overallStatus}
                       />
                     ) : (
                       <span

@@ -10,7 +10,7 @@ import { projectRouter } from "./routers/project";
 import { projectLinkRouter } from "./routers/project-link";
 import { quarterlyGoalRouter } from "./routers/quarterly-goal";
 import { roleRouter } from "./routers/role";
-import { statusUpdateRouter } from "./routers/status-update";
+import { healthAssessmentRouter } from "./routers/health-assessment";
 import { teamRouter } from "./routers/team";
 import { teamMemberRouter } from "./routers/team-member";
 import { titleRouter } from "./routers/title";
@@ -29,7 +29,7 @@ export const appRouter = createTRPCRouter({
   projectLink: projectLinkRouter,
   quarterlyGoal: quarterlyGoalRouter,
   role: roleRouter,
-  statusUpdate: statusUpdateRouter,
+  healthAssessment: healthAssessmentRouter,
   team: teamRouter,
   teamMember: teamMemberRouter,
   title: titleRouter,

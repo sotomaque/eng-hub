@@ -30,8 +30,8 @@ model Project {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  statusUpdates    StatusUpdate[]
-  teams            Team[]
+  healthAssessments HealthAssessment[]
+  teams             Team[]
   teamMembers      TeamMember[]
   milestones       Milestone[]
   quarterlyGoals   QuarterlyGoal[]
@@ -65,16 +65,35 @@ model Team {
   @@map("teams")
 }
 
-model StatusUpdate {
-  id          String       @id @default(cuid())
-  status      HealthStatus
-  description String?
-  authorId    String       @map("author_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  projectId   String       @map("project_id")
-  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+model HealthAssessment {
+  id        String       @id @default(cuid())
+  projectId String       @map("project_id")
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId  String       @map("author_id")
 
-  @@map("status_updates")
+  overallStatus HealthStatus @map("overall_status")
+  overallNotes  Json?        @map("overall_notes")
+
+  growthStatus             HealthStatus? @map("growth_status")
+  growthNotes              Json?         @map("growth_notes")
+  marginStatus             HealthStatus? @map("margin_status")
+  marginNotes              Json?         @map("margin_notes")
+  longevityStatus          HealthStatus? @map("longevity_status")
+  longevityNotes           Json?         @map("longevity_notes")
+  clientSatisfactionStatus HealthStatus? @map("client_satisfaction_status")
+  clientSatisfactionNotes  Json?         @map("client_satisfaction_notes")
+
+  engineeringVibeStatus HealthStatus? @map("engineering_vibe_status")
+  engineeringVibeNotes  Json?         @map("engineering_vibe_notes")
+  productVibeStatus     HealthStatus? @map("product_vibe_status")
+  productVibeNotes      Json?         @map("product_vibe_notes")
+  designVibeStatus      HealthStatus? @map("design_vibe_status")
+  designVibeNotes       Json?         @map("design_vibe_notes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("health_assessments")
 }
 
 model Title {

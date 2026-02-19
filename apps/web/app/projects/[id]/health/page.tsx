@@ -1,14 +1,12 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { HealthSection } from "@/components/health-section";
-import { StatusUpdateSheet } from "@/components/status-update-sheet";
 import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ addStatus?: string }>;
 }
 
 async function HealthContent({ id }: { id: string }) {
@@ -18,26 +16,29 @@ async function HealthContent({ id }: { id: string }) {
   return (
     <HealthSection
       projectId={id}
-      statusUpdates={project.statusUpdates.map((u) => ({
-        id: u.id,
-        status: u.status,
-        description: u.description,
-        createdAt: u.createdAt.toISOString(),
+      assessments={project.healthAssessments.map((a) => ({
+        id: a.id,
+        authorId: a.authorId,
+        overallStatus: a.overallStatus,
+        growthStatus: a.growthStatus,
+        marginStatus: a.marginStatus,
+        longevityStatus: a.longevityStatus,
+        clientSatisfactionStatus: a.clientSatisfactionStatus,
+        engineeringVibeStatus: a.engineeringVibeStatus,
+        productVibeStatus: a.productVibeStatus,
+        designVibeStatus: a.designVibeStatus,
+        createdAt: a.createdAt.toISOString(),
       }))}
     />
   );
 }
 
-export default async function HealthPage({ params, searchParams }: PageProps) {
+export default async function HealthPage({ params }: PageProps) {
   const { id } = await params;
-  const sp = await searchParams;
 
   return (
-    <>
-      <Suspense fallback={null}>
-        <HealthContent id={id} />
-      </Suspense>
-      {sp.addStatus === "true" && <StatusUpdateSheet projectId={id} />}
-    </>
+    <Suspense fallback={null}>
+      <HealthContent id={id} />
+    </Suspense>
   );
 }
