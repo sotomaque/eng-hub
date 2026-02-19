@@ -42,18 +42,22 @@ const updatePersonSchema = createPersonSchema.extend({
   id: z.string(),
 });
 
-async function detectCycle(personId: string, newManagerId: string): Promise<boolean> {
+async function detectCycle(
+  personId: string,
+  newManagerId: string,
+): Promise<boolean> {
   let currentId: string | null = newManagerId;
   const visited = new Set<string>();
   while (currentId) {
     if (currentId === personId) return true;
     if (visited.has(currentId)) break;
     visited.add(currentId);
-    const row: { managerId: string | null } | null =
-      await db.person.findUnique({
+    const row: { managerId: string | null } | null = await db.person.findUnique(
+      {
         where: { id: currentId },
         select: { managerId: true },
-      });
+      },
+    );
     currentId = row?.managerId ?? null;
   }
   return false;
@@ -127,7 +131,8 @@ export const personRouter = createTRPCRouter({
         if (hasCycle) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Cannot set this manager — it would create a circular reporting chain.",
+            message:
+              "Cannot set this manager — it would create a circular reporting chain.",
           });
         }
       }

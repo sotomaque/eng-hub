@@ -7,13 +7,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { useState } from "react";
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import {
   assignTiers,
   type ContributorStatsData,

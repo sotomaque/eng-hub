@@ -1,13 +1,13 @@
-import { db } from "@workspace/db";
 import { TRPCError } from "@trpc/server";
+import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
   aggregateStats,
   fetchCommitStats,
   fetchPRStats,
   parseGitHubUrl,
 } from "../lib/github";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 export const githubStatsRouter = createTRPCRouter({
   getByProjectId: publicProcedure
@@ -31,6 +31,7 @@ export const githubStatsRouter = createTRPCRouter({
                 lastName: true,
                 callsign: true,
                 githubUsername: true,
+                email: true,
                 imageUrl: true,
               },
             },
@@ -50,15 +51,18 @@ export const githubStatsRouter = createTRPCRouter({
         }
       > = {};
       for (const tm of teamMembers) {
+        const info = {
+          personId: tm.person.id,
+          firstName: tm.person.firstName,
+          lastName: tm.person.lastName,
+          callsign: tm.person.callsign,
+          imageUrl: tm.person.imageUrl,
+        };
         if (tm.person.githubUsername) {
-          memberMap[tm.person.githubUsername] = {
-            personId: tm.person.id,
-            firstName: tm.person.firstName,
-            lastName: tm.person.lastName,
-            callsign: tm.person.callsign,
-            imageUrl: tm.person.imageUrl,
-          };
+          memberMap[tm.person.githubUsername] = info;
         }
+        // Also index by email so GitLab-seeded stats (keyed by email) resolve
+        memberMap[tm.person.email] = info;
       }
 
       return { stats, sync, memberMap };
@@ -132,7 +136,11 @@ export const githubStatsRouter = createTRPCRouter({
         );
 
         // Aggregate stats
-        const { allTime, ytd } = aggregateStats(commitData, prData, teamUsernames);
+        const { allTime, ytd } = aggregateStats(
+          commitData,
+          prData,
+          teamUsernames,
+        );
 
         // Upsert stats in a transaction
         await db.$transaction(async (tx) => {

@@ -22,11 +22,12 @@ import { StatsPieChart } from "./stats-pie-chart";
 
 interface StatsSectionProps {
   projectId: string;
+  hasGithubUrl: boolean;
 }
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-export function StatsSection({ projectId }: StatsSectionProps) {
+export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
   const trpc = useTRPC();
   const autoSyncTriggered = useRef(false);
 
@@ -44,8 +45,9 @@ export function StatsSection({ projectId }: StatsSectionProps) {
     }),
   );
 
-  // Auto-sync if data is stale
+  // Auto-sync if data is stale (GitHub projects only)
   useEffect(() => {
+    if (!hasGithubUrl) return;
     if (autoSyncTriggered.current) return;
     if (statsQuery.isLoading) return;
 
@@ -59,7 +61,13 @@ export function StatsSection({ projectId }: StatsSectionProps) {
       autoSyncTriggered.current = true;
       syncMutation.mutate({ projectId });
     }
-  }, [statsQuery.isLoading, statsQuery.data?.sync, projectId, syncMutation]);
+  }, [
+    hasGithubUrl,
+    statsQuery.isLoading,
+    statsQuery.data?.sync,
+    projectId,
+    syncMutation,
+  ]);
 
   if (statsQuery.isLoading) {
     return <StatsSkeletonUI />;
@@ -83,13 +91,15 @@ export function StatsSection({ projectId }: StatsSectionProps) {
         <div className="text-muted-foreground text-sm">
           {sync?.lastSyncAt ? (
             <>
-              Last synced{" "}
+              Last {hasGithubUrl ? "synced" : "seeded"}{" "}
               {formatDistanceToNow(new Date(sync.lastSyncAt), {
                 addSuffix: true,
               })}
             </>
-          ) : (
+          ) : hasGithubUrl ? (
             "Never synced"
+          ) : (
+            "Not yet seeded"
           )}
           {sync?.syncStatus === "error" && sync.syncError && (
             <span className="ml-2 text-destructive">
@@ -98,25 +108,28 @@ export function StatsSection({ projectId }: StatsSectionProps) {
             </span>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => syncMutation.mutate({ projectId })}
-          disabled={isSyncing}
-        >
-          {isSyncing ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <RefreshCw className="size-4" />
-          )}
-          {isSyncing ? "Syncing..." : "Sync Now"}
-        </Button>
+        {hasGithubUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => syncMutation.mutate({ projectId })}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <RefreshCw className="size-4" />
+            )}
+            {isSyncing ? "Syncing..." : "Sync Now"}
+          </Button>
+        )}
       </div>
 
       {stats.length === 0 && !isSyncing ? (
         <div className="text-muted-foreground py-12 text-center text-sm">
-          No contributor stats yet. Click &quot;Sync Now&quot; to fetch data
-          from GitHub, or ensure team members have GitHub usernames set.
+          {hasGithubUrl
+            ? 'No contributor stats yet. Click "Sync Now" to fetch data from GitHub, or ensure team members have GitHub usernames set.'
+            : "No contributor stats yet. Run the seed script to populate data from git logs."}
         </div>
       ) : (
         <Tabs defaultValue="all_time">

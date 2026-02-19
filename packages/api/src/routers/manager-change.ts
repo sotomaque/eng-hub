@@ -41,8 +41,12 @@ export const managerChangeRouter = createTRPCRouter({
 
       return changes.map((c) => ({
         ...c,
-        oldManager: c.oldManagerId ? managerMap.get(c.oldManagerId) ?? null : null,
-        newManager: c.newManagerId ? managerMap.get(c.newManagerId) ?? null : null,
+        oldManager: c.oldManagerId
+          ? (managerMap.get(c.oldManagerId) ?? null)
+          : null,
+        newManager: c.newManagerId
+          ? (managerMap.get(c.newManagerId) ?? null)
+          : null,
       }));
     }),
 
@@ -84,8 +88,12 @@ export const managerChangeRouter = createTRPCRouter({
 
       return changes.map((c) => ({
         ...c,
-        oldManager: c.oldManagerId ? managerMap.get(c.oldManagerId) ?? null : null,
-        newManager: c.newManagerId ? managerMap.get(c.newManagerId) ?? null : null,
+        oldManager: c.oldManagerId
+          ? (managerMap.get(c.oldManagerId) ?? null)
+          : null,
+        newManager: c.newManagerId
+          ? (managerMap.get(c.newManagerId) ?? null)
+          : null,
       }));
     }),
 });

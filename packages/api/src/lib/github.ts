@@ -3,7 +3,12 @@ export interface ContributorCommitData {
   totalCommits: number;
   additions: number;
   deletions: number;
-  weeklyData: { week: number; additions: number; deletions: number; commits: number }[];
+  weeklyData: {
+    week: number;
+    additions: number;
+    deletions: number;
+    commits: number;
+  }[];
 }
 
 export interface ReviewData {
@@ -36,7 +41,9 @@ export interface ContributorAggregated {
   reviewTrend: "up" | "down" | "stable";
 }
 
-export function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
+export function parseGitHubUrl(
+  url: string,
+): { owner: string; repo: string } | null {
   try {
     const u = new URL(url);
     if (u.hostname !== "github.com") return null;
@@ -84,7 +91,9 @@ export async function fetchCommitStats(
       // Still computing — return empty, will populate on next sync
       return [];
     }
-    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `GitHub API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = (await response.json()) as Array<{
@@ -166,7 +175,9 @@ export async function fetchPRStats(
     });
 
     if (!response.ok) {
-      throw new Error(`GitHub GraphQL error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `GitHub GraphQL error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const json = (await response.json()) as {
@@ -180,7 +191,12 @@ export async function fetchPRStats(
               merged: boolean;
               mergedAt: string | null;
               createdAt: string;
-              reviews: { nodes: Array<{ author: { login: string } | null; createdAt: string }> };
+              reviews: {
+                nodes: Array<{
+                  author: { login: string } | null;
+                  createdAt: string;
+                }>;
+              };
             }>;
           };
         };
@@ -204,7 +220,10 @@ export async function fetchPRStats(
         mergedAt: pr.mergedAt,
         createdAt: pr.createdAt,
         reviews: pr.reviews.nodes
-          .filter((r): r is typeof r & { author: { login: string } } => !!r.author?.login)
+          .filter(
+            (r): r is typeof r & { author: { login: string } } =>
+              !!r.author?.login,
+          )
           .map((r) => ({ login: r.author.login, createdAt: r.createdAt })),
       });
     }
@@ -216,10 +235,7 @@ export async function fetchPRStats(
   return allPRs;
 }
 
-function computeTrend(
-  avg: number,
-  recent: number,
-): "up" | "down" | "stable" {
+function computeTrend(avg: number, recent: number): "up" | "down" | "stable" {
   if (avg === 0) return recent > 0 ? "up" : "stable";
   if (recent >= avg * 1.2) return "up";
   if (recent <= avg * 0.8) return "down";
@@ -242,7 +258,10 @@ export function aggregateStats(
   const allTimeReviewWeeks = new Map<string, Map<number, number>>();
   const ytdReviewWeeks = new Map<string, Map<number, number>>();
 
-  function getOrCreate(map: Map<string, ContributorAggregated>, username: string) {
+  function getOrCreate(
+    map: Map<string, ContributorAggregated>,
+    username: string,
+  ) {
     let entry = map.get(username);
     if (!entry) {
       entry = {
@@ -291,7 +310,10 @@ export function aggregateStats(
       const recentSlice = c.weeklyData.slice(-RECENT_WEEKS);
       const recentTotal = recentSlice.reduce((s, w) => s + w.commits, 0);
       allTime.recentWeeklyCommits = recentTotal / recentSlice.length;
-      allTime.trend = computeTrend(allTime.avgWeeklyCommits, allTime.recentWeeklyCommits);
+      allTime.trend = computeTrend(
+        allTime.avgWeeklyCommits,
+        allTime.recentWeeklyCommits,
+      );
     }
 
     // YTD: filter weekly data to current year
@@ -313,7 +335,10 @@ export function aggregateStats(
       const recentYtdSlice = ytdWeeks.slice(-RECENT_WEEKS);
       const recentYtdTotal = recentYtdSlice.reduce((s, w) => s + w.commits, 0);
       ytdEntry.recentWeeklyCommits = recentYtdTotal / recentYtdSlice.length;
-      ytdEntry.trend = computeTrend(ytdEntry.avgWeeklyCommits, ytdEntry.recentWeeklyCommits);
+      ytdEntry.trend = computeTrend(
+        ytdEntry.avgWeeklyCommits,
+        ytdEntry.recentWeeklyCommits,
+      );
     }
   }
 
@@ -384,7 +409,10 @@ export function aggregateStats(
       const recentTotal = recentSlice.reduce((s, [, count]) => s + count, 0);
       entry.recentWeeklyReviews = recentTotal / recentSlice.length;
 
-      entry.reviewTrend = computeTrend(entry.avgWeeklyReviews, entry.recentWeeklyReviews);
+      entry.reviewTrend = computeTrend(
+        entry.avgWeeklyReviews,
+        entry.recentWeeklyReviews,
+      );
     }
   }
 

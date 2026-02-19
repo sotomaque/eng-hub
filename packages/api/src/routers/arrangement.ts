@@ -31,7 +31,9 @@ export const arrangementRouter = createTRPCRouter({
               assignments: {
                 include: {
                   teamMember: {
-                    include: { person: { include: { role: true, title: true } } },
+                    include: {
+                      person: { include: { role: true, title: true } },
+                    },
                   },
                 },
                 orderBy: { teamMember: { person: { lastName: "asc" } } },

@@ -93,7 +93,9 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
                       <span className="font-medium">{name}</span>
                       {member && (
                         <span className="text-muted-foreground text-xs">
-                          @{s.githubUsername}
+                          {s.githubUsername.includes("@")
+                            ? s.githubUsername
+                            : `@${s.githubUsername}`}
                         </span>
                       )}
                     </div>

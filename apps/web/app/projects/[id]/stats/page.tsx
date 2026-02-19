@@ -15,20 +15,20 @@ async function StatsContent({ id }: { id: string }) {
   const project = await trpc.project.getById({ id });
   if (!project) notFound();
 
-  if (!project.githubUrl) {
+  if (!project.githubUrl && !project.gitlabUrl) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
         <AlertCircle className="text-muted-foreground size-10" />
-        <h2 className="text-lg font-semibold">No GitHub Repository</h2>
+        <h2 className="text-lg font-semibold">No Repository Configured</h2>
         <p className="text-muted-foreground max-w-md text-sm">
-          Add a GitHub URL to this project&apos;s settings to see contributor
-          stats and analytics.
+          Add a GitHub or GitLab URL to this project&apos;s settings to see
+          contributor stats and analytics.
         </p>
       </div>
     );
   }
 
-  return <StatsSection projectId={id} />;
+  return <StatsSection projectId={id} hasGithubUrl={!!project.githubUrl} />;
 }
 
 export default async function StatsPage({ params }: PageProps) {
