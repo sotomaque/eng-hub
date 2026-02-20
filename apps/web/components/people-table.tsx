@@ -21,7 +21,14 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { FolderPlus, Pencil, Plus, Trash2, UserCheck } from "lucide-react";
+import {
+  FolderPlus,
+  Layers,
+  Pencil,
+  Plus,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
@@ -60,6 +67,9 @@ interface PeopleTableProps {
   page: number;
   pageSize: number;
   search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  multiProject?: boolean;
 }
 
 export function PeopleTable({
@@ -69,6 +79,9 @@ export function PeopleTable({
   page,
   pageSize,
   search,
+  sortBy,
+  sortOrder,
+  multiProject,
 }: PeopleTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -83,21 +96,46 @@ export function PeopleTable({
     setSearchInput(search ?? "");
   }
 
+  const buildParams = useCallback(
+    (overrides: {
+      page?: string;
+      pageSize?: string;
+      search?: string;
+      sort?: string;
+      order?: string;
+      multiProject?: boolean;
+    }) => {
+      const params = new URLSearchParams();
+      params.set("page", overrides.page ?? "1");
+      params.set("pageSize", overrides.pageSize ?? String(pageSize));
+      const s = overrides.search ?? searchInput;
+      if (s) params.set("search", s);
+      const sb = overrides.sort ?? sortBy;
+      const so = overrides.order ?? sortOrder;
+      if (sb) params.set("sortBy", sb);
+      if (so) params.set("sortOrder", so);
+      const mp =
+        overrides.multiProject !== undefined
+          ? overrides.multiProject
+          : multiProject;
+      if (mp) params.set("multiProject", "true");
+      return params.toString();
+    },
+    [pageSize, searchInput, sortBy, sortOrder, multiProject],
+  );
+
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchInput(value);
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        const params = new URLSearchParams();
-        params.set("page", "1");
-        params.set("pageSize", String(pageSize));
-        if (value) params.set("search", value);
+        const qs = buildParams({ page: "1", search: value });
         startSearchTransition(() => {
-          router.replace(`/people?${params.toString()}`, { scroll: false });
+          router.replace(`/people?${qs}`, { scroll: false });
         });
       }, 300);
     },
-    [pageSize, router],
+    [buildParams, router],
   );
 
   const meQuery = useQuery(trpc.person.me.queryOptions());
@@ -200,6 +238,7 @@ export function PeopleTable({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Projects" />
         ),
+        enableSorting: false,
         cell: ({ row }) => {
           const memberships = row.original.projectMemberships;
           if (memberships.length === 0) {
@@ -395,11 +434,22 @@ export function PeopleTable({
           pageIndex={page - 1}
           pageSize={pageSize}
           onPageChange={(newPage, newPageSize) => {
-            const params = new URLSearchParams();
-            params.set("page", String(newPage));
-            params.set("pageSize", String(newPageSize));
-            if (searchInput) params.set("search", searchInput);
-            router.push(`/people?${params.toString()}`, { scroll: false });
+            const qs = buildParams({
+              page: String(newPage),
+              pageSize: String(newPageSize),
+            });
+            router.push(`/people?${qs}`, { scroll: false });
+          }}
+          sortBy={sortBy === "department" ? "departments" : sortBy}
+          sortOrder={sortOrder}
+          onSortingChange={(colId, newSortOrder) => {
+            const serverField = colId === "departments" ? "department" : colId;
+            const qs = buildParams({
+              page: "1",
+              sort: serverField,
+              order: newSortOrder,
+            });
+            router.push(`/people?${qs}`, { scroll: false });
           }}
           toolbar={(table) => (
             <DataTableToolbar
@@ -424,6 +474,21 @@ export function PeopleTable({
                     options={departmentOptions}
                   />
                 )}
+              <Button
+                variant={multiProject ? "default" : "outline"}
+                size="sm"
+                className="h-8 border-dashed"
+                onClick={() => {
+                  const qs = buildParams({
+                    page: "1",
+                    multiProject: !multiProject,
+                  });
+                  router.push(`/people?${qs}`, { scroll: false });
+                }}
+              >
+                <Layers className="mr-2 size-4" />
+                Multi-project
+              </Button>
             </DataTableToolbar>
           )}
         />

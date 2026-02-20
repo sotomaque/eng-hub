@@ -18,6 +18,8 @@ interface PageProps {
     page?: string;
     pageSize?: string;
     search?: string;
+    sortBy?: string;
+    sortOrder?: string;
   }>;
 }
 
@@ -25,16 +27,22 @@ async function ProjectsContent({
   page,
   pageSize,
   search,
+  sortBy,
+  sortOrder,
 }: {
   page: number;
   pageSize: number;
   search?: string;
+  sortBy?: "name" | "updatedAt";
+  sortOrder?: "asc" | "desc";
 }) {
   const trpc = await createServerCaller();
   const { items, totalCount } = await trpc.project.list({
     page,
     pageSize,
     search: search || undefined,
+    sortBy,
+    sortOrder,
   });
   return (
     <ProjectsTable
@@ -53,6 +61,8 @@ async function ProjectsContent({
       page={page}
       pageSize={pageSize}
       search={search}
+      sortBy={sortBy}
+      sortOrder={sortOrder}
     />
   );
 }
@@ -70,6 +80,12 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const isCreating = params.create === "true";
   const page = Math.max(1, Number(params.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 10));
+  const validSortBy = ["name", "updatedAt"] as const;
+  const sortBy = validSortBy.find((v) => v === params.sortBy);
+  const sortOrder =
+    params.sortOrder === "asc" || params.sortOrder === "desc"
+      ? params.sortOrder
+      : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,6 +97,8 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             page={page}
             pageSize={pageSize}
             search={params.search}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
           />
         </Suspense>
       </main>

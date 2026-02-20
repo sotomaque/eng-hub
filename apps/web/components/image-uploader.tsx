@@ -18,6 +18,7 @@ interface ImageUploaderProps {
   currentImageUrl?: string | null;
   onUploadComplete: (url: string) => void;
   onRemove: () => void;
+  onUploadingChange?: (uploading: boolean) => void;
   fallbackText?: string;
   shape?: "circle" | "square";
 }
@@ -27,6 +28,7 @@ export function ImageUploader({
   currentImageUrl,
   onUploadComplete,
   onRemove,
+  onUploadingChange,
   fallbackText = "",
   shape = "circle",
 }: ImageUploaderProps) {
@@ -36,10 +38,12 @@ export function ImageUploader({
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
+      onUploadingChange?.(false);
       const url = res[0]?.ufsUrl;
       if (url) onUploadComplete(url);
     },
     onUploadError: (error) => {
+      onUploadingChange?.(false);
       toast.error(`Upload failed: ${error.message}`);
     },
   });
@@ -63,6 +67,7 @@ export function ImageUploader({
     const file = new File([blob], `${crypto.randomUUID()}.jpg`, {
       type: "image/jpeg",
     });
+    onUploadingChange?.(true);
     await startUpload([file]);
   }
 

@@ -14,7 +14,7 @@
     "biome:fix": "biome check --write .",
     "biome:format": "biome format --write .",
     "prepare": "husky",
-    "test": "bun --filter=web test __tests__",
+    "test": "bun run --filter=web test && bun run --filter=@workspace/api test",
     "test:e2e": "bun --filter=web test:e2e",
     "knip": "knip"
   },

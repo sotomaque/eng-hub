@@ -62,6 +62,8 @@ interface ProjectsTableProps {
   page: number;
   pageSize: number;
   search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 function formatRelativeDate(date: Date): string {
@@ -85,6 +87,8 @@ export function ProjectsTable({
   page,
   pageSize,
   search,
+  sortBy,
+  sortOrder,
 }: ProjectsTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -100,21 +104,40 @@ export function ProjectsTable({
     setSearchInput(search ?? "");
   }
 
+  const buildParams = useCallback(
+    (overrides: {
+      page?: string;
+      pageSize?: string;
+      search?: string;
+      sort?: string;
+      order?: string;
+    }) => {
+      const params = new URLSearchParams();
+      params.set("page", overrides.page ?? "1");
+      params.set("pageSize", overrides.pageSize ?? String(pageSize));
+      const s = overrides.search ?? searchInput;
+      if (s) params.set("search", s);
+      const sb = overrides.sort ?? sortBy;
+      const so = overrides.order ?? sortOrder;
+      if (sb) params.set("sortBy", sb);
+      if (so) params.set("sortOrder", so);
+      return params.toString();
+    },
+    [pageSize, searchInput, sortBy, sortOrder],
+  );
+
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchInput(value);
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        const params = new URLSearchParams();
-        params.set("page", "1");
-        params.set("pageSize", String(pageSize));
-        if (value) params.set("search", value);
+        const qs = buildParams({ page: "1", search: value });
         startSearchTransition(() => {
-          router.replace(`/projects?${params.toString()}`, { scroll: false });
+          router.replace(`/projects?${qs}`, { scroll: false });
         });
       }, 300);
     },
-    [pageSize, router],
+    [buildParams, router],
   );
 
   const deleteMutation = useMutation(
@@ -355,11 +378,21 @@ export function ProjectsTable({
           pageIndex={page - 1}
           pageSize={pageSize}
           onPageChange={(newPage, newPageSize) => {
-            const params = new URLSearchParams();
-            params.set("page", String(newPage));
-            params.set("pageSize", String(newPageSize));
-            if (searchInput) params.set("search", searchInput);
-            router.push(`/projects?${params.toString()}`, { scroll: false });
+            const qs = buildParams({
+              page: String(newPage),
+              pageSize: String(newPageSize),
+            });
+            router.push(`/projects?${qs}`, { scroll: false });
+          }}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSortingChange={(newSortBy, newSortOrder) => {
+            const qs = buildParams({
+              page: "1",
+              sort: newSortBy,
+              order: newSortOrder,
+            });
+            router.push(`/projects?${qs}`, { scroll: false });
           }}
           toolbar={(table) => (
             <DataTableToolbar

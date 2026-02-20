@@ -130,6 +130,11 @@ export const projectRouter = createTRPCRouter({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
+        sortBy: z
+          .enum(["name", "updatedAt"])
+          .optional()
+          .default("updatedAt"),
+        sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
       }),
     )
     .query(async ({ input }) => {
@@ -138,10 +143,17 @@ export const projectRouter = createTRPCRouter({
             name: { contains: input.search, mode: "insensitive" as const },
           }
         : undefined;
+
+      const orderByMap: Record<string, object> = {
+        name: { name: input.sortOrder },
+        updatedAt: { updatedAt: input.sortOrder },
+      };
+      const orderBy = orderByMap[input.sortBy] ?? orderByMap.updatedAt;
+
       const [items, totalCount] = await Promise.all([
         db.project.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy,
           include: {
             healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
           },

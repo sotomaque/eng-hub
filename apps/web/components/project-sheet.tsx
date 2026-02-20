@@ -57,6 +57,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(
     project?.imageUrl ?? null,
   );
+  const [isImageUploading, setIsImageUploading] = useState(false);
 
   const createMutation = useMutation(
     trpc.project.create.mutationOptions({
@@ -90,7 +91,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("edit");
     params.delete("create");
-    router.push(`/?${params.toString()}`, { scroll: false });
+    router.push(`/projects?${params.toString()}`, { scroll: false });
     reset();
   }
 
@@ -125,6 +126,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
               currentImageUrl={imageUrl}
               onUploadComplete={(url) => setImageUrl(url)}
               onRemove={() => setImageUrl(null)}
+              onUploadingChange={setIsImageUploading}
               fallbackText={project?.name?.[0] ?? ""}
               shape="square"
             />
@@ -198,6 +200,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
               type="submit"
               disabled={
                 isSubmitting ||
+                isImageUploading ||
                 (!isDirty && imageUrl === (project?.imageUrl ?? null))
               }
             >

@@ -56,6 +56,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(
     member?.person.imageUrl ?? null,
   );
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const emailManuallyEdited = useRef(isEditing);
   const [selectedPersonId, setSelectedPersonId] = useState("");
 
@@ -66,6 +67,10 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
 
+  const departments = departmentsQuery.data ?? [];
+  const teams = teamsQuery.data ?? [];
+  const allTitles = titlesQuery.data ?? [];
+
   const {
     register,
     control,
@@ -73,6 +78,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     reset,
     getValues,
     setValue,
+    watch,
     formState: { errors, isDirty },
   } = useForm<CreateTeamMemberInput>({
     resolver: zodResolver(createTeamMemberSchema),
@@ -90,6 +96,35 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       managerId: member?.person.managerId ?? "",
     },
   });
+
+  const selectedDepartmentId = watch("departmentId");
+  const filteredTitles = selectedDepartmentId
+    ? allTitles.filter(
+        (t) => !t.departmentId || t.departmentId === selectedDepartmentId,
+      )
+    : allTitles;
+
+  function handleTitleChange(titleId: string) {
+    setValue("titleId", titleId, { shouldDirty: true });
+    const title = allTitles.find((t) => t.id === titleId);
+    if (title?.departmentId) {
+      setValue("departmentId", title.departmentId, { shouldDirty: true });
+    }
+  }
+
+  function handleDepartmentChange(departmentId: string) {
+    setValue("departmentId", departmentId, { shouldDirty: true });
+    const currentTitleId = getValues("titleId");
+    if (currentTitleId) {
+      const currentTitle = allTitles.find((t) => t.id === currentTitleId);
+      if (
+        currentTitle?.departmentId &&
+        currentTitle.departmentId !== departmentId
+      ) {
+        setValue("titleId", "", { shouldDirty: true });
+      }
+    }
+  }
 
   function updateDerivedEmail() {
     if (emailManuallyEdited.current) return;
@@ -142,9 +177,6 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     }
   }
 
-  const departments = departmentsQuery.data ?? [];
-  const teams = teamsQuery.data ?? [];
-  const titles = titlesQuery.data ?? [];
   const allPeople = peopleQuery.data ?? [];
   const people = allPeople.filter((p) => !member || p.id !== member.personId);
   const availablePeople = allPeople.filter(
@@ -237,6 +269,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               currentImageUrl={imageUrl}
               onUploadComplete={(url) => setImageUrl(url)}
               onRemove={() => setImageUrl(null)}
+              onUploadingChange={setIsImageUploading}
               fallbackText={
                 member
                   ? `${member.person.firstName[0]}${member.person.lastName[0]}`
@@ -319,14 +352,16 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   <Combobox
                     options={[
                       { value: "__none__", label: "No title" },
-                      ...titles.map((t) => ({
+                      ...filteredTitles.map((t) => ({
                         value: t.id,
                         label: t.name,
                       })),
                     ]}
                     value={field.value || "__none__"}
                     onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
+                      val === "__none__"
+                        ? field.onChange("")
+                        : handleTitleChange(val)
                     }
                     placeholder="Select title…"
                     searchPlaceholder="Search titles…"
@@ -358,12 +393,19 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 control={control}
                 render={({ field }) => (
                   <Combobox
-                    options={departments.map((d) => ({
-                      value: d.id,
-                      label: d.name,
-                    }))}
-                    value={field.value}
-                    onValueChange={field.onChange}
+                    options={[
+                      { value: "__none__", label: "No department" },
+                      ...departments.map((d) => ({
+                        value: d.id,
+                        label: d.name,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      val === "__none__"
+                        ? field.onChange("")
+                        : handleDepartmentChange(val)
+                    }
                     placeholder="Select department…"
                     searchPlaceholder="Search departments…"
                   />
@@ -489,6 +531,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               type="submit"
               disabled={
                 isSubmitting ||
+                isImageUploading ||
                 (!isDirty && imageUrl === (member?.person.imageUrl ?? null))
               }
             >

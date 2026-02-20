@@ -139,43 +139,75 @@ export const personRouter = createTRPCRouter({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
+        multiProject: z.boolean().optional(),
+        sortBy: z
+          .enum(["name", "email", "department"])
+          .optional()
+          .default("name"),
+        sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
       }),
     )
     .query(async ({ input }) => {
-      const where = input.search
-        ? {
-            OR: [
-              {
-                firstName: {
-                  contains: input.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                lastName: {
-                  contains: input.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                email: {
-                  contains: input.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                callsign: {
-                  contains: input.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : undefined;
+      let multiProjectIds: string[] | undefined;
+      if (input.multiProject) {
+        const grouped = await db.teamMember.groupBy({
+          by: ["personId"],
+          _count: { personId: true },
+          having: { personId: { _count: { gt: 1 } } },
+        });
+        multiProjectIds = grouped.map((r) => r.personId);
+      }
+
+      const where: Record<string, unknown> = {};
+      if (input.search) {
+        where.OR = [
+          {
+            firstName: {
+              contains: input.search,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            lastName: {
+              contains: input.search,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            email: {
+              contains: input.search,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            callsign: {
+              contains: input.search,
+              mode: "insensitive" as const,
+            },
+          },
+        ];
+      }
+      if (multiProjectIds) {
+        where.id = { in: multiProjectIds };
+      }
+
+      const orderByMap: Record<string, object[]> = {
+        name: [
+          { lastName: input.sortOrder },
+          { firstName: input.sortOrder },
+        ],
+        email: [{ email: input.sortOrder }],
+        department: [
+          { department: { name: input.sortOrder } },
+          { lastName: "asc" },
+        ],
+      };
+      const orderBy = orderByMap[input.sortBy] ?? orderByMap.name;
+
       const [items, totalCount] = await Promise.all([
         db.person.findMany({
           where,
-          orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+          orderBy,
           include: personListInclude,
           skip: (input.page - 1) * input.pageSize,
           take: input.pageSize,

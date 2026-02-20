@@ -60,6 +60,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(
     person?.imageUrl ?? null,
   );
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const emailManuallyEdited = useRef(isEditing);
 
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
@@ -69,7 +70,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     (p) => !person || p.id !== person.id,
   );
   const departments = departmentsQuery.data ?? [];
-  const titles = titlesQuery.data ?? [];
+  const allTitles = titlesQuery.data ?? [];
 
   const {
     register,
@@ -78,6 +79,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     reset,
     getValues,
     setValue,
+    watch,
     formState: { errors, isDirty },
   } = useForm<CreatePersonInput>({
     resolver: zodResolver(createPersonSchema),
@@ -93,6 +95,36 @@ export function PersonSheet({ person }: PersonSheetProps) {
       titleId: person?.titleId ?? "",
     },
   });
+
+  const selectedDepartmentId = watch("departmentId");
+  const titles = selectedDepartmentId
+    ? allTitles.filter(
+        (t) => !t.departmentId || t.departmentId === selectedDepartmentId,
+      )
+    : allTitles;
+
+  function handleTitleChange(titleId: string) {
+    setValue("titleId", titleId, { shouldDirty: true });
+    const title = allTitles.find((t) => t.id === titleId);
+    if (title?.departmentId) {
+      setValue("departmentId", title.departmentId, { shouldDirty: true });
+    }
+  }
+
+  function handleDepartmentChange(departmentId: string) {
+    setValue("departmentId", departmentId, { shouldDirty: true });
+    // Clear title if it doesn't belong to the new department
+    const currentTitleId = getValues("titleId");
+    if (currentTitleId) {
+      const currentTitle = allTitles.find((t) => t.id === currentTitleId);
+      if (
+        currentTitle?.departmentId &&
+        currentTitle.departmentId !== departmentId
+      ) {
+        setValue("titleId", "", { shouldDirty: true });
+      }
+    }
+  }
 
   function updateDerivedEmail() {
     if (emailManuallyEdited.current) return;
@@ -166,6 +198,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
               currentImageUrl={imageUrl}
               onUploadComplete={(url) => setImageUrl(url)}
               onRemove={() => setImageUrl(null)}
+              onUploadingChange={setIsImageUploading}
               fallbackText={
                 person ? `${person.firstName[0]}${person.lastName[0]}` : ""
               }
@@ -274,7 +307,9 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       ]}
                       value={field.value || "__none__"}
                       onValueChange={(val) =>
-                        field.onChange(val === "__none__" ? "" : val)
+                        val === "__none__"
+                          ? field.onChange("")
+                          : handleTitleChange(val)
                       }
                       placeholder="Select title…"
                       searchPlaceholder="Search titles…"
@@ -313,7 +348,9 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       ]}
                       value={field.value || "__none__"}
                       onValueChange={(val) =>
-                        field.onChange(val === "__none__" ? "" : val)
+                        val === "__none__"
+                          ? field.onChange("")
+                          : handleDepartmentChange(val)
                       }
                       placeholder="Select department…"
                       searchPlaceholder="Search departments…"
@@ -405,6 +442,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
               type="submit"
               disabled={
                 isSubmitting ||
+                isImageUploading ||
                 (!isDirty && imageUrl === (person?.imageUrl ?? null))
               }
             >

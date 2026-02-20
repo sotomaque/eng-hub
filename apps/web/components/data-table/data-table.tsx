@@ -12,6 +12,7 @@ import {
   type SortingState,
   type Table as TanstackTable,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -38,6 +39,17 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number;
   /** Server-side pagination: called when page or pageSize changes */
   onPageChange?: (page: number, pageSize: number) => void;
+  /** Server-side sorting: current sort column id */
+  sortBy?: string;
+  /** Server-side sorting: current sort direction */
+  sortOrder?: "asc" | "desc";
+  /** Server-side sorting: called when sorting changes */
+  onSortingChange?: (
+    sortBy: string | undefined,
+    sortOrder: "asc" | "desc",
+  ) => void;
+  /** Initial column visibility (e.g. { multiProject: false }) */
+  initialColumnVisibility?: VisibilityState;
 }
 
 export function DataTable<TData, TValue>({
@@ -48,11 +60,22 @@ export function DataTable<TData, TValue>({
   pageIndex: serverPageIndex,
   pageSize: serverPageSize,
   onPageChange,
+  sortBy: serverSortBy,
+  sortOrder: serverSortOrder,
+  onSortingChange: onServerSortingChange,
+  initialColumnVisibility,
 }: DataTableProps<TData, TValue>) {
   const isServerPagination = serverPageCount !== undefined;
+  const isServerSorting = onServerSortingChange !== undefined;
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const initialSorting: SortingState = serverSortBy
+    ? [{ id: serverSortBy, desc: serverSortOrder === "desc" }]
+    : [];
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    initialColumnVisibility ?? {},
+  );
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: serverPageIndex ?? 0,
     pageSize: serverPageSize ?? 10,
@@ -73,17 +96,43 @@ export function DataTable<TData, TValue>({
     });
   }
 
+  // Sync server sort state on prop change (browser back/forward)
+  const [prevSortBy, setPrevSortBy] = useState(serverSortBy);
+  const [prevSortOrder, setPrevSortOrder] = useState(serverSortOrder);
+  if (
+    isServerSorting &&
+    (serverSortBy !== prevSortBy || serverSortOrder !== prevSortOrder)
+  ) {
+    setPrevSortBy(serverSortBy);
+    setPrevSortOrder(serverSortOrder);
+    setSorting(
+      serverSortBy
+        ? [{ id: serverSortBy, desc: serverSortOrder === "desc" }]
+        : [],
+    );
+  }
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    ...(isServerSorting
+      ? { manualSorting: true }
+      : { getSortedRowModel: getSortedRowModel() }),
     ...(isServerPagination
       ? { manualPagination: true, pageCount: serverPageCount }
       : { getPaginationRowModel: getPaginationRowModel() }),
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const next = typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(next);
+      if (isServerSorting) {
+        const col = next[0];
+        onServerSortingChange(col?.id, col?.desc ? "desc" : "asc");
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
       const next =
         typeof updater === "function" ? updater(pagination) : updater;
@@ -95,6 +144,7 @@ export function DataTable<TData, TValue>({
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
       pagination,
     },
   });

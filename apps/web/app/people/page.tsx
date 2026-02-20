@@ -24,6 +24,9 @@ interface PageProps {
     page?: string;
     pageSize?: string;
     search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    multiProject?: string;
   }>;
 }
 
@@ -31,14 +34,27 @@ async function PeopleContent({
   page,
   pageSize,
   search,
+  sortBy,
+  sortOrder,
+  multiProject,
 }: {
   page: number;
   pageSize: number;
   search?: string;
+  sortBy?: "name" | "email" | "department";
+  sortOrder?: "asc" | "desc";
+  multiProject?: boolean;
 }) {
   const trpc = await createServerCaller();
   const [{ items, totalCount }, projects] = await Promise.all([
-    trpc.person.list({ page, pageSize, search: search || undefined }),
+    trpc.person.list({
+      page,
+      pageSize,
+      search: search || undefined,
+      sortBy,
+      sortOrder,
+      multiProject,
+    }),
     trpc.project.getAll(),
   ]);
   const projectNames = [...new Set(projects.map((p) => p.name))].sort();
@@ -50,6 +66,9 @@ async function PeopleContent({
       page={page}
       pageSize={pageSize}
       search={search}
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      multiProject={multiProject}
     />
   );
 }
@@ -87,6 +106,13 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const addToProjectPersonId = params.addToProject;
   const page = Math.max(1, Number(params.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 10));
+  const validSortBy = ["name", "email", "department"] as const;
+  const sortBy = validSortBy.find((v) => v === params.sortBy);
+  const sortOrder =
+    params.sortOrder === "asc" || params.sortOrder === "desc"
+      ? params.sortOrder
+      : undefined;
+  const multiProject = params.multiProject === "true" ? true : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,6 +124,9 @@ export default async function PeoplePage({ searchParams }: PageProps) {
             page={page}
             pageSize={pageSize}
             search={params.search}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            multiProject={multiProject}
           />
         </Suspense>
       </main>
