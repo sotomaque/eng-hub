@@ -14,7 +14,25 @@ async function PersonContent({ id }: { id: string }) {
   const person = await getCachedPerson(id);
   if (!person) notFound();
 
-  return <PersonProfile person={person} />;
+  return (
+    <PersonProfile
+      person={{
+        ...person,
+        milestoneAssignments: person.milestoneAssignments.map((a) => ({
+          milestone: {
+            ...a.milestone,
+            targetDate: a.milestone.targetDate?.toISOString() ?? null,
+          },
+        })),
+        quarterlyGoalAssignments: person.quarterlyGoalAssignments.map((a) => ({
+          quarterlyGoal: {
+            ...a.quarterlyGoal,
+            targetDate: a.quarterlyGoal.targetDate?.toISOString() ?? null,
+          },
+        })),
+      }}
+    />
+  );
 }
 
 export default async function PersonPage({ params }: PageProps) {

@@ -1,8 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Milestone } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
 import { Input } from "@workspace/ui/components/input";
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Separator } from "@workspace/ui/components/separator";
 import {
   Sheet,
   SheetContent,
@@ -32,23 +32,70 @@ import { cn } from "@workspace/ui/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { KeyResultsEditor } from "@/components/key-results-editor";
+import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   type CreateMilestoneInput,
   createMilestoneSchema,
 } from "@/lib/validations/milestone";
 
+interface AssignmentPerson {
+  person: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    imageUrl: string | null;
+  };
+}
+
+interface KeyResultData {
+  id: string;
+  title: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string | null;
+  status: string;
+  sortOrder: number;
+}
+
+interface MilestoneData {
+  id: string;
+  title: string;
+  description: string | null;
+  targetDate: string | null;
+  status: string;
+  parentId: string | null;
+  assignments: AssignmentPerson[];
+  keyResults: KeyResultData[];
+}
+
 interface MilestoneSheetProps {
   projectId: string;
-  milestone?: Milestone;
+  milestone?: MilestoneData;
 }
 
 export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!milestone;
+
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    milestone?.assignments.map((a) => a.person.id) ?? [],
+  );
+  const [keyResultsVersion, setKeyResultsVersion] = useState(0);
+
+  const milestonesQuery = useQuery(
+    trpc.milestone.getByProjectId.queryOptions({ projectId }),
+  );
+
+  const parentOptions = (milestonesQuery.data ?? [])
+    .filter((m) => m.id !== milestone?.id)
+    .map((m) => ({ value: m.id, label: m.title }));
+
   const {
     control,
     register,
@@ -61,14 +108,30 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
       projectId,
       title: milestone?.title ?? "",
       description: milestone?.description ?? "",
-      targetDate: milestone?.targetDate ?? undefined,
-      status: milestone?.status ?? "NOT_STARTED",
+      targetDate: milestone?.targetDate
+        ? new Date(milestone.targetDate)
+        : undefined,
+      status:
+        (milestone?.status as CreateMilestoneInput["status"]) ?? "NOT_STARTED",
+      parentId: milestone?.parentId ?? null,
     },
   });
 
+  const setAssigneesMutation = useMutation(
+    trpc.milestone.setAssignees.mutationOptions({
+      onError: (error) => toast.error(error.message),
+    }),
+  );
+
   const createMutation = useMutation(
     trpc.milestone.create.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async (data) => {
+        if (assigneeIds.length > 0) {
+          await setAssigneesMutation.mutateAsync({
+            milestoneId: data.id,
+            personIds: assigneeIds,
+          });
+        }
         toast.success("Milestone created");
         handleClose();
         router.refresh();
@@ -79,7 +142,13 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
 
   const updateMutation = useMutation(
     trpc.milestone.update.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        if (milestone) {
+          await setAssigneesMutation.mutateAsync({
+            milestoneId: milestone.id,
+            personIds: assigneeIds,
+          });
+        }
         toast.success("Milestone updated");
         handleClose();
         router.refresh();
@@ -91,7 +160,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    router.push(`/projects/${projectId}`, { scroll: false });
+    router.push(`/projects/${projectId}/roadmap`, { scroll: false });
     reset();
   }
 
@@ -103,6 +172,13 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
       createMutation.mutate(data);
     }
   }
+
+  const handleKeyResultChanged = useCallback(() => {
+    setKeyResultsVersion((v) => v + 1);
+  }, []);
+
+  const currentKeyResults =
+    keyResultsVersion >= 0 ? (milestone?.keyResults ?? []) : [];
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
@@ -217,6 +293,62 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
                 )}
               />
             </div>
+
+            {parentOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label>Parent Milestone</Label>
+                <Controller
+                  name="parentId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={(val) =>
+                        field.onChange(val === "__none__" ? null : val)
+                      }
+                      value={field.value ?? "__none__"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select parent..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          None (top-level)
+                        </SelectItem>
+                        {parentOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label>Assignees</Label>
+              <PersonMultiSelect
+                value={assigneeIds}
+                onChange={setAssigneeIds}
+              />
+            </div>
+
+            {isEditing && milestone && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Key Results</Label>
+                  <KeyResultsEditor
+                    keyResults={currentKeyResults}
+                    milestoneId={milestone.id}
+                    onChanged={handleKeyResultChanged}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <SheetFooter>
             <Button
@@ -227,8 +359,19 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !isDirty}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (!isDirty &&
+                  assigneeIds.length === (milestone?.assignments.length ?? 0))
+              }
+            >
+              {isSubmitting && (
+                <span className="animate-spin">
+                  <Loader2 />
+                </span>
+              )}
               {isEditing ? "Save Changes" : "Add Milestone"}
             </Button>
           </SheetFooter>

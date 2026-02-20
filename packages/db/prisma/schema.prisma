@@ -136,6 +136,8 @@ model Person {
   meetings              Meeting[]
   comments              PersonComment[] @relation("PersonComments")
   authoredComments      PersonComment[] @relation("PersonCommentAuthors")
+  milestoneAssignments      MilestoneAssignment[]
+  quarterlyGoalAssignments  QuarterlyGoalAssignment[]
 
   @@map("people")
 }
@@ -185,10 +187,16 @@ model Milestone {
   description String?
   targetDate  DateTime?     @map("target_date")
   status      RoadmapStatus @default(NOT_STARTED)
+  sortOrder   Int           @default(0) @map("sort_order")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   projectId   String        @map("project_id")
   project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId    String?       @map("parent_id")
+  parent      Milestone?    @relation("MilestoneHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Milestone[]   @relation("MilestoneHierarchy")
+  assignments MilestoneAssignment[]
+  keyResults  KeyResult[]
 
   @@map("milestones")
 }
@@ -200,10 +208,16 @@ model QuarterlyGoal {
   quarter     String?
   targetDate  DateTime?     @map("target_date")
   status      RoadmapStatus @default(NOT_STARTED)
+  sortOrder   Int           @default(0) @map("sort_order")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   projectId   String        @map("project_id")
   project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId    String?       @map("parent_id")
+  parent      QuarterlyGoal?  @relation("GoalHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    QuarterlyGoal[] @relation("GoalHierarchy")
+  assignments QuarterlyGoalAssignment[]
+  keyResults  KeyResult[]
 
   @@map("quarterly_goals")
 }
@@ -336,4 +350,46 @@ model PersonComment {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("person_comments")
+}
+
+model MilestoneAssignment {
+  id          String    @id @default(cuid())
+  milestoneId String    @map("milestone_id")
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  personId    String    @map("person_id")
+  person      Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@unique([milestoneId, personId])
+  @@map("milestone_assignments")
+}
+
+model QuarterlyGoalAssignment {
+  id              String        @id @default(cuid())
+  quarterlyGoalId String        @map("quarterly_goal_id")
+  quarterlyGoal   QuarterlyGoal @relation(fields: [quarterlyGoalId], references: [id], onDelete: Cascade)
+  personId        String        @map("person_id")
+  person          Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@unique([quarterlyGoalId, personId])
+  @@map("quarterly_goal_assignments")
+}
+
+model KeyResult {
+  id              String         @id @default(cuid())
+  title           String
+  targetValue     Float          @map("target_value")
+  currentValue    Float          @default(0) @map("current_value")
+  unit            String?
+  status          RoadmapStatus  @default(NOT_STARTED)
+  sortOrder       Int            @default(0) @map("sort_order")
+  milestoneId     String?        @map("milestone_id")
+  milestone       Milestone?     @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  quarterlyGoalId String?        @map("quarterly_goal_id")
+  quarterlyGoal   QuarterlyGoal? @relation(fields: [quarterlyGoalId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@map("key_results")
 }

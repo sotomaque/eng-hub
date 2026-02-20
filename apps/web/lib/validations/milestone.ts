@@ -13,6 +13,7 @@ export const createMilestoneSchema = z.object({
   description: z.string().optional(),
   targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum,
+  parentId: z.string().nullable().optional(),
 });
 
 export const updateMilestoneSchema = createMilestoneSchema

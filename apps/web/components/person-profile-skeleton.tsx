@@ -38,6 +38,16 @@ export function PersonProfileSkeleton() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-20" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-2/3" />
           </CardContent>
         </Card>

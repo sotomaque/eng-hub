@@ -1,8 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { QuarterlyGoal } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
 import { Input } from "@workspace/ui/components/input";
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Separator } from "@workspace/ui/components/separator";
 import {
   Sheet,
   SheetContent,
@@ -32,17 +32,51 @@ import { cn } from "@workspace/ui/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { KeyResultsEditor } from "@/components/key-results-editor";
+import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   type CreateQuarterlyGoalInput,
   createQuarterlyGoalSchema,
 } from "@/lib/validations/quarterly-goal";
 
+interface AssignmentPerson {
+  person: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    imageUrl: string | null;
+  };
+}
+
+interface KeyResultData {
+  id: string;
+  title: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string | null;
+  status: string;
+  sortOrder: number;
+}
+
+interface GoalData {
+  id: string;
+  title: string;
+  description: string | null;
+  quarter: string | null;
+  targetDate: string | null;
+  status: string;
+  parentId: string | null;
+  assignments: AssignmentPerson[];
+  keyResults: KeyResultData[];
+}
+
 interface QuarterlyGoalSheetProps {
   projectId: string;
-  goal?: QuarterlyGoal;
+  goal?: GoalData;
 }
 
 export function QuarterlyGoalSheet({
@@ -52,6 +86,20 @@ export function QuarterlyGoalSheet({
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!goal;
+
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    goal?.assignments.map((a) => a.person.id) ?? [],
+  );
+  const [keyResultsVersion, setKeyResultsVersion] = useState(0);
+
+  const goalsQuery = useQuery(
+    trpc.quarterlyGoal.getByProjectId.queryOptions({ projectId }),
+  );
+
+  const parentOptions = (goalsQuery.data ?? [])
+    .filter((g) => g.id !== goal?.id)
+    .map((g) => ({ value: g.id, label: g.title }));
+
   const {
     control,
     register,
@@ -65,14 +113,28 @@ export function QuarterlyGoalSheet({
       title: goal?.title ?? "",
       description: goal?.description ?? "",
       quarter: goal?.quarter ?? "",
-      targetDate: goal?.targetDate ?? undefined,
-      status: goal?.status ?? "NOT_STARTED",
+      targetDate: goal?.targetDate ? new Date(goal.targetDate) : undefined,
+      status:
+        (goal?.status as CreateQuarterlyGoalInput["status"]) ?? "NOT_STARTED",
+      parentId: goal?.parentId ?? null,
     },
   });
 
+  const setAssigneesMutation = useMutation(
+    trpc.quarterlyGoal.setAssignees.mutationOptions({
+      onError: (error) => toast.error(error.message),
+    }),
+  );
+
   const createMutation = useMutation(
     trpc.quarterlyGoal.create.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async (data) => {
+        if (assigneeIds.length > 0) {
+          await setAssigneesMutation.mutateAsync({
+            quarterlyGoalId: data.id,
+            personIds: assigneeIds,
+          });
+        }
         toast.success("Quarterly goal created");
         handleClose();
         router.refresh();
@@ -83,7 +145,13 @@ export function QuarterlyGoalSheet({
 
   const updateMutation = useMutation(
     trpc.quarterlyGoal.update.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        if (goal) {
+          await setAssigneesMutation.mutateAsync({
+            quarterlyGoalId: goal.id,
+            personIds: assigneeIds,
+          });
+        }
         toast.success("Quarterly goal updated");
         handleClose();
         router.refresh();
@@ -95,7 +163,7 @@ export function QuarterlyGoalSheet({
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    router.push(`/projects/${projectId}`, { scroll: false });
+    router.push(`/projects/${projectId}/roadmap`, { scroll: false });
     reset();
   }
 
@@ -107,6 +175,13 @@ export function QuarterlyGoalSheet({
       createMutation.mutate(data);
     }
   }
+
+  const handleKeyResultChanged = useCallback(() => {
+    setKeyResultsVersion((v) => v + 1);
+  }, []);
+
+  const currentKeyResults =
+    keyResultsVersion >= 0 ? (goal?.keyResults ?? []) : [];
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
@@ -248,6 +323,62 @@ export function QuarterlyGoalSheet({
                 )}
               />
             </div>
+
+            {parentOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label>Parent Goal</Label>
+                <Controller
+                  name="parentId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={(val) =>
+                        field.onChange(val === "__none__" ? null : val)
+                      }
+                      value={field.value ?? "__none__"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select parent..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          None (top-level)
+                        </SelectItem>
+                        {parentOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label>Assignees</Label>
+              <PersonMultiSelect
+                value={assigneeIds}
+                onChange={setAssigneeIds}
+              />
+            </div>
+
+            {isEditing && goal && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Key Results</Label>
+                  <KeyResultsEditor
+                    keyResults={currentKeyResults}
+                    quarterlyGoalId={goal.id}
+                    onChanged={handleKeyResultChanged}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <SheetFooter>
             <Button
@@ -258,8 +389,19 @@ export function QuarterlyGoalSheet({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !isDirty}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (!isDirty &&
+                  assigneeIds.length === (goal?.assignments.length ?? 0))
+              }
+            >
+              {isSubmitting && (
+                <span className="animate-spin">
+                  <Loader2 />
+                </span>
+              )}
               {isEditing ? "Save Changes" : "Add Goal"}
             </Button>
           </SheetFooter>

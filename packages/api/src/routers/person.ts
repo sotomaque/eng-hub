@@ -23,6 +23,35 @@ const personInclude = {
       teamMemberships: { include: { team: true } },
     },
   },
+  milestoneAssignments: {
+    include: {
+      milestone: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          targetDate: true,
+          projectId: true,
+          project: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+  quarterlyGoalAssignments: {
+    include: {
+      quarterlyGoal: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          quarter: true,
+          targetDate: true,
+          projectId: true,
+          project: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
 } as const;
 
 const createPersonSchema = z.object({

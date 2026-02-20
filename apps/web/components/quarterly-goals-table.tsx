@@ -1,6 +1,5 @@
 "use client";
 
-import type { QuarterlyGoal, RoadmapStatus } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -14,11 +13,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { CornerDownRight, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -34,9 +38,60 @@ const statusOptions = [
   { label: "At Risk", value: "AT_RISK" },
 ];
 
+interface AssignmentPerson {
+  person: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    imageUrl: string | null;
+  };
+}
+
+interface KeyResultItem {
+  id: string;
+  status: string;
+}
+
+interface GoalChild {
+  id: string;
+  title: string;
+  description: string | null;
+  quarter: string | null;
+  targetDate: string | null;
+  status: string;
+  sortOrder: number;
+  assignments: AssignmentPerson[];
+  keyResults: KeyResultItem[];
+}
+
+export interface QuarterlyGoalItem {
+  id: string;
+  title: string;
+  description: string | null;
+  quarter: string | null;
+  targetDate: string | null;
+  status: string;
+  sortOrder: number;
+  parentId: string | null;
+  assignments: AssignmentPerson[];
+  keyResults: KeyResultItem[];
+  children: GoalChild[];
+}
+
+interface FlatGoal {
+  id: string;
+  title: string;
+  quarter: string | null;
+  targetDate: string | null;
+  status: string;
+  assignments: AssignmentPerson[];
+  keyResults: KeyResultItem[];
+  depth: number;
+}
+
 interface QuarterlyGoalsTableProps {
   projectId: string;
-  goals: QuarterlyGoal[];
+  goals: QuarterlyGoalItem[];
 }
 
 export function QuarterlyGoalsTable({
@@ -45,13 +100,6 @@ export function QuarterlyGoalsTable({
 }: QuarterlyGoalsTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const quarterOptions = useMemo(() => {
-    const quarters = [...new Set(goals.map((g) => g.quarter).filter(Boolean))];
-    quarters.sort();
-    return quarters.map((q) => ({ label: q as string, value: q as string }));
-  }, [goals]);
 
   const deleteMutation = useMutation(
     trpc.quarterlyGoal.delete.mutationOptions({
@@ -60,135 +108,246 @@ export function QuarterlyGoalsTable({
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setDeletingId(null),
     }),
   );
 
-  const columns: ColumnDef<QuarterlyGoal>[] = [
-    {
-      accessorKey: "title",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Title" />
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("title")}</span>
-      ),
-    },
-    {
-      accessorKey: "quarter",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title="Quarter"
-          className="hidden sm:flex"
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="hidden sm:inline">
-          {(row.getValue("quarter") as string) || "\u2014"}
-        </span>
-      ),
-      filterFn: (row, id, value: string[]) => {
-        return value.includes(row.getValue(id));
+  const deletingId = deleteMutation.isPending
+    ? (deleteMutation.variables?.id ?? null)
+    : null;
+
+  const flatData = useMemo(() => {
+    const rows: FlatGoal[] = [];
+    for (const g of goals) {
+      rows.push({
+        id: g.id,
+        title: g.title,
+        quarter: g.quarter,
+        targetDate: g.targetDate,
+        status: g.status,
+        assignments: g.assignments,
+        keyResults: g.keyResults,
+        depth: 0,
+      });
+      for (const child of g.children) {
+        rows.push({
+          id: child.id,
+          title: child.title,
+          quarter: child.quarter,
+          targetDate: child.targetDate,
+          status: child.status,
+          assignments: child.assignments,
+          keyResults: child.keyResults,
+          depth: 1,
+        });
+      }
+    }
+    return rows;
+  }, [goals]);
+
+  const quarterOptions = useMemo(() => {
+    const quarters = [
+      ...new Set(flatData.map((g) => g.quarter).filter(Boolean)),
+    ];
+    quarters.sort();
+    return quarters.map((q) => ({ label: q as string, value: q as string }));
+  }, [flatData]);
+
+  const columns = useMemo<ColumnDef<FlatGoal>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Title" />
+        ),
+        cell: ({ row }) => {
+          const isChild = row.original.depth === 1;
+          return (
+            <div className="flex items-center gap-1.5">
+              {isChild && (
+                <CornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />
+              )}
+              <span
+                className={`font-medium ${isChild ? "text-muted-foreground" : ""}`}
+              >
+                {row.getValue("title")}
+              </span>
+            </div>
+          );
+        },
       },
-    },
-    {
-      accessorKey: "targetDate",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title="Target Date"
-          className="hidden sm:flex"
-        />
-      ),
-      cell: ({ row }) => {
-        const date = row.getValue("targetDate") as Date | null;
-        return (
-          <span className="hidden text-muted-foreground sm:inline">
-            {date ? new Date(date).toLocaleDateString() : "\u2014"}
+      {
+        id: "assignees",
+        header: () => (
+          <span className="hidden text-xs font-medium sm:inline">
+            Assignees
           </span>
-        );
+        ),
+        cell: ({ row }) => {
+          const { assignments } = row.original;
+          if (assignments.length === 0) return null;
+          const visible = assignments.slice(0, 3);
+          const overflow = assignments.length - 3;
+          return (
+            <div className="hidden items-center sm:flex">
+              <div className="flex -space-x-1.5">
+                {visible.map((a) => (
+                  <Avatar
+                    key={a.person.id}
+                    className="size-6 border-2 border-background"
+                  >
+                    <AvatarImage src={a.person.imageUrl ?? undefined} />
+                    <AvatarFallback className="text-[10px]">
+                      {a.person.firstName[0]}
+                      {a.person.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+              </div>
+              {overflow > 0 && (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  +{overflow}
+                </span>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
       },
-    },
-    {
-      accessorKey: "status",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Status" />
-      ),
-      cell: ({ row }) => {
-        const status = row.getValue("status") as RoadmapStatus;
-        return (
-          <Badge className={STATUS_STYLES[status]}>
-            {STATUS_LABELS[status]}
-          </Badge>
-        );
+      {
+        id: "keyResults",
+        header: () => (
+          <span className="hidden text-xs font-medium md:inline">KRs</span>
+        ),
+        cell: ({ row }) => {
+          const krs = row.original.keyResults;
+          if (krs.length === 0) return null;
+          const completed = krs.filter(
+            (kr) => kr.status === "COMPLETED",
+          ).length;
+          return (
+            <span className="hidden text-xs text-muted-foreground md:inline">
+              {completed}/{krs.length}
+            </span>
+          );
+        },
+        enableSorting: false,
       },
-      filterFn: (row, id, value: string[]) => {
-        return value.includes(row.getValue(id));
+      {
+        accessorKey: "quarter",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Quarter"
+            className="hidden sm:flex"
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="hidden sm:inline">
+            {(row.getValue("quarter") as string) || "\u2014"}
+          </span>
+        ),
+        filterFn: (row, id, value: string[]) => {
+          return value.includes(row.getValue(id));
+        },
       },
-    },
-    {
-      id: "actions",
-      header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => {
-        const goal = row.original;
-        return (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                router.push(
-                  `/projects/${projectId}/roadmap?editGoal=${goal.id}`,
-                  {
-                    scroll: false,
-                  },
-                )
+      {
+        accessorKey: "targetDate",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Target Date"
+            className="hidden sm:flex"
+          />
+        ),
+        cell: ({ row }) => {
+          const date = row.getValue("targetDate") as string | null;
+          return (
+            <span className="hidden text-muted-foreground sm:inline">
+              {date ? new Date(date).toLocaleDateString() : "\u2014"}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Status" />
+        ),
+        cell: ({ row }) => {
+          const status = row.getValue("status") as string;
+          return (
+            <Badge
+              className={
+                STATUS_STYLES[status as keyof typeof STATUS_STYLES] ?? ""
               }
             >
-              <Pencil className="size-4" />
-              <span className="sr-only">Edit</span>
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Trash2 className="size-4" />
-                  <span className="sr-only">Delete</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete quarterly goal?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete &quot;{goal.title}&quot;.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      setDeletingId(goal.id);
-                      deleteMutation.mutate({ id: goal.id });
-                    }}
-                    disabled={deletingId === goal.id}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    {deletingId === goal.id ? "Deleting..." : "Delete"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        );
+              {STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status}
+            </Badge>
+          );
+        },
+        filterFn: (row, id, value: string[]) => {
+          return value.includes(row.getValue(id));
+        },
       },
-      enableSorting: false,
-    },
-  ];
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => {
+          const goal = row.original;
+          return (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  router.push(
+                    `/projects/${projectId}/roadmap?editGoal=${goal.id}`,
+                    { scroll: false },
+                  )
+                }
+              >
+                <Pencil className="size-4" />
+                <span className="sr-only">Edit</span>
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Trash2 className="size-4" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete quarterly goal?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete &quot;{goal.title}&quot;.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteMutation.mutate({ id: goal.id })}
+                      disabled={deletingId === goal.id}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      {deletingId === goal.id ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+    ],
+    [router, projectId, deleteMutation, deletingId],
+  );
 
   return (
     <DataTable
       columns={columns}
-      data={goals}
+      data={flatData}
       toolbar={(table) => (
         <DataTableToolbar
           table={table}

@@ -39,8 +39,60 @@ export const projectRouter = createTRPCRouter({
             },
             orderBy: { person: { lastName: "asc" } },
           },
-          milestones: { orderBy: { targetDate: "asc" } },
-          quarterlyGoals: { orderBy: { targetDate: "asc" } },
+          milestones: {
+            where: { parentId: null },
+            orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+            include: {
+              assignments: {
+                include: {
+                  person: {
+                    select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                  },
+                },
+              },
+              keyResults: { orderBy: { sortOrder: "asc" } },
+              children: {
+                orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+                include: {
+                  assignments: {
+                    include: {
+                      person: {
+                        select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                      },
+                    },
+                  },
+                  keyResults: { orderBy: { sortOrder: "asc" } },
+                },
+              },
+            },
+          },
+          quarterlyGoals: {
+            where: { parentId: null },
+            orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+            include: {
+              assignments: {
+                include: {
+                  person: {
+                    select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                  },
+                },
+              },
+              keyResults: { orderBy: { sortOrder: "asc" } },
+              children: {
+                orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+                include: {
+                  assignments: {
+                    include: {
+                      person: {
+                        select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                      },
+                    },
+                  },
+                  keyResults: { orderBy: { sortOrder: "asc" } },
+                },
+              },
+            },
+          },
           links: true,
         },
       });

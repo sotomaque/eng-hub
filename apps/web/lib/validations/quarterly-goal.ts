@@ -14,6 +14,7 @@ export const createQuarterlyGoalSchema = z.object({
   quarter: z.string().optional(),
   targetDate: z.coerce.date().nullable().optional(),
   status: roadmapStatusEnum,
+  parentId: z.string().nullable().optional(),
 });
 
 export const updateQuarterlyGoalSchema = createQuarterlyGoalSchema

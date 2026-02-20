@@ -13,6 +13,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator";
 import { ArrowLeft, Building2, Github } from "lucide-react";
 import Link from "next/link";
+import { PersonRoadmapCard } from "@/components/person-roadmap-card";
 
 interface PersonData {
   id: string;
@@ -45,6 +46,27 @@ interface PersonData {
     projectId: string;
     project: { id: string; name: string };
     teamMemberships: Array<{ team: { name: string } }>;
+  }>;
+  milestoneAssignments: Array<{
+    milestone: {
+      id: string;
+      title: string;
+      status: string;
+      targetDate: string | null;
+      projectId: string;
+      project: { id: string; name: string };
+    };
+  }>;
+  quarterlyGoalAssignments: Array<{
+    quarterlyGoal: {
+      id: string;
+      title: string;
+      status: string;
+      quarter: string | null;
+      targetDate: string | null;
+      projectId: string;
+      project: { id: string; name: string };
+    };
   }>;
 }
 
@@ -136,6 +158,11 @@ export function PersonProfile({ person }: PersonProfileProps) {
             )}
           </CardContent>
         </Card>
+
+        <PersonRoadmapCard
+          milestoneAssignments={person.milestoneAssignments}
+          quarterlyGoalAssignments={person.quarterlyGoalAssignments}
+        />
 
         <Card>
           <CardHeader>
