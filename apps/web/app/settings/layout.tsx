@@ -1,9 +1,4 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@workspace/ui/components/sidebar";
-import { SettingsSidebar } from "@/components/settings-sidebar";
-import { SettingsSiteHeader } from "@/components/settings-site-header";
+import { AppHeader } from "@/components/app-header";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +8,11 @@ interface LayoutProps {
 
 export default function SettingsLayout({ children }: LayoutProps) {
   return (
-    <SidebarProvider>
-      <SettingsSidebar />
-      <SidebarInset>
-        <SettingsSiteHeader />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {children}
+      </main>
+    </div>
   );
 }
