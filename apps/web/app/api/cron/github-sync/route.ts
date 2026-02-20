@@ -1,17 +1,28 @@
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { syncAllGitHubStats, syncGitHubStatsForProject } from "@workspace/api";
+import { z } from "zod";
 
-async function handler(request: Request) {
+const singleProjectSchema = z.object({ projectId: z.string() });
+
+async function handler(request: Request): Promise<Response> {
   const body = await request.json().catch(() => null);
+  const parsed = singleProjectSchema.safeParse(body);
 
   // If a specific projectId is provided, sync only that project
-  if (body && typeof body === "object" && "projectId" in body) {
-    const { projectId } = body as { projectId: string };
-    await syncGitHubStatsForProject(projectId);
-    return new Response(JSON.stringify({ synced: [projectId] }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+  if (parsed.success) {
+    try {
+      await syncGitHubStatsForProject(parsed.data.projectId);
+      return new Response(JSON.stringify({ synced: [parsed.data.projectId] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return new Response(JSON.stringify({ error: message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   }
 
   // Otherwise, sync all projects with a GitHub URL

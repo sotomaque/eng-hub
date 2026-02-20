@@ -60,9 +60,7 @@ async function getManagementChain(personId: string): Promise<string[]> {
   }
 
   if (chain.length > 0) {
-    for (const memberId of chain) {
-      await redis.sadd(key, memberId);
-    }
+    await redis.sadd(key, ...chain);
     await redis.expire(key, ttl.mgmtChain);
   }
 

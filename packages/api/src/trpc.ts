@@ -79,7 +79,7 @@ const strictLimiter = new Ratelimit({
   prefix: "enghub:rl:strict",
 });
 
-export async function enforceStrictRateLimit(userId: string) {
+export async function enforceStrictRateLimit(userId: string): Promise<void> {
   const { success, reset } = await strictLimiter.limit(userId);
   if (!success) {
     throw new TRPCError({
