@@ -1,6 +1,12 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { cached, cacheKeys, invalidateReferenceData, ttl } from "../lib/cache";
+import {
+  cached,
+  cacheKeys,
+  invalidatePeopleCache,
+  invalidateReferenceData,
+  ttl,
+} from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const titleRouter = createTRPCRouter({
@@ -98,7 +104,10 @@ export const titleRouter = createTRPCRouter({
           where: { id: { in: input.mergeIds } },
         });
       });
-      await invalidateReferenceData();
+      await Promise.all([
+        invalidateReferenceData(),
+        invalidatePeopleCache(),
+      ]);
       return result;
     }),
 });

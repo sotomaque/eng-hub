@@ -10,6 +10,8 @@ mock.module("../../lib/cache", () => ({
   invalidateProjectCache: mockInvalidateProjectCache,
   invalidatePeopleCache: mockInvalidatePeopleCache,
   invalidateMgmtChain: mockInvalidateMgmtChain,
+  invalidatePersonMeByIds: mock(() => Promise.resolve()),
+  invalidateReferenceData: mock(() => Promise.resolve()),
 }));
 
 mock.module("../../lib/sync-arrangement", () => ({

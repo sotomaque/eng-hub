@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { invalidateProjectCache } from "../lib/cache";
+import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { detectMilestoneCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -166,6 +166,9 @@ export const milestoneRouter = createTRPCRouter({
           });
         }
       });
-      await invalidateProjectCache(milestone.projectId);
+      await Promise.all([
+        invalidateProjectCache(milestone.projectId),
+        invalidatePeopleCache(),
+      ]);
     }),
 });

@@ -7,6 +7,8 @@ import {
   invalidateMgmtChain,
   invalidatePeopleCache,
   invalidatePersonMeByIds,
+  invalidateProjectCache,
+  invalidateReferenceData,
   ttl,
 } from "../lib/cache";
 import { redis } from "../lib/redis";
@@ -270,7 +272,7 @@ export const personRouter = createTRPCRouter({
       // Get current state
       const current = await db.person.findUniqueOrThrow({
         where: { id },
-        select: { managerId: true, clerkUserId: true },
+        select: { managerId: true, clerkUserId: true, departmentId: true, titleId: true },
       });
 
       // Cycle detection
@@ -317,7 +319,13 @@ export const personRouter = createTRPCRouter({
         await invalidatePersonMeByIds(current.managerId, newManagerId);
       }
 
-      await invalidatePeopleCache(current.clerkUserId);
+      const deptOrTitleChanged =
+        (data.departmentId || null) !== current.departmentId ||
+        (data.titleId || null) !== current.titleId;
+      await Promise.all([
+        invalidatePeopleCache(current.clerkUserId),
+        ...(deptOrTitleChanged ? [invalidateReferenceData()] : []),
+      ]);
       return person;
     }),
 
@@ -367,7 +375,10 @@ export const personRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.projectId);
         return member;
       });
-      await invalidatePeopleCache();
+      await Promise.all([
+        invalidatePeopleCache(),
+        invalidateProjectCache(input.projectId),
+      ]);
       return result;
     }),
 
@@ -412,7 +423,11 @@ export const personRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.toProjectId);
         return member;
       });
-      await invalidatePeopleCache();
+      await Promise.all([
+        invalidatePeopleCache(),
+        invalidateProjectCache(input.fromProjectId),
+        invalidateProjectCache(input.toProjectId),
+      ]);
       return result;
     }),
 
@@ -435,7 +450,10 @@ export const personRouter = createTRPCRouter({
         });
         await syncLiveToActiveArrangement(tx, input.projectId);
       });
-      await invalidatePeopleCache();
+      await Promise.all([
+        invalidatePeopleCache(),
+        invalidateProjectCache(input.projectId),
+      ]);
       return result;
     }),
 

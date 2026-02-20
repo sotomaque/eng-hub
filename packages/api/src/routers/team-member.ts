@@ -6,6 +6,7 @@ import {
   invalidatePeopleCache,
   invalidatePersonMeByIds,
   invalidateProjectCache,
+  invalidateReferenceData,
 } from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
@@ -190,7 +191,7 @@ export const teamMemberRouter = createTRPCRouter({
       const result = await db.$transaction(async (tx) => {
         const existing = await tx.teamMember.findUniqueOrThrow({
           where: { id },
-          include: { person: { select: { managerId: true } } },
+          include: { person: { select: { managerId: true, departmentId: true, titleId: true } } },
         });
 
         // Update Person identity fields + managerId + role/title
@@ -241,12 +242,17 @@ export const teamMemberRouter = createTRPCRouter({
           where: { id },
         });
         await syncLiveToActiveArrangement(tx, member.projectId);
+        const deptOrTitleChanged =
+          data.departmentId !== existing.person.departmentId ||
+          (data.titleId || null) !== existing.person.titleId;
+
         return {
           member,
           personId: existing.personId,
           managerChanged: newManagerId !== existing.person.managerId,
           oldManagerId: existing.person.managerId,
           newManagerId,
+          deptOrTitleChanged,
         };
       });
       after(async () => {
@@ -262,6 +268,7 @@ export const teamMemberRouter = createTRPCRouter({
                 ),
               ]
             : []),
+          ...(result.deptOrTitleChanged ? [invalidateReferenceData()] : []),
         ]);
       });
       return result.member;

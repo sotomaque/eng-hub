@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { invalidateProjectCache } from "../lib/cache";
+import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { detectGoalCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -170,6 +170,9 @@ export const quarterlyGoalRouter = createTRPCRouter({
           });
         }
       });
-      await invalidateProjectCache(goal.projectId);
+      await Promise.all([
+        invalidateProjectCache(goal.projectId),
+        invalidatePeopleCache(),
+      ]);
     }),
 });
