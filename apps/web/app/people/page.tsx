@@ -46,7 +46,7 @@ async function PeopleContent({
   multiProject?: boolean;
 }) {
   const trpc = await createServerCaller();
-  const [{ items, totalCount }, projects] = await Promise.all([
+  const [listResult, projectsResult] = await Promise.allSettled([
     trpc.person.list({
       page,
       pageSize,
@@ -57,6 +57,10 @@ async function PeopleContent({
     }),
     trpc.project.getAll(),
   ]);
+  if (listResult.status === "rejected") throw listResult.reason;
+  const { items, totalCount } = listResult.value;
+  const projects =
+    projectsResult.status === "fulfilled" ? projectsResult.value : [];
   const projectNames = [...new Set(projects.map((p) => p.name))].sort();
   return (
     <PeopleTable

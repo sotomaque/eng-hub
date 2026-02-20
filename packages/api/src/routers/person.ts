@@ -192,10 +192,7 @@ export const personRouter = createTRPCRouter({
       }
 
       const orderByMap: Record<string, object[]> = {
-        name: [
-          { lastName: input.sortOrder },
-          { firstName: input.sortOrder },
-        ],
+        name: [{ lastName: input.sortOrder }, { firstName: input.sortOrder }],
         email: [{ email: input.sortOrder }],
         department: [
           { department: { name: input.sortOrder } },

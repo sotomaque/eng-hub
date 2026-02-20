@@ -39,6 +39,11 @@ mock.module("@upstash/ratelimit", () => ({
   },
 }));
 
+// Mock next/server – after() just runs the callback immediately in tests
+mock.module("next/server", () => ({
+  after: mock((fn: () => Promise<void>) => fn()),
+}));
+
 // Mock Clerk auth to return a userId
 mock.module("@clerk/nextjs/server", () => ({
   auth: () => Promise.resolve({ userId: "test-user-id" }),
@@ -89,7 +94,7 @@ const tx = {
   managerChange: { create: mockManagerChangeCreate },
 };
 
-const mockTransaction = mock(async (fn: (tx: typeof tx) => Promise<unknown>) =>
+const mockTransaction = mock(async (fn: (arg: unknown) => Promise<unknown>) =>
   fn(tx),
 );
 
@@ -122,9 +127,11 @@ describe("teamMember.create", () => {
     mockPersonCreate
       .mockReset()
       .mockResolvedValue({ id: "person-1", managerId: null });
-    mockTeamMemberCreate
-      .mockReset()
-      .mockResolvedValue({ id: "tm-1", personId: "person-1", projectId: "proj-1" });
+    mockTeamMemberCreate.mockReset().mockResolvedValue({
+      id: "tm-1",
+      personId: "person-1",
+      projectId: "proj-1",
+    });
     mockTeamMembershipCreateMany.mockReset();
     mockManagerChangeCreate.mockReset();
   });
@@ -161,8 +168,7 @@ describe("teamMember.create", () => {
   });
 
   test("logs manager change when creating new person with manager", async () => {
-    mockPersonCreate
-      .mockResolvedValue({ id: "person-2", managerId: "mgr-1" });
+    mockPersonCreate.mockResolvedValue({ id: "person-2", managerId: "mgr-1" });
 
     await caller.create({
       projectId: "proj-1",

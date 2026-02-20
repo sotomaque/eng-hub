@@ -130,10 +130,7 @@ export const projectRouter = createTRPCRouter({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
-        sortBy: z
-          .enum(["name", "updatedAt"])
-          .optional()
-          .default("updatedAt"),
+        sortBy: z.enum(["name", "updatedAt"]).optional().default("updatedAt"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
       }),
     )

@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // ── Mocks ────────────────────────────────────────────────────
 
 mock.module("../../lib/cache", () => ({
-  cached: mock(
-    (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn(),
+  cached: mock((_key: string, _ttl: number, fn: () => Promise<unknown>) =>
+    fn(),
   ),
   cacheKeys: { people: "enghub:people:all" },
   ttl: { people: 1800 },
