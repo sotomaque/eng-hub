@@ -6,7 +6,6 @@ import {
   invalidateProjectCache,
   ttl,
 } from "../lib/cache";
-import { redis } from "../lib/redis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectSchema = z.object({
@@ -162,15 +161,9 @@ export const projectRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const key = cacheKeys.project(input.id);
-      const hit = await redis.get<Awaited<ReturnType<typeof fetchProject>>>(key);
-      if (hit !== null && hit !== undefined) return hit;
-
-      const data = await fetchProject(input.id);
-      if (data) {
-        await redis.set(key, data, { ex: ttl.project });
-      }
-      return data;
+      return cached(cacheKeys.project(input.id), ttl.project, () =>
+        fetchProject(input.id),
+      );
     }),
 
   create: protectedProcedure
