@@ -41,10 +41,11 @@ async function PeopleContent({
     trpc.person.list({ page, pageSize, search: search || undefined }),
     trpc.project.getAll(),
   ]);
+  const projectNames = [...new Set(projects.map((p) => p.name))].sort();
   return (
     <PeopleTable
       people={items}
-      projects={projects}
+      projectNames={projectNames}
       totalCount={totalCount}
       page={page}
       pageSize={pageSize}

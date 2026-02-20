@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateProjectCache } from "../lib/cache";
 import { detectGoalCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -22,10 +23,7 @@ const goalInclude = {
   assignments: { include: { person: { select: personSelect } } },
   keyResults: { orderBy: { sortOrder: "asc" as const } },
   children: {
-    orderBy: [
-      { sortOrder: "asc" as const },
-      { targetDate: "asc" as const },
-    ],
+    orderBy: [{ sortOrder: "asc" as const }, { targetDate: "asc" as const }],
     include: {
       assignments: { include: { person: { select: personSelect } } },
       keyResults: { orderBy: { sortOrder: "asc" as const } },
@@ -81,7 +79,7 @@ export const quarterlyGoalRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createQuarterlyGoalSchema)
     .mutation(async ({ input }) => {
-      return db.quarterlyGoal.create({
+      const result = await db.quarterlyGoal.create({
         data: {
           projectId: input.projectId,
           title: input.title,
@@ -93,6 +91,8 @@ export const quarterlyGoalRouter = createTRPCRouter({
           sortOrder: input.sortOrder ?? 0,
         },
       });
+      await invalidateProjectCache(input.projectId);
+      return result;
     }),
 
   update: protectedProcedure
@@ -119,7 +119,7 @@ export const quarterlyGoalRouter = createTRPCRouter({
         }
       }
 
-      return db.quarterlyGoal.update({
+      const result = await db.quarterlyGoal.update({
         where: { id },
         data: {
           title: data.title,
@@ -131,14 +131,18 @@ export const quarterlyGoalRouter = createTRPCRouter({
           sortOrder: data.sortOrder ?? 0,
         },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.quarterlyGoal.delete({
+      const result = await db.quarterlyGoal.delete({
         where: { id: input.id },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   setAssignees: protectedProcedure
@@ -149,7 +153,11 @@ export const quarterlyGoalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const goal = await db.quarterlyGoal.findUniqueOrThrow({
+        where: { id: input.quarterlyGoalId },
+        select: { projectId: true },
+      });
+      await db.$transaction(async (tx) => {
         await tx.quarterlyGoalAssignment.deleteMany({
           where: { quarterlyGoalId: input.quarterlyGoalId },
         });
@@ -162,5 +170,6 @@ export const quarterlyGoalRouter = createTRPCRouter({
           });
         }
       });
+      await invalidateProjectCache(goal.projectId);
     }),
 });

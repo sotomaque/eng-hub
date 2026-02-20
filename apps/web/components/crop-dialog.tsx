@@ -96,7 +96,7 @@ export function CropDialog({
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={isProcessing}>
-            {isProcessing ? "Processing..." : "Crop & Upload"}
+            {isProcessing ? "Processing…" : "Crop & Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>

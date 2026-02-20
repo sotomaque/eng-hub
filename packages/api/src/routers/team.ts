@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateProjectCache } from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -30,7 +31,7 @@ export const teamRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         const team = await tx.team.create({
           data: {
             projectId: input.projectId,
@@ -42,6 +43,8 @@ export const teamRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.projectId);
         return team;
       });
+      await invalidateProjectCache(input.projectId);
+      return result;
     }),
 
   update: protectedProcedure
@@ -54,7 +57,7 @@ export const teamRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         const team = await tx.team.update({
           where: { id: input.id },
           data: {
@@ -66,12 +69,14 @@ export const teamRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, team.projectId);
         return team;
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         const team = await tx.team.findUniqueOrThrow({
           where: { id: input.id },
         });
@@ -79,5 +84,7 @@ export const teamRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, team.projectId);
         return team;
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 });

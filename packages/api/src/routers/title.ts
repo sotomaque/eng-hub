@@ -1,16 +1,24 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { cacheKeys, invalidateReferenceData, ttl } from "../lib/cache";
+import { redis } from "../lib/redis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const titleRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    return db.title.findMany({
+    const cached = await redis.get(cacheKeys.titles);
+    if (cached) return cached;
+
+    const data = await db.title.findMany({
       orderBy: { sortOrder: "asc" },
       include: {
         department: true,
         _count: { select: { people: true } },
       },
     });
+
+    await redis.set(cacheKeys.titles, data, { ex: ttl.referenceData });
+    return data;
   }),
 
   create: protectedProcedure
@@ -24,13 +32,15 @@ export const titleRouter = createTRPCRouter({
       const maxSort = await db.title.aggregate({
         _max: { sortOrder: true },
       });
-      return db.title.create({
+      const result = await db.title.create({
         data: {
           name: input.name,
           departmentId: input.departmentId ?? null,
           sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
         },
       });
+      await invalidateReferenceData();
+      return result;
     }),
 
   update: protectedProcedure
@@ -42,25 +52,29 @@ export const titleRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.title.update({
+      const result = await db.title.update({
         where: { id: input.id },
         data: {
           name: input.name,
           departmentId: input.departmentId || null,
         },
       });
+      await invalidateReferenceData();
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.title.delete({ where: { id: input.id } });
+      const result = await db.title.delete({ where: { id: input.id } });
+      await invalidateReferenceData();
+      return result;
     }),
 
   reorder: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ input }) => {
-      return db.$transaction(
+      const result = await db.$transaction(
         input.ids.map((id, index) =>
           db.title.update({
             where: { id },
@@ -68,6 +82,8 @@ export const titleRouter = createTRPCRouter({
           }),
         ),
       );
+      await invalidateReferenceData();
+      return result;
     }),
 
   merge: protectedProcedure
@@ -78,7 +94,7 @@ export const titleRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         await tx.person.updateMany({
           where: { titleId: { in: input.mergeIds } },
           data: { titleId: input.keepId },
@@ -87,5 +103,7 @@ export const titleRouter = createTRPCRouter({
           where: { id: { in: input.mergeIds } },
         });
       });
+      await invalidateReferenceData();
+      return result;
     }),
 });

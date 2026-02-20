@@ -221,8 +221,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   }))}
                   value={selectedPersonId}
                   onValueChange={handlePersonSelect}
-                  placeholder="Search existing people..."
-                  searchPlaceholder="Search by name..."
+                  placeholder="Search existing people…"
+                  searchPlaceholder="Search by name…"
                   emptyMessage="No people available."
                 />
                 <p className="text-muted-foreground text-xs">
@@ -328,8 +328,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     onValueChange={(val) =>
                       field.onChange(val === "__none__" ? "" : val)
                     }
-                    placeholder="Select title..."
-                    searchPlaceholder="Search titles..."
+                    placeholder="Select title…"
+                    searchPlaceholder="Search titles…"
                   />
                 )}
               />
@@ -364,8 +364,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     }))}
                     value={field.value}
                     onValueChange={field.onChange}
-                    placeholder="Select department..."
-                    searchPlaceholder="Search departments..."
+                    placeholder="Select department…"
+                    searchPlaceholder="Search departments…"
                   />
                 )}
               />
@@ -410,8 +410,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     onValueChange={(val) =>
                       field.onChange(val === "__none__" ? "" : val)
                     }
-                    placeholder="Select manager..."
-                    searchPlaceholder="Search people..."
+                    placeholder="Select manager…"
+                    searchPlaceholder="Search people…"
                   />
                 )}
               />

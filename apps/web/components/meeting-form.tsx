@@ -174,7 +174,7 @@ export function MeetingForm({
           </Button>
           <Button type="submit" disabled={isPending}>
             {isPending
-              ? "Saving..."
+              ? "Saving…"
               : meeting
                 ? "Save Changes"
                 : "Create Meeting"}

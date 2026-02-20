@@ -330,7 +330,7 @@ export function QuarterlyGoalsTable({
                       disabled={deletingId === goal.id}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      {deletingId === goal.id ? "Deleting..." : "Delete"}
+                      {deletingId === goal.id ? "Deleting…" : "Delete"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -352,7 +352,7 @@ export function QuarterlyGoalsTable({
         <DataTableToolbar
           table={table}
           searchColumn="title"
-          searchPlaceholder="Filter goals..."
+          searchPlaceholder="Filter goals…"
         >
           {table.getColumn("quarter") && quarterOptions.length > 0 && (
             <DataTableFacetedFilter

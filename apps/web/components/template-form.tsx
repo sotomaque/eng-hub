@@ -120,7 +120,7 @@ export function TemplateForm({ template, readOnly }: TemplateFormProps) {
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending
-                ? "Saving..."
+                ? "Saving…"
                 : template
                   ? "Save Changes"
                   : "Create Template"}
@@ -151,7 +151,7 @@ export function TemplateForm({ template, readOnly }: TemplateFormProps) {
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="A brief description of this template..."
+            placeholder="A brief description of this template…"
             readOnly={readOnly}
             className="h-9 bg-background"
           />

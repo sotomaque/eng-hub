@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateProjectCache } from "../lib/cache";
 import { detectMilestoneCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -22,10 +23,7 @@ const milestoneInclude = {
   assignments: { include: { person: { select: personSelect } } },
   keyResults: { orderBy: { sortOrder: "asc" as const } },
   children: {
-    orderBy: [
-      { sortOrder: "asc" as const },
-      { targetDate: "asc" as const },
-    ],
+    orderBy: [{ sortOrder: "asc" as const }, { targetDate: "asc" as const }],
     include: {
       assignments: { include: { person: { select: personSelect } } },
       keyResults: { orderBy: { sortOrder: "asc" as const } },
@@ -79,7 +77,7 @@ export const milestoneRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createMilestoneSchema)
     .mutation(async ({ input }) => {
-      return db.milestone.create({
+      const result = await db.milestone.create({
         data: {
           projectId: input.projectId,
           title: input.title,
@@ -90,6 +88,8 @@ export const milestoneRouter = createTRPCRouter({
           sortOrder: input.sortOrder ?? 0,
         },
       });
+      await invalidateProjectCache(input.projectId);
+      return result;
     }),
 
   update: protectedProcedure
@@ -116,7 +116,7 @@ export const milestoneRouter = createTRPCRouter({
         }
       }
 
-      return db.milestone.update({
+      const result = await db.milestone.update({
         where: { id },
         data: {
           title: data.title,
@@ -127,14 +127,18 @@ export const milestoneRouter = createTRPCRouter({
           sortOrder: data.sortOrder ?? 0,
         },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.milestone.delete({
+      const result = await db.milestone.delete({
         where: { id: input.id },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   setAssignees: protectedProcedure
@@ -145,7 +149,11 @@ export const milestoneRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const milestone = await db.milestone.findUniqueOrThrow({
+        where: { id: input.milestoneId },
+        select: { projectId: true },
+      });
+      await db.$transaction(async (tx) => {
         await tx.milestoneAssignment.deleteMany({
           where: { milestoneId: input.milestoneId },
         });
@@ -158,5 +166,6 @@ export const milestoneRouter = createTRPCRouter({
           });
         }
       });
+      await invalidateProjectCache(milestone.projectId);
     }),
 });

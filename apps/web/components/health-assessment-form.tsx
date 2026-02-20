@@ -287,7 +287,7 @@ export function HealthAssessmentForm({
           <Button type="submit" disabled={isSubmitting || !overallStatus}>
             {isSubmitting && <Loader2 className="size-4 animate-spin" />}
             {isSubmitting
-              ? "Saving..."
+              ? "Saving…"
               : isEdit
                 ? "Save Changes"
                 : "Create Assessment"}

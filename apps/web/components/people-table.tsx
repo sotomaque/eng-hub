@@ -55,7 +55,7 @@ type PersonWithMemberships = {
 
 interface PeopleTableProps {
   people: PersonWithMemberships[];
-  projects: Project[];
+  projectNames: string[];
   totalCount: number;
   page: number;
   pageSize: number;
@@ -64,7 +64,7 @@ interface PeopleTableProps {
 
 export function PeopleTable({
   people,
-  projects,
+  projectNames,
   totalCount,
   page,
   pageSize,
@@ -128,11 +128,10 @@ export function PeopleTable({
     ? (deleteMutation.variables?.id ?? null)
     : null;
 
-  const projectOptions = useMemo(() => {
-    const names = [...new Set(projects.map((p) => p.name))];
-    names.sort();
-    return names.map((n) => ({ label: n, value: n }));
-  }, [projects]);
+  const projectOptions = useMemo(
+    () => projectNames.map((n) => ({ label: n, value: n })),
+    [projectNames],
+  );
 
   const departmentOptions = useMemo(() => {
     const deptNames = new Set<string>();
@@ -300,7 +299,7 @@ export function PeopleTable({
                         }
                         disabled={claimMutation.isPending}
                       >
-                        {claimMutation.isPending ? "Linking..." : "Confirm"}
+                        {claimMutation.isPending ? "Linking\u2026" : "Confirm"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -350,7 +349,7 @@ export function PeopleTable({
                       disabled={deletingId === person.id}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      {deletingId === person.id ? "Deleting..." : "Delete"}
+                      {deletingId === person.id ? "Deleting\u2026" : "Delete"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -406,7 +405,7 @@ export function PeopleTable({
             <DataTableToolbar
               table={table}
               searchColumn="name"
-              searchPlaceholder="Search people..."
+              searchPlaceholder="Search people\u2026"
               searchValue={searchInput}
               onSearchChange={handleSearchChange}
             >

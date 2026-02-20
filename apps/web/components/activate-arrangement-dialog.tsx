@@ -80,7 +80,7 @@ export function ActivateArrangementDialog({
             onClick={() => activateMutation.mutate({ id: arrangementId })}
             disabled={activateMutation.isPending}
           >
-            {activateMutation.isPending ? "Activating..." : "Activate"}
+            {activateMutation.isPending ? "Activating…" : "Activate"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

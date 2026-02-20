@@ -1,8 +1,5 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import {
   Command,
@@ -17,6 +14,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
+import { cn } from "@workspace/ui/lib/utils";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 
 interface ComboboxOption {
   value: string;
@@ -58,13 +58,14 @@ function Combobox({
             className,
           )}
         >
-          <span className="truncate">
-            {selectedLabel ?? placeholder}
-          </span>
+          <span className="truncate">{selectedLabel ?? placeholder}</span>
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>

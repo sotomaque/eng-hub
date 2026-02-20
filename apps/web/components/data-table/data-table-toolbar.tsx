@@ -20,7 +20,7 @@ interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
   searchColumn = "title",
-  searchPlaceholder = "Filter...",
+  searchPlaceholder = "Filter…",
   children,
   searchValue,
   onSearchChange,

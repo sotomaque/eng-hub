@@ -285,7 +285,7 @@ export function ProjectsTable({
                       disabled={deletingId === project.id}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      {deletingId === project.id ? "Deleting..." : "Delete"}
+                      {deletingId === project.id ? "Deleting…" : "Delete"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -365,7 +365,7 @@ export function ProjectsTable({
             <DataTableToolbar
               table={table}
               searchColumn="name"
-              searchPlaceholder="Search projects..."
+              searchPlaceholder="Search projects…"
               searchValue={searchInput}
               onSearchChange={handleSearchChange}
             >

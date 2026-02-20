@@ -1,18 +1,23 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { cacheKeys, invalidateGithubStats, ttl } from "../lib/cache";
+import { parseGitHubUrl } from "../lib/github";
+import { syncGitHubStatsForProject } from "../lib/github-sync";
+import { redis } from "../lib/redis";
 import {
-  aggregateStats,
-  fetchCommitStats,
-  fetchPRStats,
-  parseGitHubUrl,
-} from "../lib/github";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+  createTRPCRouter,
+  enforceStrictRateLimit,
+  protectedProcedure,
+} from "../trpc";
 
 export const githubStatsRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
+      const cached = await redis.get(cacheKeys.githubStats(input.projectId));
+      if (cached) return cached;
+
       const [stats, sync, teamMembers] = await Promise.all([
         db.contributorStats.findMany({
           where: { projectId: input.projectId },
@@ -65,7 +70,11 @@ export const githubStatsRouter = createTRPCRouter({
         memberMap[tm.person.email] = info;
       }
 
-      return { stats, sync, memberMap };
+      const result = { stats, sync, memberMap };
+      await redis.set(cacheKeys.githubStats(input.projectId), result, {
+        ex: ttl.githubStats,
+      });
+      return result;
     }),
 
   getSyncStatus: protectedProcedure
@@ -78,7 +87,10 @@ export const githubStatsRouter = createTRPCRouter({
 
   syncNow: protectedProcedure
     .input(z.object({ projectId: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Strict rate limit: 3 syncs per 5 minutes
+      await enforceStrictRateLimit(ctx.userId);
+
       const project = await db.project.findUnique({
         where: { id: input.projectId },
         select: { githubUrl: true },
@@ -99,122 +111,13 @@ export const githubStatsRouter = createTRPCRouter({
         });
       }
 
-      // Mark as syncing
-      await db.gitHubSync.upsert({
-        where: { projectId: input.projectId },
-        create: {
-          projectId: input.projectId,
-          syncStatus: "syncing",
-        },
-        update: {
-          syncStatus: "syncing",
-          syncError: null,
-        },
-      });
-
       try {
-        const token = process.env.GITHUB_TOKEN;
-
-        // Fetch data from GitHub
-        const [commitData, prData] = await Promise.all([
-          fetchCommitStats(parsed.owner, parsed.repo, token),
-          fetchPRStats(parsed.owner, parsed.repo, token),
-        ]);
-
-        // Get team members' GitHub usernames
-        const teamMembers = await db.teamMember.findMany({
-          where: { projectId: input.projectId },
-          include: {
-            person: { select: { githubUsername: true } },
-          },
-        });
-
-        const teamUsernames = new Set(
-          teamMembers
-            .map((tm) => tm.person.githubUsername)
-            .filter((u): u is string => !!u),
-        );
-
-        // Aggregate stats
-        const { allTime, ytd } = aggregateStats(
-          commitData,
-          prData,
-          teamUsernames,
-        );
-
-        // Upsert stats in a transaction
-        await db.$transaction(async (tx) => {
-          // Delete old stats for this project
-          await tx.contributorStats.deleteMany({
-            where: { projectId: input.projectId },
-          });
-
-          // Insert new stats
-          const records = [
-            ...allTime.map((s) => ({
-              projectId: input.projectId,
-              githubUsername: s.githubUsername,
-              period: "all_time" as const,
-              commits: s.commits,
-              prsOpened: s.prsOpened,
-              prsMerged: s.prsMerged,
-              reviewsDone: s.reviewsDone,
-              additions: s.additions,
-              deletions: s.deletions,
-              avgWeeklyCommits: s.avgWeeklyCommits,
-              recentWeeklyCommits: s.recentWeeklyCommits,
-              trend: s.trend,
-              avgWeeklyReviews: s.avgWeeklyReviews,
-              recentWeeklyReviews: s.recentWeeklyReviews,
-              reviewTrend: s.reviewTrend,
-            })),
-            ...ytd.map((s) => ({
-              projectId: input.projectId,
-              githubUsername: s.githubUsername,
-              period: "ytd" as const,
-              commits: s.commits,
-              prsOpened: s.prsOpened,
-              prsMerged: s.prsMerged,
-              reviewsDone: s.reviewsDone,
-              additions: s.additions,
-              deletions: s.deletions,
-              avgWeeklyCommits: s.avgWeeklyCommits,
-              recentWeeklyCommits: s.recentWeeklyCommits,
-              trend: s.trend,
-              avgWeeklyReviews: s.avgWeeklyReviews,
-              recentWeeklyReviews: s.recentWeeklyReviews,
-              reviewTrend: s.reviewTrend,
-            })),
-          ];
-
-          if (records.length > 0) {
-            await tx.contributorStats.createMany({ data: records });
-          }
-        });
-
-        // Mark sync as complete
-        await db.gitHubSync.update({
-          where: { projectId: input.projectId },
-          data: {
-            syncStatus: "idle",
-            lastSyncAt: new Date(),
-            syncError: null,
-          },
-        });
-
+        await syncGitHubStatsForProject(input.projectId);
+        await invalidateGithubStats(input.projectId);
         return { success: true };
       } catch (error) {
-        // Mark sync as errored
         const message =
           error instanceof Error ? error.message : "Unknown error";
-        await db.gitHubSync.update({
-          where: { projectId: input.projectId },
-          data: {
-            syncStatus: "error",
-            syncError: message,
-          },
-        });
-
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `GitHub sync failed: ${message}`,

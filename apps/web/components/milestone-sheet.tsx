@@ -281,7 +281,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status..." />
+                      <SelectValue placeholder="Select status…" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NOT_STARTED">Not Started</SelectItem>
@@ -308,7 +308,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
                       value={field.value ?? "__none__"}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select parent..." />
+                        <SelectValue placeholder="Select parent…" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">

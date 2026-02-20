@@ -143,7 +143,7 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
           <div className="relative">
             <Search className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
             <Input
-              placeholder="Search across all teams..."
+              placeholder="Search across all teams…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-9 pl-9"

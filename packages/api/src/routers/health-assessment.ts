@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const healthStatusEnum = z.enum(["RED", "YELLOW", "GREEN"]);
@@ -57,7 +58,7 @@ export const healthAssessmentRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createHealthAssessmentSchema)
     .mutation(async ({ ctx, input }) => {
-      return db.healthAssessment.create({
+      const result = await db.healthAssessment.create({
         data: {
           projectId: input.projectId,
           authorId: ctx.userId,
@@ -69,10 +70,8 @@ export const healthAssessmentRouter = createTRPCRouter({
           marginNotes: input.marginNotes ?? undefined,
           longevityStatus: input.longevityStatus ?? undefined,
           longevityNotes: input.longevityNotes ?? undefined,
-          clientSatisfactionStatus:
-            input.clientSatisfactionStatus ?? undefined,
-          clientSatisfactionNotes:
-            input.clientSatisfactionNotes ?? undefined,
+          clientSatisfactionStatus: input.clientSatisfactionStatus ?? undefined,
+          clientSatisfactionNotes: input.clientSatisfactionNotes ?? undefined,
           engineeringVibeStatus: input.engineeringVibeStatus ?? undefined,
           engineeringVibeNotes: input.engineeringVibeNotes ?? undefined,
           productVibeStatus: input.productVibeStatus ?? undefined,
@@ -80,8 +79,10 @@ export const healthAssessmentRouter = createTRPCRouter({
           designVibeStatus: input.designVibeStatus ?? undefined,
           designVibeNotes: input.designVibeNotes ?? undefined,
         },
-        select: { id: true },
+        select: { id: true, projectId: true },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   update: protectedProcedure
@@ -95,7 +96,7 @@ export const healthAssessmentRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      return db.healthAssessment.update({
+      const result = await db.healthAssessment.update({
         where: { id: input.id },
         data: {
           overallStatus: input.overallStatus,
@@ -106,10 +107,8 @@ export const healthAssessmentRouter = createTRPCRouter({
           marginNotes: input.marginNotes ?? undefined,
           longevityStatus: input.longevityStatus ?? undefined,
           longevityNotes: input.longevityNotes ?? undefined,
-          clientSatisfactionStatus:
-            input.clientSatisfactionStatus ?? undefined,
-          clientSatisfactionNotes:
-            input.clientSatisfactionNotes ?? undefined,
+          clientSatisfactionStatus: input.clientSatisfactionStatus ?? undefined,
+          clientSatisfactionNotes: input.clientSatisfactionNotes ?? undefined,
           engineeringVibeStatus: input.engineeringVibeStatus ?? undefined,
           engineeringVibeNotes: input.engineeringVibeNotes ?? undefined,
           productVibeStatus: input.productVibeStatus ?? undefined,
@@ -117,8 +116,10 @@ export const healthAssessmentRouter = createTRPCRouter({
           designVibeStatus: input.designVibeStatus ?? undefined,
           designVibeNotes: input.designVibeNotes ?? undefined,
         },
-        select: { id: true },
+        select: { id: true, projectId: true },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   delete: protectedProcedure
@@ -126,13 +127,14 @@ export const healthAssessmentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const existing = await db.healthAssessment.findUnique({
         where: { id: input.id },
-        select: { authorId: true },
+        select: { authorId: true, projectId: true },
       });
       if (!existing || existing.authorId !== ctx.userId) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       await db.healthAssessment.delete({ where: { id: input.id } });
+      await invalidateProjectCache(existing.projectId);
       return { id: input.id };
     }),
 });

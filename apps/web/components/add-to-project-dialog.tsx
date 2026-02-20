@@ -119,7 +119,7 @@ export function AddToProjectDialog({
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select project..." />
+                      <SelectValue placeholder="Select project…" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableProjects.map((project) => (

@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateMgmtChain, invalidateProjectCache } from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -95,7 +96,7 @@ export const teamMemberRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const teamIds = input.teamIds?.filter(Boolean) ?? [];
       const managerId = input.managerId || null;
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         // Find or create the Person by email
         let person = await tx.person.findUnique({
           where: { email: input.email },
@@ -161,6 +162,8 @@ export const teamMemberRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.projectId);
         return member;
       });
+      await invalidateProjectCache(input.projectId);
+      return result;
     }),
 
   update: protectedProcedure
@@ -169,7 +172,7 @@ export const teamMemberRouter = createTRPCRouter({
       const { id, teamIds: rawTeamIds, ...data } = input;
       const teamIds = rawTeamIds?.filter(Boolean) ?? [];
       const newManagerId = data.managerId || null;
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         const existing = await tx.teamMember.findUniqueOrThrow({
           where: { id },
           include: { person: { select: { managerId: true } } },
@@ -223,19 +226,30 @@ export const teamMemberRouter = createTRPCRouter({
           where: { id },
         });
         await syncLiveToActiveArrangement(tx, member.projectId);
-        return member;
+        return {
+          member,
+          personId: existing.personId,
+          managerChanged: newManagerId !== existing.person.managerId,
+        };
       });
+      await invalidateProjectCache(result.member.projectId);
+      if (result.managerChanged) {
+        await invalidateMgmtChain(result.personId);
+      }
+      return result.member;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.$transaction(async (tx) => {
+      const result = await db.$transaction(async (tx) => {
         const member = await tx.teamMember.delete({
           where: { id: input.id },
         });
         await syncLiveToActiveArrangement(tx, member.projectId);
         return member;
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 });

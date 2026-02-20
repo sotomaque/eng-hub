@@ -302,7 +302,7 @@ export function MilestonesTable({
                       disabled={deletingId === milestone.id}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      {deletingId === milestone.id ? "Deleting..." : "Delete"}
+                      {deletingId === milestone.id ? "Deleting…" : "Delete"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -324,7 +324,7 @@ export function MilestonesTable({
         <DataTableToolbar
           table={table}
           searchColumn="title"
-          searchPlaceholder="Filter milestones..."
+          searchPlaceholder="Filter milestones…"
         >
           {table.getColumn("status") && (
             <DataTableFacetedFilter

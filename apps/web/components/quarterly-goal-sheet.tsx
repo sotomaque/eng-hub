@@ -239,7 +239,7 @@ export function QuarterlyGoalSheet({
                     value={field.value || "__none__"}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select quarter..." />
+                      <SelectValue placeholder="Select quarter…" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">No quarter</SelectItem>
@@ -311,7 +311,7 @@ export function QuarterlyGoalSheet({
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status..." />
+                      <SelectValue placeholder="Select status…" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NOT_STARTED">Not Started</SelectItem>
@@ -338,7 +338,7 @@ export function QuarterlyGoalSheet({
                       value={field.value ?? "__none__"}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select parent..." />
+                        <SelectValue placeholder="Select parent…" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">

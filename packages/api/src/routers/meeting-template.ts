@@ -1,11 +1,16 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { cacheKeys, invalidateMeetingTemplates, ttl } from "../lib/cache";
+import { redis } from "../lib/redis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const meetingTemplateRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    return db.meetingTemplate.findMany({
+    const cached = await redis.get(cacheKeys.meetingTemplates);
+    if (cached) return cached;
+
+    const data = await db.meetingTemplate.findMany({
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -15,6 +20,11 @@ export const meetingTemplateRouter = createTRPCRouter({
         updatedAt: true,
       },
     });
+
+    await redis.set(cacheKeys.meetingTemplates, data, {
+      ex: ttl.referenceData,
+    });
+    return data;
   }),
 
   getById: protectedProcedure
@@ -24,7 +34,10 @@ export const meetingTemplateRouter = createTRPCRouter({
         where: { id: input.id },
       });
       if (!template) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Template not found." });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Template not found.",
+        });
       }
       return {
         id: template.id,
@@ -44,7 +57,7 @@ export const meetingTemplateRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return db.meetingTemplate.create({
+      const result = await db.meetingTemplate.create({
         data: {
           name: input.name,
           description: input.description,
@@ -53,6 +66,8 @@ export const meetingTemplateRouter = createTRPCRouter({
         },
         select: { id: true },
       });
+      await invalidateMeetingTemplates();
+      return result;
     }),
 
   update: protectedProcedure
@@ -73,7 +88,7 @@ export const meetingTemplateRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      return db.meetingTemplate.update({
+      const result = await db.meetingTemplate.update({
         where: { id: input.id },
         data: {
           name: input.name,
@@ -82,6 +97,8 @@ export const meetingTemplateRouter = createTRPCRouter({
         },
         select: { id: true },
       });
+      await invalidateMeetingTemplates();
+      return result;
     }),
 
   delete: protectedProcedure
@@ -96,6 +113,7 @@ export const meetingTemplateRouter = createTRPCRouter({
       }
 
       await db.meetingTemplate.delete({ where: { id: input.id } });
+      await invalidateMeetingTemplates();
       return { id: input.id };
     }),
 });

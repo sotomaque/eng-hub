@@ -34,7 +34,7 @@ interface PersonMultiSelectProps {
 export function PersonMultiSelect({
   value,
   onChange,
-  placeholder = "Assign people...",
+  placeholder = "Assign people…",
 }: PersonMultiSelectProps) {
   const [open, setOpen] = useState(false);
   const trpc = useTRPC();
@@ -86,7 +86,7 @@ export function PersonMultiSelect({
           align="start"
         >
           <Command>
-            <CommandInput placeholder="Search people..." />
+            <CommandInput placeholder="Search people…" />
             <CommandList>
               <CommandEmpty>No people found.</CommandEmpty>
               <CommandGroup>

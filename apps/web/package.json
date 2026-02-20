@@ -50,6 +50,7 @@
     "@trpc/server": "^11.1.0",
     "@trpc/tanstack-react-query": "^11.1.0",
     "@uploadthing/react": "^7.3.3",
+    "@upstash/qstash": "^2.9.0",
     "@workspace/api": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",

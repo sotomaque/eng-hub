@@ -132,7 +132,7 @@ export function TiptapEditor({
         dropcursor: { color: "hsl(var(--primary))", width: 2 },
       }),
       Placeholder.configure({
-        placeholder: "Start writing...",
+        placeholder: "Start writing…",
       }),
       Link.configure({
         HTMLAttributes: {

@@ -122,7 +122,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
               <Input
                 id="url"
                 type="url"
-                placeholder="https://figma.com/..."
+                placeholder="https://figma.com/…"
                 {...register("url")}
                 aria-invalid={!!errors.url}
               />

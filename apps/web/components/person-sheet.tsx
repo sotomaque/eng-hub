@@ -250,8 +250,8 @@ export function PersonSheet({ person }: PersonSheetProps) {
                     onValueChange={(val) =>
                       field.onChange(val === "__none__" ? "" : val)
                     }
-                    placeholder="Select manager..."
-                    searchPlaceholder="Search people..."
+                    placeholder="Select manager…"
+                    searchPlaceholder="Search people…"
                   />
                 )}
               />
@@ -276,8 +276,8 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       onValueChange={(val) =>
                         field.onChange(val === "__none__" ? "" : val)
                       }
-                      placeholder="Select title..."
-                      searchPlaceholder="Search titles..."
+                      placeholder="Select title…"
+                      searchPlaceholder="Search titles…"
                     />
                   )}
                 />
@@ -315,8 +315,8 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       onValueChange={(val) =>
                         field.onChange(val === "__none__" ? "" : val)
                       }
-                      placeholder="Select department..."
-                      searchPlaceholder="Search departments..."
+                      placeholder="Select department…"
+                      searchPlaceholder="Search departments…"
                     />
                   )}
                 />

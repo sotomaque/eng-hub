@@ -134,7 +134,7 @@ export function TableTeamView({
                     onValueChange={(teamId) => handleAssign(member.id, teamId)}
                   >
                     <SelectTrigger className="h-8 w-36 text-xs">
-                      <SelectValue placeholder="Assign to..." />
+                      <SelectValue placeholder="Assign to…" />
                     </SelectTrigger>
                     <SelectContent>
                       {teams.map((team) => (

@@ -277,7 +277,7 @@ export function TeamMembersTable({
                     disabled={deletingId === member.id}
                     className="bg-destructive text-white hover:bg-destructive/90"
                   >
-                    {deletingId === member.id ? "Removing..." : "Remove"}
+                    {deletingId === member.id ? "Removing…" : "Remove"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -297,7 +297,7 @@ export function TeamMembersTable({
         <DataTableToolbar
           table={table}
           searchColumn="name"
-          searchPlaceholder="Filter members..."
+          searchPlaceholder="Filter members…"
         >
           {table.getColumn("titleName") && titleOptions.length > 0 && (
             <DataTableFacetedFilter

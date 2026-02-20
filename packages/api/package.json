@@ -11,6 +11,9 @@
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
     "@trpc/server": "^11.1.0",
+    "@upstash/qstash": "^2.9.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.2",
     "@workspace/db": "workspace:*",
     "zod": "^3.24.0"
   },

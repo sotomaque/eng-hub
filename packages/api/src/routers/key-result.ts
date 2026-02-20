@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const roadmapStatusEnum = z.enum([
@@ -20,13 +21,9 @@ const createKeyResultSchema = z
     milestoneId: z.string().optional(),
     quarterlyGoalId: z.string().optional(),
   })
-  .refine(
-    (d) => (d.milestoneId ? 1 : 0) + (d.quarterlyGoalId ? 1 : 0) === 1,
-    {
-      message:
-        "Exactly one of milestoneId or quarterlyGoalId must be provided",
-    },
-  );
+  .refine((d) => (d.milestoneId ? 1 : 0) + (d.quarterlyGoalId ? 1 : 0) === 1, {
+    message: "Exactly one of milestoneId or quarterlyGoalId must be provided",
+  });
 
 const updateKeyResultSchema = z.object({
   id: z.string(),
@@ -36,6 +33,24 @@ const updateKeyResultSchema = z.object({
   unit: z.string().optional(),
   status: roadmapStatusEnum,
 });
+
+async function getProjectIdForKeyResult(input: {
+  milestoneId?: string;
+  quarterlyGoalId?: string;
+}): Promise<string> {
+  if (input.milestoneId) {
+    const m = await db.milestone.findUniqueOrThrow({
+      where: { id: input.milestoneId },
+      select: { projectId: true },
+    });
+    return m.projectId;
+  }
+  const g = await db.quarterlyGoal.findUniqueOrThrow({
+    where: { id: input.quarterlyGoalId },
+    select: { projectId: true },
+  });
+  return g.projectId;
+}
 
 export const keyResultRouter = createTRPCRouter({
   create: protectedProcedure
@@ -58,7 +73,7 @@ export const keyResultRouter = createTRPCRouter({
         _max: { sortOrder: true },
       });
 
-      return db.keyResult.create({
+      const result = await db.keyResult.create({
         data: {
           title: input.title,
           targetValue: input.targetValue,
@@ -70,18 +85,47 @@ export const keyResultRouter = createTRPCRouter({
           quarterlyGoalId: input.quarterlyGoalId,
         },
       });
+
+      const projectId = await getProjectIdForKeyResult(input);
+      await invalidateProjectCache(projectId);
+      return result;
     }),
 
   update: protectedProcedure
     .input(updateKeyResultSchema)
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      return db.keyResult.update({ where: { id }, data });
+      const result = await db.keyResult.update({
+        where: { id },
+        data,
+        include: {
+          milestone: { select: { projectId: true } },
+          quarterlyGoal: { select: { projectId: true } },
+        },
+      });
+      const projectId =
+        result.milestone?.projectId ?? result.quarterlyGoal?.projectId;
+      if (projectId) {
+        await invalidateProjectCache(projectId);
+      }
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.keyResult.delete({ where: { id: input.id } });
+      const result = await db.keyResult.delete({
+        where: { id: input.id },
+        include: {
+          milestone: { select: { projectId: true } },
+          quarterlyGoal: { select: { projectId: true } },
+        },
+      });
+      const projectId =
+        result.milestone?.projectId ?? result.quarterlyGoal?.projectId;
+      if (projectId) {
+        await invalidateProjectCache(projectId);
+      }
+      return result;
     }),
 });

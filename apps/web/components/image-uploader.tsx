@@ -104,7 +104,7 @@ export function ImageUploader({
             ) : (
               <Upload className="size-4" />
             )}
-            {isUploading ? "Uploading..." : "Upload"}
+            {isUploading ? "Uploading…" : "Upload"}
           </Button>
           {currentImageUrl && (
             <Button

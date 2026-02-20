@@ -1,5 +1,7 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { cacheKeys, invalidateProjectCache, ttl } from "../lib/cache";
+import { redis } from "../lib/redis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectSchema = z.object({
@@ -16,12 +18,18 @@ const updateProjectSchema = createProjectSchema.extend({
 
 export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    return db.project.findMany({
+    const cached = await redis.get(cacheKeys.projectList);
+    if (cached) return cached;
+
+    const data = await db.project.findMany({
       orderBy: { createdAt: "desc" },
       include: {
         healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
       },
     });
+
+    await redis.set(cacheKeys.projectList, data, { ex: ttl.projectList });
+    return data;
   }),
 
   list: protectedProcedure
@@ -34,7 +42,9 @@ export const projectRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const where = input.search
-        ? { name: { contains: input.search, mode: "insensitive" as const } }
+        ? {
+            name: { contains: input.search, mode: "insensitive" as const },
+          }
         : undefined;
       const [items, totalCount] = await Promise.all([
         db.project.findMany({
@@ -54,14 +64,22 @@ export const projectRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      return db.project.findUnique({
+      const cached = await redis.get(cacheKeys.project(input.id));
+      if (cached) return cached;
+
+      const data = await db.project.findUnique({
         where: { id: input.id },
         include: {
           healthAssessments: { orderBy: { createdAt: "desc" } },
           teams: { orderBy: { name: "asc" } },
           teamMembers: {
             include: {
-              person: { include: { department: true, title: { include: { department: true } } } },
+              person: {
+                include: {
+                  department: true,
+                  title: { include: { department: true } },
+                },
+              },
               teamMemberships: { include: { team: true } },
             },
             orderBy: { person: { lastName: "asc" } },
@@ -73,7 +91,12 @@ export const projectRouter = createTRPCRouter({
               assignments: {
                 include: {
                   person: {
-                    select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      imageUrl: true,
+                    },
                   },
                 },
               },
@@ -84,7 +107,12 @@ export const projectRouter = createTRPCRouter({
                   assignments: {
                     include: {
                       person: {
-                        select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                        select: {
+                          id: true,
+                          firstName: true,
+                          lastName: true,
+                          imageUrl: true,
+                        },
                       },
                     },
                   },
@@ -100,7 +128,12 @@ export const projectRouter = createTRPCRouter({
               assignments: {
                 include: {
                   person: {
-                    select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      imageUrl: true,
+                    },
                   },
                 },
               },
@@ -111,7 +144,12 @@ export const projectRouter = createTRPCRouter({
                   assignments: {
                     include: {
                       person: {
-                        select: { id: true, firstName: true, lastName: true, imageUrl: true },
+                        select: {
+                          id: true,
+                          firstName: true,
+                          lastName: true,
+                          imageUrl: true,
+                        },
                       },
                     },
                   },
@@ -123,12 +161,19 @@ export const projectRouter = createTRPCRouter({
           links: true,
         },
       });
+
+      if (data) {
+        await redis.set(cacheKeys.project(input.id), data, {
+          ex: ttl.project,
+        });
+      }
+      return data;
     }),
 
   create: protectedProcedure
     .input(createProjectSchema)
     .mutation(async ({ input }) => {
-      return db.project.create({
+      const result = await db.project.create({
         data: {
           name: input.name,
           description: input.description,
@@ -137,13 +182,15 @@ export const projectRouter = createTRPCRouter({
           imageUrl: input.imageUrl || null,
         },
       });
+      await redis.del(cacheKeys.projectList);
+      return result;
     }),
 
   update: protectedProcedure
     .input(updateProjectSchema)
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      return db.project.update({
+      const result = await db.project.update({
         where: { id },
         data: {
           name: data.name,
@@ -153,13 +200,17 @@ export const projectRouter = createTRPCRouter({
           imageUrl: data.imageUrl || null,
         },
       });
+      await invalidateProjectCache(id);
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.project.delete({
+      const result = await db.project.delete({
         where: { id: input.id },
       });
+      await invalidateProjectCache(input.id);
+      return result;
     }),
 });

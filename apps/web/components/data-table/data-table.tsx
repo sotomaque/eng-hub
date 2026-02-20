@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
@@ -58,14 +58,20 @@ export function DataTable<TData, TValue>({
     pageSize: serverPageSize ?? 10,
   });
 
-  useEffect(() => {
-    if (isServerPagination) {
-      setPagination({
-        pageIndex: serverPageIndex ?? 0,
-        pageSize: serverPageSize ?? 10,
-      });
-    }
-  }, [isServerPagination, serverPageIndex, serverPageSize]);
+  // Render-time prop sync (no useEffect) — handles browser back/forward
+  const [prevPageIndex, setPrevPageIndex] = useState(serverPageIndex);
+  const [prevPageSize, setPrevPageSize] = useState(serverPageSize);
+  if (
+    isServerPagination &&
+    (serverPageIndex !== prevPageIndex || serverPageSize !== prevPageSize)
+  ) {
+    setPrevPageIndex(serverPageIndex);
+    setPrevPageSize(serverPageSize);
+    setPagination({
+      pageIndex: serverPageIndex ?? 0,
+      pageSize: serverPageSize ?? 10,
+    });
+  }
 
   const table = useReactTable({
     data,

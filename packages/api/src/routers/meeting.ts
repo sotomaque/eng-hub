@@ -31,7 +31,13 @@ function serializeMeeting(m: {
   templateId: string | null;
   createdAt: Date;
   updatedAt: Date;
-  person: { id: string; firstName: string; lastName: string; callsign: string | null; imageUrl: string | null };
+  person: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    callsign: string | null;
+    imageUrl: string | null;
+  };
   template: { id: string; name: string } | null;
 }) {
   return {

@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectLinkSchema = z.object({
@@ -34,33 +35,39 @@ export const projectLinkRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createProjectLinkSchema)
     .mutation(async ({ input }) => {
-      return db.projectLink.create({
+      const result = await db.projectLink.create({
         data: {
           projectId: input.projectId,
           label: input.label,
           url: input.url,
         },
       });
+      await invalidateProjectCache(input.projectId);
+      return result;
     }),
 
   update: protectedProcedure
     .input(updateProjectLinkSchema)
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      return db.projectLink.update({
+      const result = await db.projectLink.update({
         where: { id },
         data: {
           label: data.label,
           url: data.url,
         },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.projectLink.delete({
+      const result = await db.projectLink.delete({
         where: { id: input.id },
       });
+      await invalidateProjectCache(result.projectId);
+      return result;
     }),
 });

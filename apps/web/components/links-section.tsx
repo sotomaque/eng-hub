@@ -169,7 +169,7 @@ export function LinksSection({
                             disabled={deletingId === link.id}
                             className="bg-destructive text-white hover:bg-destructive/90"
                           >
-                            {deletingId === link.id ? "Deleting..." : "Delete"}
+                            {deletingId === link.id ? "Deleting…" : "Delete"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

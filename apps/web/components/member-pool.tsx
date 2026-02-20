@@ -72,7 +72,7 @@ export function MemberPool({ members }: MemberPoolProps) {
       </div>
 
       <Input
-        placeholder="Search members..."
+        placeholder="Search members…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="mb-3 h-8 text-sm"

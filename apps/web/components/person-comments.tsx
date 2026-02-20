@@ -118,7 +118,7 @@ export function PersonComments({ personId }: PersonCommentsProps) {
               <Textarea
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                placeholder="Add a note..."
+                placeholder="Add a note…"
                 className="min-h-20 resize-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

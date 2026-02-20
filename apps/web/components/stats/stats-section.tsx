@@ -131,7 +131,7 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
             ) : (
               <RefreshCw className="size-4" />
             )}
-            {isSyncing ? "Syncing..." : "Sync Now"}
+            {isSyncing ? "Syncing…" : "Sync Now"}
           </Button>
         )}
       </div>

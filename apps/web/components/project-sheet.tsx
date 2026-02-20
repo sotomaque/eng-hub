@@ -148,7 +148,7 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="A brief description of the project..."
+                placeholder="A brief description of the project…"
                 {...register("description")}
               />
             </div>
