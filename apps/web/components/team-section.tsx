@@ -14,8 +14,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
-import { Pencil, Plus, Search, Settings, Users } from "lucide-react";
-import Link from "next/link";
+import { Pencil, Plus, Search, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
