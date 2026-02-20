@@ -1,24 +1,19 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { cacheKeys, invalidateReferenceData, ttl } from "../lib/cache";
-import { redis } from "../lib/redis";
+import { cached, cacheKeys, invalidateReferenceData, ttl } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const departmentRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    const cached = await redis.get(cacheKeys.departments);
-    if (cached) return cached;
-
-    const data = await db.department.findMany({
-      orderBy: { name: "asc" },
-      include: {
-        titles: { orderBy: { sortOrder: "asc" } },
-        _count: { select: { people: true } },
-      },
-    });
-
-    await redis.set(cacheKeys.departments, data, { ex: ttl.referenceData });
-    return data;
+    return cached(cacheKeys.departments, ttl.referenceData, () =>
+      db.department.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          titles: { orderBy: { sortOrder: "asc" } },
+          _count: { select: { people: true } },
+        },
+      }),
+    );
   }),
 
   create: protectedProcedure

@@ -1,6 +1,11 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { cacheKeys, invalidateProjectCache, ttl } from "../lib/cache";
+import {
+  cached,
+  cacheKeys,
+  invalidateProjectCache,
+  ttl,
+} from "../lib/cache";
 import { redis } from "../lib/redis";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -18,18 +23,14 @@ const updateProjectSchema = createProjectSchema.extend({
 
 export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    const cached = await redis.get(cacheKeys.projectList);
-    if (cached) return cached;
-
-    const data = await db.project.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
-      },
-    });
-
-    await redis.set(cacheKeys.projectList, data, { ex: ttl.projectList });
-    return data;
+    return cached(cacheKeys.projectList, ttl.projectList, () =>
+      db.project.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
+        },
+      }),
+    );
   }),
 
   list: protectedProcedure

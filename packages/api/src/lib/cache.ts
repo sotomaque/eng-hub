@@ -29,6 +29,20 @@ export const ttl = {
   githubStats: 3600, // 1 hour
 } as const;
 
+// ── Cache-Aside Helper ──────────────────────────────────────
+
+export async function cached<T>(
+  key: string,
+  ttlSeconds: number,
+  fetch: () => Promise<T>,
+): Promise<T> {
+  const hit = await redis.get<T>(key);
+  if (hit !== null && hit !== undefined) return hit;
+  const data = await fetch();
+  await redis.set(key, data, { ex: ttlSeconds });
+  return data;
+}
+
 // ── Invalidation Helpers ─────────────────────────────────────
 
 export async function invalidateReferenceData() {
