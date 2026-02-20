@@ -24,6 +24,8 @@ import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { getLinkMeta } from "@/lib/constants/link-icons";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface LinksSectionProps {
@@ -31,6 +33,40 @@ interface LinksSectionProps {
   links: ProjectLink[];
   githubUrl: string | null;
   gitlabUrl: string | null;
+}
+
+function LinkRow({
+  url,
+  label,
+  actions,
+}: {
+  url: string;
+  label: string;
+  actions?: React.ReactNode;
+}) {
+  const meta = getLinkMeta(url);
+  const Icon = meta.icon;
+
+  return (
+    <div className="flex items-center justify-between rounded-md border p-3">
+      <div className="flex items-center gap-3">
+        <Icon className={`size-4 ${meta.color}`} />
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
+        >
+          View
+          <ExternalLink className="size-3" />
+        </a>
+        {actions}
+      </div>
+    </div>
+  );
 }
 
 export function LinksSection({
@@ -55,7 +91,9 @@ export function LinksSection({
   );
 
   function handleAdd() {
-    router.push(`/projects/${projectId}/links?addLink=true`, { scroll: false });
+    router.push(`/projects/${projectId}/links?addLink=true`, {
+      scroll: false,
+    });
   }
 
   function handleEdit(id: string) {
@@ -93,92 +131,52 @@ export function LinksSection({
           </div>
         ) : (
           <div className="space-y-2">
-            {githubUrl && (
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">GitHub</span>
-                </div>
-                <a
-                  href={githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
-                >
-                  View
-                  <ExternalLink className="size-3" />
-                </a>
-              </div>
-            )}
-            {gitlabUrl && (
-              <div className="flex items-center justify-between rounded-md border p-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">GitLab</span>
-                </div>
-                <a
-                  href={gitlabUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
-                >
-                  View
-                  <ExternalLink className="size-3" />
-                </a>
-              </div>
-            )}
+            {githubUrl && <LinkRow url={githubUrl} label="GitHub" />}
+            {gitlabUrl && <LinkRow url={gitlabUrl} label="GitLab" />}
             {links.map((link) => (
-              <div
+              <LinkRow
                 key={link.id}
-                className="flex items-center justify-between rounded-md border p-3"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{link.label}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
-                  >
-                    View
-                    <ExternalLink className="size-3" />
-                  </a>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(link.id)}
-                  >
-                    <Pencil className="size-4" />
-                    <span className="sr-only">Edit</span>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="size-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete link?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will remove the &quot;{link.label}&quot; link.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(link.id)}
-                          disabled={deletingId === link.id}
-                          className="bg-destructive text-white hover:bg-destructive/90"
-                        >
-                          {deletingId === link.id ? "Deleting..." : "Delete"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
+                url={link.url}
+                label={link.label}
+                actions={
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(link.id)}
+                    >
+                      <Pencil className="size-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="size-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete link?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove the &quot;{link.label}&quot; link.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(link.id)}
+                            disabled={deletingId === link.id}
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                          >
+                            {deletingId === link.id ? "Deleting..." : "Delete"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                }
+              />
             ))}
           </div>
         )}

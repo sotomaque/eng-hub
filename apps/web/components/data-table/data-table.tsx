@@ -22,26 +22,50 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   toolbar?: (table: TanstackTable<TData>) => ReactNode;
+  /** Server-side pagination: total number of pages */
+  pageCount?: number;
+  /** Server-side pagination: current 0-based page index */
+  pageIndex?: number;
+  /** Server-side pagination: rows per page */
+  pageSize?: number;
+  /** Server-side pagination: called when page or pageSize changes */
+  onPageChange?: (page: number, pageSize: number) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   toolbar,
+  pageCount: serverPageCount,
+  pageIndex: serverPageIndex,
+  pageSize: serverPageSize,
+  onPageChange,
 }: DataTableProps<TData, TValue>) {
+  const isServerPagination = serverPageCount !== undefined;
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
+    pageIndex: serverPageIndex ?? 0,
+    pageSize: serverPageSize ?? 10,
   });
+
+  useEffect(() => {
+    if (isServerPagination) {
+      setPagination({
+        pageIndex: serverPageIndex ?? 0,
+        pageSize: serverPageSize ?? 10,
+      });
+    }
+  }, [isServerPagination, serverPageIndex, serverPageSize]);
 
   const table = useReactTable({
     data,
@@ -49,10 +73,19 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(isServerPagination
+      ? { manualPagination: true, pageCount: serverPageCount }
+      : { getPaginationRowModel: getPaginationRowModel() }),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function" ? updater(pagination) : updater;
+      setPagination(next);
+      if (isServerPagination && onPageChange) {
+        onPageChange(next.pageIndex + 1, next.pageSize);
+      }
+    },
     state: {
       sorting,
       columnFilters,

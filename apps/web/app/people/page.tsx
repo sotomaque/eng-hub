@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+
 import { AddToProjectDialog } from "@/components/add-to-project-dialog";
-
-export const metadata: Metadata = { title: "People" };
-
 import { AppHeader } from "@/components/app-header";
 import { DepartmentSheet } from "@/components/department-sheet";
 import { PeopleTable } from "@/components/people-table";
@@ -11,6 +9,8 @@ import { PersonSheet } from "@/components/person-sheet";
 import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";
 import { TitleSheet } from "@/components/title-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
+
+export const metadata: Metadata = { title: "People" };
 
 export const dynamic = "force-dynamic";
 
@@ -21,16 +21,36 @@ interface PageProps {
     addToProject?: string;
     manageTitles?: string;
     manageDepartments?: string;
+    page?: string;
+    pageSize?: string;
+    search?: string;
   }>;
 }
 
-async function PeopleContent() {
+async function PeopleContent({
+  page,
+  pageSize,
+  search,
+}: {
+  page: number;
+  pageSize: number;
+  search?: string;
+}) {
   const trpc = await createServerCaller();
-  const [people, projects] = await Promise.all([
-    trpc.person.getAll(),
+  const [{ items, totalCount }, projects] = await Promise.all([
+    trpc.person.list({ page, pageSize, search: search || undefined }),
     trpc.project.getAll(),
   ]);
-  return <PeopleTable people={people} projects={projects} />;
+  return (
+    <PeopleTable
+      people={items}
+      projects={projects}
+      totalCount={totalCount}
+      page={page}
+      pageSize={pageSize}
+      search={search}
+    />
+  );
 }
 
 async function EditPersonContent({ personId }: { personId: string }) {
@@ -64,6 +84,8 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const isCreating = params.create === "true";
   const editPersonId = params.edit;
   const addToProjectPersonId = params.addToProject;
+  const page = Math.max(1, Number(params.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 10));
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +93,11 @@ export default async function PeoplePage({ searchParams }: PageProps) {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Suspense fallback={<ProjectsTableSkeleton />}>
-          <PeopleContent />
+          <PeopleContent
+            page={page}
+            pageSize={pageSize}
+            search={params.search}
+          />
         </Suspense>
       </main>
 

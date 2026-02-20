@@ -31,7 +31,7 @@ import {
 import { FolderOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -58,6 +58,10 @@ type ProjectItem = {
 
 interface ProjectsTableProps {
   projects: ProjectItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  search?: string;
 }
 
 function formatRelativeDate(date: Date): string {
@@ -75,10 +79,43 @@ function formatRelativeDate(date: Date): string {
   });
 }
 
-export function ProjectsTable({ projects }: ProjectsTableProps) {
+export function ProjectsTable({
+  projects,
+  totalCount,
+  page,
+  pageSize,
+  search,
+}: ProjectsTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState(search ?? "");
+  const [prevSearch, setPrevSearch] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [isSearchPending, startSearchTransition] = useTransition();
+
+  // Render-time prop sync (no useEffect) — handles browser back/forward
+  if (search !== prevSearch) {
+    setPrevSearch(search);
+    setSearchInput(search ?? "");
+  }
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchInput(value);
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams();
+        params.set("page", "1");
+        params.set("pageSize", String(pageSize));
+        if (value) params.set("search", value);
+        startSearchTransition(() => {
+          router.replace(`/projects?${params.toString()}`, { scroll: false });
+        });
+      }, 300);
+    },
+    [pageSize, router],
+  );
 
   const deleteMutation = useMutation(
     trpc.project.delete.mutationOptions({
@@ -94,12 +131,12 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
   );
 
   const handleCreate = useCallback(() => {
-    router.push("/?create=true", { scroll: false });
+    router.push("/projects?create=true", { scroll: false });
   }, [router]);
 
   const handleEdit = useCallback(
     (id: string) => {
-      router.push(`/?edit=${id}`, { scroll: false });
+      router.push(`/projects?edit=${id}`, { scroll: false });
     },
     [router],
   );
@@ -295,7 +332,7 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold tracking-tight">Projects</h2>
           <span className="text-muted-foreground rounded-md bg-muted px-2 py-0.5 text-sm font-medium">
-            {projects.length}
+            {totalCount}
           </span>
         </div>
         <Button onClick={handleCreate} size="sm">
@@ -304,25 +341,45 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={projects}
-        toolbar={(table) => (
-          <DataTableToolbar
-            table={table}
-            searchColumn="name"
-            searchPlaceholder="Filter projects..."
-          >
-            {table.getColumn("status") && (
-              <DataTableFacetedFilter
-                column={table.getColumn("status")}
-                title="Status"
-                options={HEALTH_FILTER_OPTIONS}
-              />
-            )}
-          </DataTableToolbar>
-        )}
-      />
+      <div
+        className={
+          isSearchPending
+            ? "opacity-60 transition-opacity"
+            : "transition-opacity"
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={projects}
+          pageCount={Math.ceil(totalCount / pageSize)}
+          pageIndex={page - 1}
+          pageSize={pageSize}
+          onPageChange={(newPage, newPageSize) => {
+            const params = new URLSearchParams();
+            params.set("page", String(newPage));
+            params.set("pageSize", String(newPageSize));
+            if (searchInput) params.set("search", searchInput);
+            router.push(`/projects?${params.toString()}`, { scroll: false });
+          }}
+          toolbar={(table) => (
+            <DataTableToolbar
+              table={table}
+              searchColumn="name"
+              searchPlaceholder="Search projects..."
+              searchValue={searchInput}
+              onSearchChange={handleSearchChange}
+            >
+              {table.getColumn("status") && (
+                <DataTableFacetedFilter
+                  column={table.getColumn("status")}
+                  title="Status"
+                  options={HEALTH_FILTER_OPTIONS}
+                />
+              )}
+            </DataTableToolbar>
+          )}
+        />
+      </div>
     </div>
   );
 }

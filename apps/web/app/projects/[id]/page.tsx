@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Overview" };
+
 import { Suspense } from "react";
 import { ProjectDetailSkeleton } from "@/components/project-detail-skeleton";
 import { ProjectOverview } from "@/components/project-overview";

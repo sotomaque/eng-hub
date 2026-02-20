@@ -54,6 +54,17 @@ const personInclude = {
   },
 } as const;
 
+const personListInclude = {
+  department: true,
+  title: { include: { department: true } },
+  projectMemberships: {
+    include: {
+      project: true,
+      teamMemberships: { include: { team: true } },
+    },
+  },
+} as const;
+
 const createPersonSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -99,6 +110,58 @@ export const personRouter = createTRPCRouter({
       include: personInclude,
     });
   }),
+
+  list: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(1).max(100).default(10),
+        search: z.string().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const where = input.search
+        ? {
+            OR: [
+              {
+                firstName: {
+                  contains: input.search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                lastName: {
+                  contains: input.search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                email: {
+                  contains: input.search,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                callsign: {
+                  contains: input.search,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : undefined;
+      const [items, totalCount] = await Promise.all([
+        db.person.findMany({
+          where,
+          orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+          include: personListInclude,
+          skip: (input.page - 1) * input.pageSize,
+          take: input.pageSize,
+        }),
+        db.person.count({ where }),
+      ]);
+      return { items, totalCount };
+    }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))

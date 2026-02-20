@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Health" };
+
 import { Suspense } from "react";
 import { HealthSection } from "@/components/health-section";
 import { getCachedProject } from "@/lib/trpc/cached-queries";

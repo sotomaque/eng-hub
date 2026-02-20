@@ -3,7 +3,6 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { AppUserButton } from "@/components/app-user-button";
 import { MainNav } from "@/components/main-nav";
-import { ModeToggle } from "@/components/mode-toggle";
 
 export function AppHeader() {
   return (
@@ -16,7 +15,6 @@ export function AppHeader() {
           <MainNav />
         </div>
         <div className="flex items-center gap-2">
-          <ModeToggle />
           <SignedOut>
             <SignInButton mode="modal">
               <Button variant="outline" size="sm">

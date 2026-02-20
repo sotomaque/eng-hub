@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Teams" };
+
 import { ArrangementsList } from "@/components/arrangements-list";
 import { getCachedProject } from "@/lib/trpc/cached-queries";
 import { createServerCaller } from "@/lib/trpc/server";

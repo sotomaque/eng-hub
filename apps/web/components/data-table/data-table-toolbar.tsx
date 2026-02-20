@@ -11,6 +11,10 @@ interface DataTableToolbarProps<TData> {
   searchColumn?: string;
   searchPlaceholder?: string;
   children?: ReactNode;
+  /** Server-side search: controlled input value */
+  searchValue?: string;
+  /** Server-side search: called on every keystroke */
+  onSearchChange?: (value: string) => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -18,26 +22,41 @@ export function DataTableToolbar<TData>({
   searchColumn = "title",
   searchPlaceholder = "Filter...",
   children,
+  searchValue,
+  onSearchChange,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isServerSearch = onSearchChange !== undefined;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    (isServerSearch && !!searchValue);
 
   return (
     <div className="flex items-center gap-2">
       <Input
         placeholder={searchPlaceholder}
         value={
-          (table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
+          isServerSearch
+            ? (searchValue ?? "")
+            : ((table.getColumn(searchColumn)?.getFilterValue() as string) ??
+              "")
         }
-        onChange={(event) =>
-          table.getColumn(searchColumn)?.setFilterValue(event.target.value)
-        }
+        onChange={(event) => {
+          if (isServerSearch) {
+            onSearchChange(event.target.value);
+          } else {
+            table.getColumn(searchColumn)?.setFilterValue(event.target.value);
+          }
+        }}
         className="h-8 w-[150px] lg:w-[250px]"
       />
       {children}
       {isFiltered && (
         <Button
           variant="ghost"
-          onClick={() => table.resetColumnFilters()}
+          onClick={() => {
+            table.resetColumnFilters();
+            if (isServerSearch) onSearchChange("");
+          }}
           className="h-8 px-2 lg:px-3"
         >
           Reset

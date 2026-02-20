@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Links" };
+
 import { Suspense } from "react";
 import { LinksSection } from "@/components/links-section";
 import { ProjectLinkSheet } from "@/components/project-link-sheet";

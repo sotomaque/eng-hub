@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "People" };
+
 import { Suspense } from "react";
 import { DepartmentSheet } from "@/components/department-sheet";
 import { TeamEditSheet } from "@/components/team-edit-sheet";

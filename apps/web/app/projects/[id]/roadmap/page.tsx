@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Roadmap" };
+
 import { Suspense } from "react";
 import { MilestoneSheet } from "@/components/milestone-sheet";
 import { QuarterlyGoalSheet } from "@/components/quarterly-goal-sheet";

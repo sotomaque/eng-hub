@@ -24,7 +24,7 @@ import { Button } from "@workspace/ui/components/button";
 import { FolderPlus, Pencil, Plus, Trash2, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -56,11 +56,49 @@ type PersonWithMemberships = {
 interface PeopleTableProps {
   people: PersonWithMemberships[];
   projects: Project[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  search?: string;
 }
 
-export function PeopleTable({ people, projects }: PeopleTableProps) {
+export function PeopleTable({
+  people,
+  projects,
+  totalCount,
+  page,
+  pageSize,
+  search,
+}: PeopleTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
+  const [searchInput, setSearchInput] = useState(search ?? "");
+  const [prevSearch, setPrevSearch] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [isSearchPending, startSearchTransition] = useTransition();
+
+  // Render-time prop sync (no useEffect) — handles browser back/forward
+  if (search !== prevSearch) {
+    setPrevSearch(search);
+    setSearchInput(search ?? "");
+  }
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchInput(value);
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams();
+        params.set("page", "1");
+        params.set("pageSize", String(pageSize));
+        if (value) params.set("search", value);
+        startSearchTransition(() => {
+          router.replace(`/people?${params.toString()}`, { scroll: false });
+        });
+      }, 300);
+    },
+    [pageSize, router],
+  );
 
   const meQuery = useQuery(trpc.person.me.queryOptions());
   const myPersonId = meQuery.data?.id ?? null;
@@ -332,8 +370,8 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">People</h1>
           <p className="text-muted-foreground text-sm">
-            {people.length} {people.length === 1 ? "person" : "people"} across
-            all projects
+            {totalCount} {totalCount === 1 ? "person" : "people"} across all
+            projects
           </p>
         </div>
         <Button
@@ -344,32 +382,53 @@ export function PeopleTable({ people, projects }: PeopleTableProps) {
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={people}
-        toolbar={(table) => (
-          <DataTableToolbar
-            table={table}
-            searchColumn="name"
-            searchPlaceholder="Filter people..."
-          >
-            {table.getColumn("projects") && projectOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={table.getColumn("projects")}
-                title="Project"
-                options={projectOptions}
-              />
-            )}
-            {table.getColumn("departments") && departmentOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={table.getColumn("departments")}
-                title="Department"
-                options={departmentOptions}
-              />
-            )}
-          </DataTableToolbar>
-        )}
-      />
+      <div
+        className={
+          isSearchPending
+            ? "opacity-60 transition-opacity"
+            : "transition-opacity"
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={people}
+          pageCount={Math.ceil(totalCount / pageSize)}
+          pageIndex={page - 1}
+          pageSize={pageSize}
+          onPageChange={(newPage, newPageSize) => {
+            const params = new URLSearchParams();
+            params.set("page", String(newPage));
+            params.set("pageSize", String(newPageSize));
+            if (searchInput) params.set("search", searchInput);
+            router.push(`/people?${params.toString()}`, { scroll: false });
+          }}
+          toolbar={(table) => (
+            <DataTableToolbar
+              table={table}
+              searchColumn="name"
+              searchPlaceholder="Search people..."
+              searchValue={searchInput}
+              onSearchChange={handleSearchChange}
+            >
+              {table.getColumn("projects") && projectOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={table.getColumn("projects")}
+                  title="Project"
+                  options={projectOptions}
+                />
+              )}
+              {table.getColumn("departments") &&
+                departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={table.getColumn("departments")}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+            </DataTableToolbar>
+          )}
+        />
+      </div>
     </div>
   );
 }

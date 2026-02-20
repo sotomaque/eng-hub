@@ -2,12 +2,28 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@workspace/ui/components/sidebar";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectSidebar } from "@/components/project-sidebar";
 import { ProjectSiteHeader } from "@/components/project-site-header";
 import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const project = await getCachedProject(id);
+  return {
+    title: {
+      default: project?.name ?? "Project",
+      template: `%s - ${project?.name ?? "Project"}`,
+    },
+  };
+}
 
 interface LayoutProps {
   children: React.ReactNode;

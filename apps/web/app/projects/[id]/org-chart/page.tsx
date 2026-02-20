@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Org Chart" };
+
 import { Suspense } from "react";
 import { OrgChart, type OrgMember } from "@/components/org-chart";
 import { getCachedProject } from "@/lib/trpc/cached-queries";

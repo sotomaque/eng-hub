@@ -1,5 +1,9 @@
 import { AlertCircle } from "lucide-react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = { title: "Stats" };
+
 import { Suspense } from "react";
 import { StatsSection } from "@/components/stats/stats-section";
 import { getCachedProject } from "@/lib/trpc/cached-queries";
