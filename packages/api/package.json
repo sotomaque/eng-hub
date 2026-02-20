@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "biome check ./src --files-ignore-unknown=true",
     "lint:fix": "biome check --write ./src --files-ignore-unknown=true",
-    "lint:types": "tsc --noEmit"
+    "lint:types": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",

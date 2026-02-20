@@ -75,11 +75,13 @@ export async function isInManagementChain(
   clerkUserId: string,
   personId: string,
 ): Promise<boolean> {
-  const viewerId = await resolveClerkPerson(clerkUserId);
+  const key = cacheKeys.mgmtChain(personId);
+  const [viewerId, keyExists] = await Promise.all([
+    resolveClerkPerson(clerkUserId),
+    redis.exists(key),
+  ]);
   if (!viewerId) return false;
 
-  const key = cacheKeys.mgmtChain(personId);
-  const keyExists = await redis.exists(key);
   if (keyExists === 1) {
     const isMember = await redis.sismember(key, viewerId);
     return isMember === 1;

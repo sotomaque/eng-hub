@@ -32,6 +32,17 @@ export async function syncLiveToActiveArrangement(
     where: { team: { projectId } },
   });
 
+  // Build membership lookup once — O(N+M) instead of O(N*M) filter per team
+  const membersByTeam = new Map<string, string[]>();
+  for (const m of memberships) {
+    const list = membersByTeam.get(m.teamId);
+    if (list) {
+      list.push(m.teamMemberId);
+    } else {
+      membersByTeam.set(m.teamId, [m.teamMemberId]);
+    }
+  }
+
   for (const [i, team] of teams.entries()) {
     const arrTeam = await tx.arrangementTeam.create({
       data: {
@@ -42,10 +53,8 @@ export async function syncLiveToActiveArrangement(
       },
     });
 
-    const teamMemberIds = memberships
-      .filter((m) => m.teamId === team.id)
-      .map((m) => m.teamMemberId);
-    if (teamMemberIds.length > 0) {
+    const teamMemberIds = membersByTeam.get(team.id);
+    if (teamMemberIds && teamMemberIds.length > 0) {
       await tx.arrangementAssignment.createMany({
         data: teamMemberIds.map((memberId) => ({
           arrangementTeamId: arrTeam.id,

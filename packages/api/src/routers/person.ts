@@ -294,8 +294,10 @@ export const personRouter = createTRPCRouter({
         select: { clerkUserId: true },
       });
       const result = await db.person.delete({ where: { id: input.id } });
-      await invalidatePeopleCache(person?.clerkUserId);
-      await invalidateManagerChains(input.id);
+      await Promise.all([
+        invalidatePeopleCache(person?.clerkUserId),
+        invalidateManagerChains(input.id),
+      ]);
       return result;
     }),
 

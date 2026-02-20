@@ -104,20 +104,49 @@ export async function fetchCommitStats(
 
   if (!Array.isArray(data)) return [];
 
-  return data
-    .filter((c) => c.author?.login)
-    .map((c) => ({
-      username: c.author!.login,
-      totalCommits: c.total,
-      additions: c.weeks.reduce((sum, w) => sum + w.a, 0),
-      deletions: c.weeks.reduce((sum, w) => sum + w.d, 0),
-      weeklyData: c.weeks.map((w) => ({
+  const result: {
+    username: string;
+    totalCommits: number;
+    additions: number;
+    deletions: number;
+    weeklyData: {
+      week: number;
+      additions: number;
+      deletions: number;
+      commits: number;
+    }[];
+  }[] = [];
+
+  for (const c of data) {
+    if (!c.author?.login) continue;
+    let additions = 0;
+    let deletions = 0;
+    const weeklyData: {
+      week: number;
+      additions: number;
+      deletions: number;
+      commits: number;
+    }[] = [];
+    for (const w of c.weeks) {
+      additions += w.a;
+      deletions += w.d;
+      weeklyData.push({
         week: w.w,
         additions: w.a,
         deletions: w.d,
         commits: w.c,
-      })),
-    }));
+      });
+    }
+    result.push({
+      username: c.author.login,
+      totalCommits: c.total,
+      additions,
+      deletions,
+      weeklyData,
+    });
+  }
+
+  return result;
 }
 
 const PR_QUERY = `
@@ -404,7 +433,9 @@ export function aggregateStats(
       const weeks = weeklyMap.get(username);
       if (!weeks || weeks.size === 0) continue;
 
-      const sortedWeeks = [...weeks.entries()].sort((a, b) => a[0] - b[0]);
+      const sortedWeeks = Array.from(weeks.entries()).sort(
+        (a, b) => a[0] - b[0],
+      );
       const totalReviews = sortedWeeks.reduce((s, [, count]) => s + count, 0);
       entry.avgWeeklyReviews = totalReviews / sortedWeeks.length;
 

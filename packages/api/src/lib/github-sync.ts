@@ -35,17 +35,16 @@ export async function syncGitHubStatsForProject(
   try {
     const token = process.env.GITHUB_TOKEN;
 
-    const [commitData, prData] = await Promise.all([
+    const [commitData, prData, teamMembers] = await Promise.all([
       fetchCommitStats(parsed.owner, parsed.repo, token),
       fetchPRStats(parsed.owner, parsed.repo, token),
+      db.teamMember.findMany({
+        where: { projectId },
+        include: {
+          person: { select: { githubUsername: true } },
+        },
+      }),
     ]);
-
-    const teamMembers = await db.teamMember.findMany({
-      where: { projectId },
-      include: {
-        person: { select: { githubUsername: true } },
-      },
-    });
 
     const teamUsernames = new Set(
       teamMembers

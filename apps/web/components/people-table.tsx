@@ -216,10 +216,10 @@ export function PeopleTable({
           );
         },
         filterFn: (row, _id, value: string[]) => {
-          const projectNames = new Set(
-            row.original.projectMemberships.map((m) => m.project.name),
+          const memberships = row.original.projectMemberships;
+          return value.some((v) =>
+            memberships.some((m) => m.project.name === v),
           );
-          return value.some((v) => projectNames.has(v));
         },
       },
       {

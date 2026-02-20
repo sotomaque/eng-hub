@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DraggableMemberChip } from "@/components/draggable-member-chip";
 
 interface MemberData {
@@ -30,29 +30,35 @@ export function MemberPool({ members }: MemberPoolProps) {
 
   const [search, setSearch] = useState("");
 
-  const filtered = search
-    ? members.filter(
-        (m) =>
-          `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`
-            .toLowerCase()
-            .includes(search.toLowerCase()) ||
-          (m.person.department?.name ?? "")
-            .toLowerCase()
-            .includes(search.toLowerCase()) ||
-          (m.person.title?.name ?? "")
-            .toLowerCase()
-            .includes(search.toLowerCase()),
-      )
-    : members;
+  const { filtered, byDepartment } = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    const f = search
+      ? members.filter(
+          (m) =>
+            `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`
+              .toLowerCase()
+              .includes(lowerSearch) ||
+            (m.person.department?.name ?? "")
+              .toLowerCase()
+              .includes(lowerSearch) ||
+            (m.person.title?.name ?? "").toLowerCase().includes(lowerSearch),
+        )
+      : members;
 
-  // Group by department
-  const byDepartment = new Map<string, MemberData[]>();
-  for (const member of filtered) {
-    const departmentName = member.person.department?.name ?? "No Department";
-    const group = byDepartment.get(departmentName) ?? [];
-    group.push(member);
-    byDepartment.set(departmentName, group);
-  }
+    // Group by department
+    const grouped = new Map<string, MemberData[]>();
+    for (const member of f) {
+      const departmentName = member.person.department?.name ?? "No Department";
+      const list = grouped.get(departmentName);
+      if (list) {
+        list.push(member);
+      } else {
+        grouped.set(departmentName, [member]);
+      }
+    }
+
+    return { filtered: f, byDepartment: grouped };
+  }, [members, search]);
 
   return (
     <div
