@@ -53,6 +53,8 @@
         "@trpc/tanstack-react-query": "^11.1.0",
         "@uploadthing/react": "^7.3.3",
         "@upstash/qstash": "^2.9.0",
+        "@upstash/ratelimit": "^2.0.8",
+        "@upstash/redis": "^1.36.2",
         "@workspace/api": "workspace:*",
         "@workspace/db": "workspace:*",
         "@workspace/ui": "workspace:*",
