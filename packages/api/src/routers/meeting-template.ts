@@ -1,7 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { cached, cacheKeys, invalidateMeetingTemplates, ttl } from "../lib/cache";
+import {
+  cached,
+  cacheKeys,
+  invalidateMeetingTemplates,
+  ttl,
+} from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const meetingTemplateRouter = createTRPCRouter({

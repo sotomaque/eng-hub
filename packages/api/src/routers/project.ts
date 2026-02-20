@@ -1,11 +1,6 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import {
-  cached,
-  cacheKeys,
-  invalidateProjectCache,
-  ttl,
-} from "../lib/cache";
+import { cached, cacheKeys, invalidateProjectCache, ttl } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectSchema = z.object({
