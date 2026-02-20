@@ -60,7 +60,7 @@ async function getManagementChain(personId: string): Promise<string[]> {
   }
 
   if (chain.length > 0) {
-    await redis.sadd(key, ...chain);
+    await Promise.all(chain.map((id) => redis.sadd(key, id)));
     await redis.expire(key, ttl.mgmtChain);
   }
 
