@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { DepartmentManager } from "@/components/department-manager";
+
+export const metadata: Metadata = { title: "Departments & Titles" };
 
 export default function DepartmentsPage() {
   return (

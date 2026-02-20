@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/app-header";
+
+export const metadata: Metadata = { title: "Org Chart" };
+
 import { OrgChart, type OrgMember } from "@/components/org-chart";
 import { createServerCaller } from "@/lib/trpc/server";
 

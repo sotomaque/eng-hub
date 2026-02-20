@@ -10,8 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getMe } from "./_lib/queries";
+
+export const metadata: Metadata = { title: "My Dashboard" };
 
 export default async function MeProfilePage() {
   const person = await getMe();

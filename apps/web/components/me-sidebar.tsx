@@ -107,7 +107,7 @@ export function MeSidebar({ personName, personImageUrl }: MeSidebarProps) {
             <SidebarMenuButton asChild>
               <Link href="/">
                 <ArrowLeft />
-                <span>Back to Projects</span>
+                <span>Home</span>
               </Link>
             </SidebarMenuButton>
             <ModeToggle />

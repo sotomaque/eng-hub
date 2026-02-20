@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AddToProjectDialog } from "@/components/add-to-project-dialog";
+
+export const metadata: Metadata = { title: "People" };
+
 import { AppHeader } from "@/components/app-header";
 import { DepartmentSheet } from "@/components/department-sheet";
 import { PeopleTable } from "@/components/people-table";

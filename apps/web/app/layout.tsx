@@ -16,7 +16,10 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Eng Hub",
+  title: {
+    default: "Eng Hub",
+    template: "Eng Hub - %s",
+  },
   description: "Engineering project management dashboard",
 };
 

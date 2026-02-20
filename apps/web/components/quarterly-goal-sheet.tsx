@@ -185,7 +185,7 @@ export function QuarterlyGoalSheet({
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent>
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
             {isEditing ? "Edit Quarterly Goal" : "Add Quarterly Goal"}

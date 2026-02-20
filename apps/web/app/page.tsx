@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/app-header";
+
+export const metadata: Metadata = { title: "Projects" };
+
 import { ProjectSheet } from "@/components/project-sheet";
 import { ProjectsTable } from "@/components/projects-table";
 import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";

@@ -87,7 +87,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent>
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Link" : "Add Link"}</SheetTitle>
           <SheetDescription>
