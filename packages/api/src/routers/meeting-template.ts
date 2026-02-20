@@ -1,30 +1,23 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { cacheKeys, invalidateMeetingTemplates, ttl } from "../lib/cache";
-import { redis } from "../lib/redis";
+import { cached, cacheKeys, invalidateMeetingTemplates, ttl } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const meetingTemplateRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    const cached = await redis.get(cacheKeys.meetingTemplates);
-    if (cached) return cached;
-
-    const data = await db.meetingTemplate.findMany({
-      orderBy: { updatedAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        authorId: true,
-        updatedAt: true,
-      },
-    });
-
-    await redis.set(cacheKeys.meetingTemplates, data, {
-      ex: ttl.referenceData,
-    });
-    return data;
+    return cached(cacheKeys.meetingTemplates, ttl.referenceData, () =>
+      db.meetingTemplate.findMany({
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          authorId: true,
+          updatedAt: true,
+        },
+      }),
+    );
   }),
 
   getById: protectedProcedure

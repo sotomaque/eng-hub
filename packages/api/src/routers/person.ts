@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
 import {
+  cached,
   cacheKeys,
   invalidateMgmtChain,
   invalidatePeopleCache,
@@ -124,16 +125,12 @@ async function invalidateManagerChains(personId: string) {
 
 export const personRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    const cached = await redis.get(cacheKeys.people);
-    if (cached) return cached;
-
-    const data = await db.person.findMany({
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      include: personInclude,
-    });
-
-    await redis.set(cacheKeys.people, data, { ex: ttl.people });
-    return data;
+    return cached(cacheKeys.people, ttl.people, () =>
+      db.person.findMany({
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        include: personInclude,
+      }),
+    );
   }),
 
   list: protectedProcedure
@@ -405,20 +402,12 @@ export const personRouter = createTRPCRouter({
     }),
 
   me: protectedProcedure.query(async ({ ctx }) => {
-    const cached = await redis.get(cacheKeys.personMe(ctx.userId));
-    if (cached) return cached;
-
-    const data = await db.person.findUnique({
-      where: { clerkUserId: ctx.userId },
-      include: personInclude,
-    });
-
-    if (data) {
-      await redis.set(cacheKeys.personMe(ctx.userId), data, {
-        ex: ttl.personMe,
-      });
-    }
-    return data;
+    return cached(cacheKeys.personMe(ctx.userId), ttl.personMe, () =>
+      db.person.findUnique({
+        where: { clerkUserId: ctx.userId },
+        include: personInclude,
+      }),
+    );
   }),
 
   claimAsMe: protectedProcedure

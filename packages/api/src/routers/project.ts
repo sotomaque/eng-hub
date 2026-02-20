@@ -21,6 +21,103 @@ const updateProjectSchema = createProjectSchema.extend({
   id: z.string(),
 });
 
+function fetchProject(id: string) {
+  return db.project.findUnique({
+    where: { id },
+    include: {
+      healthAssessments: { orderBy: { createdAt: "desc" } },
+      teams: { orderBy: { name: "asc" } },
+      teamMembers: {
+        include: {
+          person: {
+            include: {
+              department: true,
+              title: { include: { department: true } },
+            },
+          },
+          teamMemberships: { include: { team: true } },
+        },
+        orderBy: { person: { lastName: "asc" } },
+      },
+      milestones: {
+        where: { parentId: null },
+        orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+        include: {
+          assignments: {
+            include: {
+              person: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  imageUrl: true,
+                },
+              },
+            },
+          },
+          keyResults: { orderBy: { sortOrder: "asc" } },
+          children: {
+            orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+            include: {
+              assignments: {
+                include: {
+                  person: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      imageUrl: true,
+                    },
+                  },
+                },
+              },
+              keyResults: { orderBy: { sortOrder: "asc" } },
+            },
+          },
+        },
+      },
+      quarterlyGoals: {
+        where: { parentId: null },
+        orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+        include: {
+          assignments: {
+            include: {
+              person: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  imageUrl: true,
+                },
+              },
+            },
+          },
+          keyResults: { orderBy: { sortOrder: "asc" } },
+          children: {
+            orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
+            include: {
+              assignments: {
+                include: {
+                  person: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      imageUrl: true,
+                    },
+                  },
+                },
+              },
+              keyResults: { orderBy: { sortOrder: "asc" } },
+            },
+          },
+        },
+      },
+      links: true,
+    },
+  });
+}
+
 export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
     return cached(cacheKeys.projectList, ttl.projectList, () =>
@@ -65,108 +162,13 @@ export const projectRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const cached = await redis.get(cacheKeys.project(input.id));
-      if (cached) return cached;
+      const key = cacheKeys.project(input.id);
+      const hit = await redis.get<Awaited<ReturnType<typeof fetchProject>>>(key);
+      if (hit !== null && hit !== undefined) return hit;
 
-      const data = await db.project.findUnique({
-        where: { id: input.id },
-        include: {
-          healthAssessments: { orderBy: { createdAt: "desc" } },
-          teams: { orderBy: { name: "asc" } },
-          teamMembers: {
-            include: {
-              person: {
-                include: {
-                  department: true,
-                  title: { include: { department: true } },
-                },
-              },
-              teamMemberships: { include: { team: true } },
-            },
-            orderBy: { person: { lastName: "asc" } },
-          },
-          milestones: {
-            where: { parentId: null },
-            orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
-            include: {
-              assignments: {
-                include: {
-                  person: {
-                    select: {
-                      id: true,
-                      firstName: true,
-                      lastName: true,
-                      imageUrl: true,
-                    },
-                  },
-                },
-              },
-              keyResults: { orderBy: { sortOrder: "asc" } },
-              children: {
-                orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
-                include: {
-                  assignments: {
-                    include: {
-                      person: {
-                        select: {
-                          id: true,
-                          firstName: true,
-                          lastName: true,
-                          imageUrl: true,
-                        },
-                      },
-                    },
-                  },
-                  keyResults: { orderBy: { sortOrder: "asc" } },
-                },
-              },
-            },
-          },
-          quarterlyGoals: {
-            where: { parentId: null },
-            orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
-            include: {
-              assignments: {
-                include: {
-                  person: {
-                    select: {
-                      id: true,
-                      firstName: true,
-                      lastName: true,
-                      imageUrl: true,
-                    },
-                  },
-                },
-              },
-              keyResults: { orderBy: { sortOrder: "asc" } },
-              children: {
-                orderBy: [{ sortOrder: "asc" }, { targetDate: "asc" }],
-                include: {
-                  assignments: {
-                    include: {
-                      person: {
-                        select: {
-                          id: true,
-                          firstName: true,
-                          lastName: true,
-                          imageUrl: true,
-                        },
-                      },
-                    },
-                  },
-                  keyResults: { orderBy: { sortOrder: "asc" } },
-                },
-              },
-            },
-          },
-          links: true,
-        },
-      });
-
+      const data = await fetchProject(input.id);
       if (data) {
-        await redis.set(cacheKeys.project(input.id), data, {
-          ex: ttl.project,
-        });
+        await redis.set(key, data, { ex: ttl.project });
       }
       return data;
     }),
@@ -183,7 +185,7 @@ export const projectRouter = createTRPCRouter({
           imageUrl: input.imageUrl || null,
         },
       });
-      await redis.del(cacheKeys.projectList);
+      await invalidateProjectCache(result.id);
       return result;
     }),
 
