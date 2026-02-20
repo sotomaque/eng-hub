@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { isInManagementChain } from "../lib/hierarchy";
+import { canViewMeetings } from "../lib/hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const meetingInclude = {
@@ -64,10 +64,16 @@ export const meetingRouter = createTRPCRouter({
     return meetings.map(serializeMeeting);
   }),
 
+  canView: protectedProcedure
+    .input(z.object({ personId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return canViewMeetings(ctx.userId, input.personId);
+    }),
+
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const hasAccess = await isInManagementChain(ctx.userId, input.personId);
+      const hasAccess = await canViewMeetings(ctx.userId, input.personId);
       if (!hasAccess) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -95,10 +101,7 @@ export const meetingRouter = createTRPCRouter({
       }
 
       if (meeting.authorId !== ctx.userId) {
-        const hasAccess = await isInManagementChain(
-          ctx.userId,
-          meeting.personId,
-        );
+        const hasAccess = await canViewMeetings(ctx.userId, meeting.personId);
         if (!hasAccess) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
@@ -194,5 +197,89 @@ export const meetingRouter = createTRPCRouter({
 
       await db.meeting.delete({ where: { id: input.id } });
       return { id: input.id };
+    }),
+
+  // ── Visibility Grant Management ─────────────────────────────
+
+  getMyGrants: protectedProcedure.query(async ({ ctx }) => {
+    const viewer = await db.person.findUnique({
+      where: { clerkUserId: ctx.userId },
+      select: { id: true },
+    });
+    if (!viewer) return [];
+    return db.meetingVisibilityGrant.findMany({
+      where: { granterId: viewer.id },
+      include: {
+        grantee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            imageUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
+
+  grantVisibility: protectedProcedure
+    .input(z.object({ granteeId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const viewer = await db.person.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: {
+          id: true,
+          directReports: { select: { id: true }, take: 1 },
+        },
+      });
+      if (!viewer) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You must claim a Person record first.",
+        });
+      }
+      if (viewer.directReports.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You have no direct reports to share.",
+        });
+      }
+      if (input.granteeId === viewer.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot grant access to yourself.",
+        });
+      }
+      return db.meetingVisibilityGrant.upsert({
+        where: {
+          granterId_granteeId: {
+            granterId: viewer.id,
+            granteeId: input.granteeId,
+          },
+        },
+        create: { granterId: viewer.id, granteeId: input.granteeId },
+        update: {},
+      });
+    }),
+
+  revokeVisibility: protectedProcedure
+    .input(z.object({ granteeId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const viewer = await db.person.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+      if (!viewer) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+      return db.meetingVisibilityGrant.delete({
+        where: {
+          granterId_granteeId: {
+            granterId: viewer.id,
+            granteeId: input.granteeId,
+          },
+        },
+      });
     }),
 });

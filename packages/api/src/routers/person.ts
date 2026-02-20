@@ -6,6 +6,7 @@ import {
   cacheKeys,
   invalidateMgmtChain,
   invalidatePeopleCache,
+  invalidatePersonMeByIds,
   ttl,
 } from "../lib/cache";
 import { redis } from "../lib/redis";
@@ -254,6 +255,9 @@ export const personRouter = createTRPCRouter({
       }
 
       await invalidatePeopleCache();
+      if (managerId) {
+        await invalidatePersonMeByIds(managerId);
+      }
       return person;
     }),
 
@@ -309,6 +313,8 @@ export const personRouter = createTRPCRouter({
         });
         // Invalidate management chain caches
         await invalidateManagerChains(id);
+        // Invalidate old and new managers' person-me caches (directReports changed)
+        await invalidatePersonMeByIds(current.managerId, newManagerId);
       }
 
       await invalidatePeopleCache(current.clerkUserId);
@@ -320,12 +326,13 @@ export const personRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const person = await db.person.findUnique({
         where: { id: input.id },
-        select: { clerkUserId: true },
+        select: { clerkUserId: true, managerId: true },
       });
       const result = await db.person.delete({ where: { id: input.id } });
       await Promise.all([
         invalidatePeopleCache(person?.clerkUserId),
         invalidateManagerChains(input.id),
+        invalidatePersonMeByIds(person?.managerId ?? null),
       ]);
       return result;
     }),

@@ -138,6 +138,8 @@ model Person {
   authoredComments      PersonComment[] @relation("PersonCommentAuthors")
   milestoneAssignments      MilestoneAssignment[]
   quarterlyGoalAssignments  QuarterlyGoalAssignment[]
+  visibilityGrantsGiven    MeetingVisibilityGrant[] @relation("GrantedVisibility")
+  visibilityGrantsReceived MeetingVisibilityGrant[] @relation("ReceivedVisibility")
 
   @@map("people")
 }
@@ -336,6 +338,18 @@ model Meeting {
   updatedAt  DateTime          @updatedAt @map("updated_at")
 
   @@map("meetings")
+}
+
+model MeetingVisibilityGrant {
+  id        String   @id @default(cuid())
+  granterId String   @map("granter_id")
+  granter   Person   @relation("GrantedVisibility", fields: [granterId], references: [id], onDelete: Cascade)
+  granteeId String   @map("grantee_id")
+  grantee   Person   @relation("ReceivedVisibility", fields: [granteeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([granterId, granteeId])
+  @@map("meeting_visibility_grants")
 }
 
 model PersonComment {

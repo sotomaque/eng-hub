@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   invalidateMgmtChain,
   invalidatePeopleCache,
+  invalidatePersonMeByIds,
   invalidateProjectCache,
 } from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
@@ -106,6 +107,7 @@ export const teamMemberRouter = createTRPCRouter({
         let person = await tx.person.findUnique({
           where: { email: input.email },
         });
+        const affectedManagerIds: (string | null)[] = [];
         if (!person) {
           person = await tx.person.create({
             data: {
@@ -123,6 +125,7 @@ export const teamMemberRouter = createTRPCRouter({
           });
 
           if (managerId) {
+            affectedManagerIds.push(managerId);
             await tx.managerChange.create({
               data: {
                 personId: person.id,
@@ -133,6 +136,7 @@ export const teamMemberRouter = createTRPCRouter({
             });
           }
         } else if (managerId && person.managerId !== managerId) {
+          affectedManagerIds.push(person.managerId, managerId);
           const oldManagerId = person.managerId;
           await tx.person.update({
             where: { id: person.id },
@@ -165,15 +169,16 @@ export const teamMemberRouter = createTRPCRouter({
         }
 
         await syncLiveToActiveArrangement(tx, input.projectId);
-        return member;
+        return { member, affectedManagerIds };
       });
       after(async () => {
         await Promise.all([
           invalidateProjectCache(input.projectId),
           invalidatePeopleCache(),
+          invalidatePersonMeByIds(...result.affectedManagerIds),
         ]);
       });
-      return result;
+      return result.member;
     }),
 
   update: protectedProcedure
@@ -240,6 +245,8 @@ export const teamMemberRouter = createTRPCRouter({
           member,
           personId: existing.personId,
           managerChanged: newManagerId !== existing.person.managerId,
+          oldManagerId: existing.person.managerId,
+          newManagerId,
         };
       });
       after(async () => {
@@ -247,7 +254,13 @@ export const teamMemberRouter = createTRPCRouter({
           invalidateProjectCache(result.member.projectId),
           invalidatePeopleCache(),
           ...(result.managerChanged
-            ? [invalidateMgmtChain(result.personId)]
+            ? [
+                invalidateMgmtChain(result.personId),
+                invalidatePersonMeByIds(
+                  result.oldManagerId,
+                  result.newManagerId,
+                ),
+              ]
             : []),
         ]);
       });

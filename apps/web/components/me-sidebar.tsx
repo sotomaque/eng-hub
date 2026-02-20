@@ -22,6 +22,7 @@ import {
   FileText,
   LayoutDashboard,
   NotebookPen,
+  Share2,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +39,7 @@ const navItems = [
   { label: "Direct Reports", icon: Users, path: "/direct-reports" },
   { label: "1:1 Meetings", icon: NotebookPen, path: "/one-on-ones" },
   { label: "Templates", icon: FileText, path: "/templates" },
+  { label: "Sharing", icon: Share2, path: "/sharing" },
 ];
 
 export function MeSidebar({ personName, personImageUrl }: MeSidebarProps) {
