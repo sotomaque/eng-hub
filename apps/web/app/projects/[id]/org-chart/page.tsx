@@ -28,7 +28,7 @@ async function OrgChartContent({ projectId }: { projectId: string }) {
     imageUrl: m.person.imageUrl,
     managerId: m.person.managerId,
     manager: m.person.manager,
-    roleName: m.person.role?.name ?? null,
+    departmentName: m.person.department?.name ?? null,
     titleName: m.person.title?.name ?? null,
   }));
 

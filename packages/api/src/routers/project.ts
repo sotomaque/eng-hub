@@ -34,7 +34,7 @@ export const projectRouter = createTRPCRouter({
           teams: { orderBy: { name: "asc" } },
           teamMembers: {
             include: {
-              person: { include: { role: true, title: true } },
+              person: { include: { department: true, title: { include: { department: true } } } },
               teamMemberships: { include: { team: true } },
             },
             orderBy: { person: { lastName: "asc" } },

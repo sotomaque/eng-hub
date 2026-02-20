@@ -28,11 +28,12 @@ export function TeamCompositionBar({
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
 
-  // Sort: titled entries alphabetically, then null (no title) last
+  // Sort by titleColorMap insertion order (reflects sortOrder), null (no title) last
+  const colorKeys = [...titleColorMap.keys()];
   const entries = [...counts.entries()].sort((a, b) => {
     if (a[0] === null) return 1;
     if (b[0] === null) return -1;
-    return a[0].localeCompare(b[0]);
+    return colorKeys.indexOf(a[0]) - colorKeys.indexOf(b[0]);
   });
 
   const total = members.length;

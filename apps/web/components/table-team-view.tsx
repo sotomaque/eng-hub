@@ -1,6 +1,5 @@
 "use client";
 
-import type { Role } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -17,6 +16,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
@@ -25,11 +25,12 @@ import { useTRPC } from "@/lib/trpc/client";
 
 interface MemberData {
   id: string;
+  personId: string;
   person: {
     firstName: string;
     lastName: string;
     callsign: string | null;
-    role: Role | null;
+    department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
 }
@@ -112,15 +113,18 @@ export function TableTeamView({
                   className="flex items-center justify-between gap-2 rounded-md border px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
+                    <Link
+                      href={`/people/${member.personId}`}
+                      className="truncate text-sm font-medium hover:underline"
+                    >
                       {member.person.firstName}
                       {member.person.callsign
                         ? ` ${member.person.callsign}`
                         : ""}{" "}
                       {member.person.lastName}
-                    </p>
+                    </Link>
                     <p className="text-muted-foreground text-xs">
-                      {member.person.role?.name ?? "—"}
+                      {member.person.department?.name ?? "—"}
                       {member.person.title
                         ? ` · ${member.person.title.name}`
                         : ""}
@@ -201,16 +205,19 @@ export function TableTeamView({
                       className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-muted"
                     >
                       <div className="min-w-0">
-                        <span className="text-sm">
+                        <Link
+                          href={`/people/${a.teamMember.personId}`}
+                          className="text-sm hover:underline"
+                        >
                           {a.teamMember.person.firstName}
                           {a.teamMember.person.callsign
                             ? ` ${a.teamMember.person.callsign}`
                             : ""}{" "}
                           {a.teamMember.person.lastName}
-                        </span>
-                        {a.teamMember.person.role && (
+                        </Link>
+                        {a.teamMember.person.department && (
                           <span className="text-muted-foreground ml-2 text-xs">
-                            {a.teamMember.person.role.name}
+                            {a.teamMember.person.department.name}
                           </span>
                         )}
                       </div>

@@ -1,13 +1,6 @@
 "use client";
 
-import type {
-  Person,
-  Role,
-  Team,
-  TeamMember,
-  TeamMembership,
-  Title,
-} from "@prisma/client";
+import type { Team, TeamMembership } from "@prisma/client";
 import {
   Avatar,
   AvatarFallback,
@@ -29,8 +22,20 @@ import { TeamCompositionBar } from "@/components/team-composition-bar";
 import { TeamMembersTable } from "@/components/team-members-table";
 import { buildTitleColorMap } from "@/lib/constants/team";
 
-type MemberWithRelations = TeamMember & {
-  person: Person & { role: Role | null; title: Title | null };
+type MemberWithRelations = {
+  id: string;
+  personId: string;
+  person: {
+    firstName: string;
+    lastName: string;
+    callsign: string | null;
+    email: string;
+    imageUrl: string | null;
+    githubUsername: string | null;
+    gitlabUsername: string | null;
+    department: { name: string } | null;
+    title: { name: string; sortOrder: number } | null;
+  };
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
@@ -46,10 +51,10 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
   const [search, setSearch] = useState("");
 
   const titleColorMap = useMemo(() => {
-    const titleNames = members
-      .map((m) => m.person.title?.name)
-      .filter((n): n is string => n != null);
-    return buildTitleColorMap(titleNames);
+    const titles = members
+      .map((m) => m.person.title)
+      .filter((t): t is { name: string; sortOrder: number } => t != null);
+    return buildTitleColorMap(titles);
   }, [members]);
 
   const filteredMembers = useMemo(() => {
@@ -61,7 +66,7 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
       return (
         name.includes(q) ||
         m.person.email.toLowerCase().includes(q) ||
-        (m.person.role?.name ?? "").toLowerCase().includes(q) ||
+        (m.person.department?.name ?? "").toLowerCase().includes(q) ||
         (m.person.title?.name ?? "").toLowerCase().includes(q)
       );
     });
@@ -120,12 +125,6 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
               <Users className="size-4" />
               <span className="hidden sm:inline">Manage Teams</span>
             </Button>
-            <Link href={`/projects/${projectId}/arrangements`}>
-              <Button size="sm" variant="outline">
-                <Settings className="size-4" />
-                <span className="hidden sm:inline">Manage Arrangements</span>
-              </Button>
-            </Link>
             <Button
               onClick={() =>
                 router.push(`/projects/${projectId}/team?addMember=true`, {

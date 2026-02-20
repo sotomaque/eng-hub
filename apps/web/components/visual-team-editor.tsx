@@ -10,7 +10,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { Role } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,7 +26,7 @@ interface MemberData {
     lastName: string;
     callsign: string | null;
     imageUrl?: string | null;
-    role: Role | null;
+    department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
 }

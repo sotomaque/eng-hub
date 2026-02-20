@@ -21,7 +21,7 @@ async function OrgChartContent() {
     imageUrl: p.imageUrl,
     managerId: p.managerId,
     manager: p.manager,
-    roleName: p.role?.name ?? null,
+    departmentName: p.department?.name ?? null,
     titleName: p.title?.name ?? null,
   }));
 

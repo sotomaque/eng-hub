@@ -15,8 +15,8 @@ const managerSelect = {
 const personInclude = {
   manager: { select: managerSelect },
   directReports: { select: { ...managerSelect, email: true } },
-  role: true,
-  title: true,
+  department: true,
+  title: { include: { department: true } },
   projectMemberships: {
     include: {
       project: true,
@@ -34,7 +34,7 @@ const createPersonSchema = z.object({
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
   managerId: z.string().optional().or(z.literal("")),
-  roleId: z.string().optional().or(z.literal("")),
+  departmentId: z.string().optional().or(z.literal("")),
   titleId: z.string().optional().or(z.literal("")),
 });
 
@@ -94,7 +94,7 @@ export const personRouter = createTRPCRouter({
           gitlabUsername: input.gitlabUsername || null,
           imageUrl: input.imageUrl || null,
           managerId,
-          roleId: input.roleId || null,
+          departmentId: input.departmentId || null,
           titleId: input.titleId || null,
         },
       });
@@ -148,7 +148,7 @@ export const personRouter = createTRPCRouter({
           gitlabUsername: data.gitlabUsername || null,
           imageUrl: data.imageUrl || null,
           managerId: newManagerId,
-          roleId: data.roleId || null,
+          departmentId: data.departmentId || null,
           titleId: data.titleId || null,
         },
       });

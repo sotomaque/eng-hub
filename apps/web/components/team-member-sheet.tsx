@@ -1,14 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  Person,
-  Role,
-  Team,
-  TeamMember,
-  TeamMembership,
-  Title,
-} from "@prisma/client";
+import type { Team, TeamMembership } from "@prisma/client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
@@ -37,8 +30,21 @@ import {
 
 interface TeamMemberSheetProps {
   projectId: string;
-  member?: TeamMember & {
-    person: Person & { role: Role | null; title: Title | null };
+  member?: {
+    id: string;
+    personId: string;
+    person: {
+      firstName: string;
+      lastName: string;
+      callsign: string | null;
+      email: string;
+      imageUrl: string | null;
+      githubUsername: string | null;
+      gitlabUsername: string | null;
+      managerId: string | null;
+      department: { id: string; name: string } | null;
+      title: { id: string; name: string } | null;
+    };
     teamMemberships: (TeamMembership & { team: Team })[];
   };
 }
@@ -53,7 +59,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const emailManuallyEdited = useRef(isEditing);
   const [selectedPersonId, setSelectedPersonId] = useState("");
 
-  const rolesQuery = useQuery(trpc.role.getAll.queryOptions());
+  const departmentsQuery = useQuery(trpc.department.getAll.queryOptions());
   const teamsQuery = useQuery(
     trpc.team.getByProjectId.queryOptions({ projectId }),
   );
@@ -77,7 +83,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       callsign: member?.person.callsign ?? "",
       email: member?.person.email ?? "",
       titleId: member?.person.title?.id ?? "",
-      roleId: member?.person.role?.id ?? "",
+      departmentId: member?.person.department?.id ?? "",
       teamIds: member?.teamMemberships.map((m) => m.teamId) ?? [],
       githubUsername: member?.person.githubUsername ?? "",
       gitlabUsername: member?.person.gitlabUsername ?? "",
@@ -136,7 +142,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     }
   }
 
-  const roles = rolesQuery.data ?? [];
+  const departments = departmentsQuery.data ?? [];
   const teams = teamsQuery.data ?? [];
   const titles = titlesQuery.data ?? [];
   const allPeople = peopleQuery.data ?? [];
@@ -155,7 +161,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
         callsign: "",
         email: "",
         titleId: "",
-        roleId: "",
+        departmentId: "",
         teamIds: [],
         githubUsername: "",
         gitlabUsername: "",
@@ -178,7 +184,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       shouldDirty: true,
     });
     setValue("managerId", person.managerId ?? "", { shouldDirty: true });
-    if (person.roleId) setValue("roleId", person.roleId, { shouldDirty: true });
+    if (person.departmentId)
+      setValue("departmentId", person.departmentId, { shouldDirty: true });
     if (person.titleId)
       setValue("titleId", person.titleId, { shouldDirty: true });
     emailManuallyEdited.current = true;
@@ -345,26 +352,26 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>Department</Label>
               <Controller
-                name="roleId"
+                name="departmentId"
                 control={control}
                 render={({ field }) => (
                   <Combobox
-                    options={roles.map((r) => ({
-                      value: r.id,
-                      label: r.name,
+                    options={departments.map((d) => ({
+                      value: d.id,
+                      label: d.name,
                     }))}
                     value={field.value}
                     onValueChange={field.onChange}
-                    placeholder="Select role..."
-                    searchPlaceholder="Search roles..."
+                    placeholder="Select department..."
+                    searchPlaceholder="Search departments..."
                   />
                 )}
               />
-              {errors.roleId && (
+              {errors.departmentId && (
                 <p className="text-destructive text-sm">
-                  {errors.roleId.message}
+                  {errors.departmentId.message}
                 </p>
               )}
               <Button
@@ -376,12 +383,12 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     ? `editMember=${member.id}`
                     : "addMember=true";
                   router.push(
-                    `/projects/${projectId}/team?${memberParam}&manageRoles=true`,
+                    `/projects/${projectId}/team?${memberParam}&manageDepartments=true`,
                     { scroll: false },
                   );
                 }}
               >
-                Manage Roles
+                Manage Departments
               </Button>
             </div>
 

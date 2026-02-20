@@ -1,6 +1,6 @@
 "use client";
 
-import type { Person, Role, TeamMember } from "@prisma/client";
+import type { Person, TeamMember } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -16,7 +16,10 @@ import { buildTitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRole = TeamMember & {
-  person: Person & { role: Role | null; title: { name: string } | null };
+  person: Person & {
+    department: { name: string; color: string | null } | null;
+    title: { name: string; sortOrder: number } | null;
+  };
 };
 
 interface AssignmentData {
@@ -65,10 +68,10 @@ export function ArrangementEditor({
         t.assignments.map((a) => a.teamMember),
       ),
     ];
-    const titleNames = allMembers
-      .map((m) => m.person.title?.name)
-      .filter((n): n is string => n != null);
-    return buildTitleColorMap(titleNames);
+    const titles = allMembers
+      .map((m) => m.person.title)
+      .filter((t): t is { name: string; sortOrder: number } => t != null);
+    return buildTitleColorMap(titles);
   }, [arrangement]);
 
   const totalMembers =

@@ -1,7 +1,6 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import type { Role } from "@prisma/client";
 import {
   Avatar,
   AvatarFallback,
@@ -9,19 +8,13 @@ import {
 } from "@workspace/ui/components/avatar";
 import { cn } from "@workspace/ui/lib/utils";
 
-const ROLE_COLORS: Record<string, string> = {
-  Engineering: "border-l-blue-500",
-  Design: "border-l-purple-500",
-  Product: "border-l-green-500",
-};
-
 interface DraggableMemberChipProps {
   id: string;
   firstName: string;
   lastName: string;
   callsign?: string | null;
   title: { name: string } | null;
-  role: Role | null;
+  department: { name: string; color: string | null } | null;
   sourceTeamId: string | null;
   imageUrl?: string | null;
 }
@@ -32,7 +25,7 @@ export function DraggableMemberChip({
   lastName,
   callsign,
   title,
-  role,
+  department,
   sourceTeamId,
   imageUrl,
 }: DraggableMemberChipProps) {
@@ -47,9 +40,6 @@ export function DraggableMemberChip({
     },
   });
 
-  const borderColor =
-    (role ? ROLE_COLORS[role.name] : undefined) ?? "border-l-gray-400";
-
   return (
     <div
       ref={setNodeRef}
@@ -57,9 +47,9 @@ export function DraggableMemberChip({
       {...listeners}
       className={cn(
         "flex cursor-grab items-center gap-2 rounded-md border border-l-4 bg-background px-3 py-1.5 text-sm shadow-xs transition-opacity active:cursor-grabbing",
-        borderColor,
         isDragging && "opacity-50",
       )}
+      style={{ borderLeftColor: department?.color ?? "#9ca3af" }}
     >
       <Avatar className="size-6 shrink-0">
         <AvatarImage src={imageUrl ?? undefined} />
@@ -74,9 +64,9 @@ export function DraggableMemberChip({
           {title.name}
         </span>
       )}
-      {role && (
+      {department && (
         <span className="text-muted-foreground ml-auto shrink-0 text-xs">
-          {role.name}
+          {department.name}
         </span>
       )}
     </div>

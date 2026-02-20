@@ -1,13 +1,6 @@
 "use client";
 
-import type {
-  Person,
-  Role,
-  Team,
-  TeamMember,
-  TeamMembership,
-  Title,
-} from "@prisma/client";
+import type { Team, TeamMembership } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -29,8 +22,9 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -40,8 +34,20 @@ import type { TitleColorMap } from "@/lib/constants/team";
 import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
-type MemberWithRelations = TeamMember & {
-  person: Person & { role: Role | null; title: Title | null };
+type MemberWithRelations = {
+  id: string;
+  personId: string;
+  person: {
+    firstName: string;
+    lastName: string;
+    callsign: string | null;
+    email: string;
+    imageUrl: string | null;
+    githubUsername: string | null;
+    gitlabUsername: string | null;
+    department: { name: string } | null;
+    title: { name: string } | null;
+  };
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
@@ -58,8 +64,6 @@ export function TeamMembersTable({
 }: TeamMembersTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
   const deleteMutation = useMutation(
     trpc.teamMember.delete.mutationOptions({
       onSuccess: () => {
@@ -67,9 +71,12 @@ export function TeamMembersTable({
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
-      onSettled: () => setDeletingId(null),
     }),
   );
+
+  const deletingId = deleteMutation.isPending
+    ? (deleteMutation.variables?.id ?? null)
+    : null;
 
   const titleOptions = useMemo(() => {
     const titles = [
@@ -79,14 +86,16 @@ export function TeamMembersTable({
     return titles.map((t) => ({ label: t as string, value: t as string }));
   }, [members]);
 
-  const roleOptions = useMemo(() => {
-    const roles = [
+  const departmentOptions = useMemo(() => {
+    const depts = [
       ...new Set(
-        members.map((m) => m.person.role?.name).filter(Boolean) as string[],
+        members
+          .map((m) => m.person.department?.name)
+          .filter(Boolean) as string[],
       ),
     ];
-    roles.sort();
-    return roles.map((r) => ({ label: r, value: r }));
+    depts.sort();
+    return depts.map((d) => ({ label: d, value: d }));
   }, [members]);
 
   const columns: ColumnDef<MemberWithRelations>[] = [
@@ -100,7 +109,10 @@ export function TeamMembersTable({
       cell: ({ row }) => {
         const member = row.original;
         return (
-          <div className="flex items-center gap-2">
+          <Link
+            href={`/people/${member.personId}`}
+            className="flex items-center gap-2 hover:underline"
+          >
             <Avatar className="size-7 shrink-0">
               <AvatarImage src={member.person.imageUrl ?? undefined} />
               <AvatarFallback className="text-xs">
@@ -109,7 +121,7 @@ export function TeamMembersTable({
               </AvatarFallback>
             </Avatar>
             <span className="font-medium">{row.getValue("name")}</span>
-          </div>
+          </Link>
         );
       },
     },
@@ -165,13 +177,13 @@ export function TeamMembersTable({
       },
     },
     {
-      id: "roleName",
-      accessorFn: (row) => row.person.role?.name ?? "",
+      id: "departmentName",
+      accessorFn: (row) => row.person.department?.name ?? "",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Role" />
+        <DataTableColumnHeader column={column} title="Department" />
       ),
       cell: ({ row }) => {
-        const val = row.getValue("roleName") as string;
+        const val = row.getValue("departmentName") as string;
         return val ? (
           <span>{val}</span>
         ) : (
@@ -261,10 +273,7 @@ export function TeamMembersTable({
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => {
-                      setDeletingId(member.id);
-                      deleteMutation.mutate({ id: member.id });
-                    }}
+                    onClick={() => deleteMutation.mutate({ id: member.id })}
                     disabled={deletingId === member.id}
                     className="bg-destructive text-white hover:bg-destructive/90"
                   >
@@ -297,13 +306,14 @@ export function TeamMembersTable({
               options={titleOptions}
             />
           )}
-          {table.getColumn("roleName") && roleOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={table.getColumn("roleName")}
-              title="Role"
-              options={roleOptions}
-            />
-          )}
+          {table.getColumn("departmentName") &&
+            departmentOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={table.getColumn("departmentName")}
+                title="Department"
+                options={departmentOptions}
+              />
+            )}
         </DataTableToolbar>
       )}
     />

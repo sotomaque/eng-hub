@@ -1,15 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  Person,
-  Project,
-  Role,
-  Team,
-  TeamMember,
-  TeamMembership,
-  Title,
-} from "@prisma/client";
+import type { Project, Team, TeamMembership } from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Combobox } from "@workspace/ui/components/combobox";
@@ -35,13 +27,26 @@ import {
   createPersonSchema,
 } from "@/lib/validations/person";
 
-type PersonWithMemberships = Person & {
-  role: Role | null;
-  title: Title | null;
-  projectMemberships: (TeamMember & {
+type PersonWithMemberships = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  callsign: string | null;
+  email: string;
+  imageUrl: string | null;
+  githubUsername: string | null;
+  gitlabUsername: string | null;
+  managerId: string | null;
+  departmentId: string | null;
+  titleId: string | null;
+  department: { id: string; name: string } | null;
+  title: { id: string; name: string } | null;
+  projectMemberships: {
+    id: string;
+    projectId: string;
     project: Project;
     teamMemberships: (TeamMembership & { team: Team })[];
-  })[];
+  }[];
 };
 
 interface PersonSheetProps {
@@ -58,12 +63,12 @@ export function PersonSheet({ person }: PersonSheetProps) {
   const emailManuallyEdited = useRef(isEditing);
 
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
-  const rolesQuery = useQuery(trpc.role.getAll.queryOptions());
+  const departmentsQuery = useQuery(trpc.department.getAll.queryOptions());
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
   const people = (peopleQuery.data ?? []).filter(
     (p) => !person || p.id !== person.id,
   );
-  const roles = rolesQuery.data ?? [];
+  const departments = departmentsQuery.data ?? [];
   const titles = titlesQuery.data ?? [];
 
   const {
@@ -84,7 +89,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
       githubUsername: person?.githubUsername ?? "",
       gitlabUsername: person?.gitlabUsername ?? "",
       managerId: person?.managerId ?? "",
-      roleId: person?.roleId ?? "",
+      departmentId: person?.departmentId ?? "",
       titleId: person?.titleId ?? "",
     },
   });
@@ -293,25 +298,25 @@ export function PersonSheet({ person }: PersonSheetProps) {
                 </Button>
               </div>
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label>Department</Label>
                 <Controller
-                  name="roleId"
+                  name="departmentId"
                   control={control}
                   render={({ field }) => (
                     <Combobox
                       options={[
-                        { value: "__none__", label: "No role" },
-                        ...roles.map((r) => ({
-                          value: r.id,
-                          label: r.name,
+                        { value: "__none__", label: "No department" },
+                        ...departments.map((d) => ({
+                          value: d.id,
+                          label: d.name,
                         })),
                       ]}
                       value={field.value || "__none__"}
                       onValueChange={(val) =>
                         field.onChange(val === "__none__" ? "" : val)
                       }
-                      placeholder="Select role..."
-                      searchPlaceholder="Search roles..."
+                      placeholder="Select department..."
+                      searchPlaceholder="Search departments..."
                     />
                   )}
                 />
@@ -323,12 +328,15 @@ export function PersonSheet({ person }: PersonSheetProps) {
                     const personParam = isEditing
                       ? `edit=${person.id}`
                       : "create=true";
-                    router.push(`/people?${personParam}&manageRoles=true`, {
-                      scroll: false,
-                    });
+                    router.push(
+                      `/people?${personParam}&manageDepartments=true`,
+                      {
+                        scroll: false,
+                      },
+                    );
                   }}
                 >
-                  Manage Roles
+                  Manage Departments
                 </Button>
               </div>
             </div>

@@ -22,14 +22,18 @@ export type TitleColorMap = Map<string, string>;
 
 /**
  * Build a stable title → hex color mapping.
- * Sorts unique title names alphabetically and assigns from palette by index.
+ * Sorts unique titles by sortOrder and assigns from palette by index.
  */
-export function buildTitleColorMap(titleNames: string[]): TitleColorMap {
-  const unique = [...new Set(titleNames)].sort();
+export function buildTitleColorMap(
+  titles: { name: string; sortOrder: number }[],
+): TitleColorMap {
+  const unique = [...new Map(titles.map((t) => [t.name, t])).values()].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
   const map = new Map<string, string>();
-  for (const [i, name] of unique.entries()) {
+  for (const [i, title] of unique.entries()) {
     map.set(
-      name,
+      title.name,
       TITLE_COLOR_PALETTE[i % TITLE_COLOR_PALETTE.length] ??
         TITLE_NO_TITLE_COLOR,
     );

@@ -13,30 +13,13 @@ import { SidebarTrigger } from "@workspace/ui/components/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-interface ProjectSiteHeaderProps {
-  projectName: string;
-  projectId: string;
-}
-
 const SEGMENT_LABELS: Record<string, string> = {
-  health: "Health",
-  team: "People",
-  "org-chart": "Org Chart",
-  roadmap: "Roadmap",
-  links: "Links",
-  arrangements: "Teams",
-  stats: "Stats",
+  departments: "Departments & Titles",
 };
 
-export function ProjectSiteHeader({
-  projectName,
-  projectId,
-}: ProjectSiteHeaderProps) {
+export function SettingsSiteHeader() {
   const pathname = usePathname();
-  const basePath = `/projects/${projectId}`;
-
-  // Determine the active section from the pathname
-  const relativePath = pathname.replace(basePath, "").replace(/^\//, "");
+  const relativePath = pathname.replace("/settings", "").replace(/^\//, "");
   const segments = relativePath.split("/").filter(Boolean);
   const sectionSlug = segments[0];
   const sectionLabel = sectionSlug ? SEGMENT_LABELS[sectionSlug] : undefined;
@@ -49,26 +32,16 @@ export function ProjectSiteHeader({
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/">Projects</Link>
+              <Link href="/settings">Settings</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          {sectionLabel ? (
+          {sectionLabel && (
             <>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={basePath}>{projectName}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
-          ) : (
-            <BreadcrumbItem>
-              <BreadcrumbPage>{projectName}</BreadcrumbPage>
-            </BreadcrumbItem>
           )}
         </BreadcrumbList>
       </Breadcrumb>

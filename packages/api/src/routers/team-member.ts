@@ -15,8 +15,8 @@ const memberInclude = {
   person: {
     include: {
       manager: { select: managerSelect },
-      role: true,
-      title: true,
+      department: true,
+      title: { include: { department: true } },
     },
   },
   teamMemberships: { include: { team: true } },
@@ -29,7 +29,7 @@ const createTeamMemberSchema = z.object({
   callsign: z.string().optional().or(z.literal("")),
   email: z.string().email(),
   titleId: z.string().optional().or(z.literal("")),
-  roleId: z.string(),
+  departmentId: z.string(),
   teamIds: z.array(z.string()).optional(),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
@@ -44,7 +44,7 @@ const updateTeamMemberSchema = z.object({
   callsign: z.string().optional().or(z.literal("")),
   email: z.string().email(),
   titleId: z.string().optional().or(z.literal("")),
-  roleId: z.string(),
+  departmentId: z.string(),
   teamIds: z.array(z.string()).optional(),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
@@ -81,8 +81,8 @@ export const teamMemberRouter = createTRPCRouter({
           person: {
             include: {
               manager: { select: managerSelect },
-              role: true,
-              title: true,
+              department: true,
+              title: { include: { department: true } },
             },
           },
         },
@@ -111,7 +111,7 @@ export const teamMemberRouter = createTRPCRouter({
               gitlabUsername: input.gitlabUsername || null,
               imageUrl: input.imageUrl || null,
               managerId,
-              roleId: input.roleId,
+              departmentId: input.departmentId,
               titleId: input.titleId || null,
             },
           });
@@ -185,7 +185,7 @@ export const teamMemberRouter = createTRPCRouter({
           gitlabUsername: data.gitlabUsername || null,
           imageUrl: data.imageUrl || null,
           managerId: newManagerId,
-          roleId: data.roleId,
+          departmentId: data.departmentId,
           titleId: data.titleId || null,
         };
 

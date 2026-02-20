@@ -62,7 +62,7 @@ export function ArrangementsList({
   const deleteMutation = useMutation(
     trpc.arrangement.delete.mutationOptions({
       onSuccess: () => {
-        toast.success("Arrangement deleted");
+        toast.success("Configuration deleted");
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
@@ -82,12 +82,12 @@ export function ArrangementsList({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Team Arrangements</h1>
+          <h1 className="text-2xl font-bold">Teams</h1>
           <p className="text-muted-foreground text-sm">{projectName}</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="size-4" />
-          New Arrangement
+          New Configuration
         </Button>
       </div>
 
@@ -95,15 +95,15 @@ export function ArrangementsList({
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="text-muted-foreground mb-3 size-10" />
-            <h3 className="mb-1 font-semibold">No arrangements yet</h3>
+            <h3 className="mb-1 font-semibold">No team configurations yet</h3>
             <p className="text-muted-foreground mb-4 max-w-sm text-sm">
-              Create a team arrangement to visually organize members into
+              Create a team configuration to visually organize members into
               sub-teams. You can create multiple proposals and activate the one
               you want.
             </p>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="size-4" />
-              Create First Arrangement
+              Create First Configuration
             </Button>
           </CardContent>
         </Card>
@@ -173,7 +173,7 @@ export function ArrangementsList({
                       <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                         <AlertDialogHeader>
                           <AlertDialogTitle>
-                            Delete arrangement?
+                            Delete configuration?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
                             This will permanently delete &quot;

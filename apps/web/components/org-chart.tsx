@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { ChevronDown, ChevronRight, Network, Users } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type ManagerInfo = {
@@ -32,7 +33,7 @@ export type OrgMember = {
   imageUrl: string | null;
   managerId: string | null;
   manager: ManagerInfo | null;
-  roleName: string | null;
+  departmentName: string | null;
   titleName: string | null;
 };
 
@@ -115,12 +116,12 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 
   return (
     <div className={depth > 0 ? "ml-6 border-l pl-4" : ""}>
-      <button
-        type="button"
-        className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-muted/50"
-        onClick={() => hasChildren && setExpanded(!expanded)}
-      >
-        <div className="flex size-5 shrink-0 items-center justify-center">
+      <div className="flex w-full items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/50">
+        <button
+          type="button"
+          className="flex size-5 shrink-0 items-center justify-center"
+          onClick={() => hasChildren && setExpanded((prev) => !prev)}
+        >
           {hasChildren ? (
             expanded ? (
               <ChevronDown className="size-4 text-muted-foreground" />
@@ -130,29 +131,34 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
           ) : (
             <span className="size-1.5 rounded-full bg-muted-foreground/40" />
           )}
-        </div>
-        <Avatar className="size-8 shrink-0">
-          <AvatarImage src={m.imageUrl ?? undefined} />
-          <AvatarFallback className="text-xs">
-            {m.firstName[0]}
-            {m.lastName[0]}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium">{displayName}</span>
-          <div className="flex items-center gap-1.5">
-            {m.roleName && (
-              <span className="truncate text-xs text-muted-foreground">
-                {m.roleName}
-              </span>
-            )}
-            {m.titleName && (
-              <Badge variant="outline" className="text-[10px] px-1 py-0">
-                {m.titleName}
-              </Badge>
-            )}
+        </button>
+        <Link
+          href={`/people/${m.personId}`}
+          className="flex min-w-0 flex-1 items-center gap-3 hover:underline"
+        >
+          <Avatar className="size-8 shrink-0">
+            <AvatarImage src={m.imageUrl ?? undefined} />
+            <AvatarFallback className="text-xs">
+              {m.firstName[0]}
+              {m.lastName[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium">{displayName}</span>
+            <div className="flex items-center gap-1.5">
+              {m.departmentName && (
+                <span className="truncate text-xs text-muted-foreground">
+                  {m.departmentName}
+                </span>
+              )}
+              {m.titleName && (
+                <Badge variant="outline" className="text-[10px] px-1 py-0">
+                  {m.titleName}
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
+        </Link>
         {hasChildren && (
           <Badge
             variant="secondary"
@@ -161,7 +167,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
             {node.children.length}
           </Badge>
         )}
-      </button>
+      </div>
       {hasChildren && expanded && (
         <div className="mt-0.5">
           {sortedChildren.map((child) => (
@@ -195,7 +201,7 @@ function ExternalManagerGroup({
       <button
         type="button"
         className="flex w-full items-center gap-3 px-2 py-1 text-left"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => setExpanded((prev) => !prev)}
       >
         <div className="flex size-5 shrink-0 items-center justify-center">
           {expanded ? (
@@ -204,21 +210,27 @@ function ExternalManagerGroup({
             <ChevronRight className="size-4 text-muted-foreground" />
           )}
         </div>
-        <Avatar className="size-8 shrink-0 opacity-60">
-          <AvatarImage src={manager.imageUrl ?? undefined} />
-          <AvatarFallback className="text-xs">
-            {manager.firstName[0]}
-            {manager.lastName[0]}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium text-muted-foreground">
-            {displayName}
-          </span>
-          <span className="text-xs text-muted-foreground/70">
-            External manager
-          </span>
-        </div>
+        <Link
+          href={`/people/${manager.id}`}
+          className="flex min-w-0 flex-1 items-center gap-3 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Avatar className="size-8 shrink-0 opacity-60">
+            <AvatarImage src={manager.imageUrl ?? undefined} />
+            <AvatarFallback className="text-xs">
+              {manager.firstName[0]}
+              {manager.lastName[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium text-muted-foreground">
+              {displayName}
+            </span>
+            <span className="text-xs text-muted-foreground/70">
+              External manager
+            </span>
+          </div>
+        </Link>
         <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0">
           {reports.length}
         </Badge>
@@ -250,7 +262,7 @@ function formatRelativeTime(date: string): string {
 export function OrgChart({
   members,
   recentChanges,
-  emptyMessage = "No team members yet. Add members from the Team page to see the org chart.",
+  emptyMessage = "No team members yet. Add members from the People page to see the org chart.",
 }: OrgChartProps) {
   const { roots, externalManagers } = useMemo(
     () => buildTree(members),

@@ -9,7 +9,7 @@ export const createPersonSchema = z.object({
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
   managerId: z.string().optional().or(z.literal("")),
-  roleId: z.string().optional().or(z.literal("")),
+  departmentId: z.string().optional().or(z.literal("")),
   titleId: z.string().optional().or(z.literal("")),
 });
 

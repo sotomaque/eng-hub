@@ -42,7 +42,7 @@ export function CreateArrangementDialog({
   const createMutation = useMutation(
     trpc.arrangement.create.mutationOptions({
       onSuccess: (data) => {
-        toast.success("Arrangement created");
+        toast.success("Configuration created");
         onOpenChange(false);
         setName("");
         router.push(`/projects/${projectId}/arrangements/${data.id}`);
@@ -55,7 +55,7 @@ export function CreateArrangementDialog({
   const cloneMutation = useMutation(
     trpc.arrangement.clone.mutationOptions({
       onSuccess: (data) => {
-        toast.success("Arrangement cloned");
+        toast.success("Configuration cloned");
         onOpenChange(false);
         setName("");
         router.push(`/projects/${projectId}/arrangements/${data.id}`);
@@ -68,7 +68,7 @@ export function CreateArrangementDialog({
   const cloneFromLiveMutation = useMutation(
     trpc.arrangement.cloneFromLive.mutationOptions({
       onSuccess: (data) => {
-        toast.success("Arrangement created from live teams");
+        toast.success("Configuration created from live teams");
         onOpenChange(false);
         setName("");
         router.push(`/projects/${projectId}/arrangements/${data.id}`);
@@ -104,9 +104,9 @@ export function CreateArrangementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Arrangement</DialogTitle>
+          <DialogTitle>New Team Configuration</DialogTitle>
           <DialogDescription>
-            Create a new team arrangement to organize members into sub-teams.
+            Create a new team configuration to organize members into sub-teams.
           </DialogDescription>
         </DialogHeader>
 
@@ -154,7 +154,7 @@ export function CreateArrangementDialog({
                   />
                   <div>
                     <p className="text-sm font-medium">
-                      Clone active arrangement
+                      Clone active configuration
                     </p>
                     <p className="text-muted-foreground text-xs">
                       Copy teams and assignments from &quot;
@@ -195,7 +195,11 @@ export function CreateArrangementDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || !name.trim()}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
+              {isSubmitting && (
+                <span className="animate-spin">
+                  <Loader2 />
+                </span>
+              )}
               Create
             </Button>
           </DialogFooter>

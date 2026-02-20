@@ -50,10 +50,10 @@ export default async function MeProfilePage() {
                 <p>{person.email}</p>
               </div>
             )}
-            {person.role && (
+            {person.department && (
               <div>
-                <p className="text-muted-foreground text-sm">Role</p>
-                <Badge variant="secondary">{person.role.name}</Badge>
+                <p className="text-muted-foreground text-sm">Department</p>
+                <Badge variant="secondary">{person.department.name}</Badge>
               </div>
             )}
             {person.title && (

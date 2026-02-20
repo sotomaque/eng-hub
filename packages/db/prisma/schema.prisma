@@ -43,10 +43,12 @@ model Project {
   @@map("projects")
 }
 
-model Role {
+model Department {
   id     String   @id @default(cuid())
   name   String   @unique
+  color  String?
   people Person[]
+  titles Title[]
 
   @@map("roles")
 }
@@ -97,9 +99,12 @@ model HealthAssessment {
 }
 
 model Title {
-  id     String   @id @default(cuid())
-  name   String   @unique
-  people Person[]
+  id           String      @id @default(cuid())
+  name         String      @unique
+  sortOrder    Int         @default(0) @map("sort_order")
+  departmentId String?     @map("department_id")
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  people       Person[]
 
   @@map("titles")
 }
@@ -117,8 +122,8 @@ model Person {
   managerId      String?  @map("manager_id")
   manager        Person?  @relation("PersonManager", fields: [managerId], references: [id], onDelete: SetNull)
   directReports  Person[] @relation("PersonManager")
-  roleId         String?  @map("role_id")
-  role           Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  departmentId   String?  @map("role_id")
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   titleId        String?  @map("title_id")
   title          Title?   @relation(fields: [titleId], references: [id], onDelete: SetNull)
   createdAt      DateTime @default(now()) @map("created_at")
@@ -129,6 +134,8 @@ model Person {
   oldManagerOfChanges   ManagerChange[] @relation("OldManagerChanges")
   newManagerOfChanges   ManagerChange[] @relation("NewManagerChanges")
   meetings              Meeting[]
+  comments              PersonComment[] @relation("PersonComments")
+  authoredComments      PersonComment[] @relation("PersonCommentAuthors")
 
   @@map("people")
 }
@@ -315,4 +322,18 @@ model Meeting {
   updatedAt  DateTime          @updatedAt @map("updated_at")
 
   @@map("meetings")
+}
+
+model PersonComment {
+  id             String   @id @default(cuid())
+  content        String
+  personId       String   @map("person_id")
+  person         Person   @relation("PersonComments", fields: [personId], references: [id], onDelete: Cascade)
+  authorId       String   @map("author_id")
+  authorPersonId String   @map("author_person_id")
+  author         Person   @relation("PersonCommentAuthors", fields: [authorPersonId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("person_comments")
 }

@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { AddToProjectDialog } from "@/components/add-to-project-dialog";
 import { AppHeader } from "@/components/app-header";
+import { DepartmentSheet } from "@/components/department-sheet";
 import { PeopleTable } from "@/components/people-table";
 import { PersonSheet } from "@/components/person-sheet";
 import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";
-import { RoleSheet } from "@/components/role-sheet";
 import { TitleSheet } from "@/components/title-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
 
@@ -16,26 +16,17 @@ interface PageProps {
     edit?: string;
     addToProject?: string;
     manageTitles?: string;
-    manageRoles?: string;
+    manageDepartments?: string;
   }>;
 }
 
 async function PeopleContent() {
   const trpc = await createServerCaller();
-  const [people, projects, roles, titles] = await Promise.all([
+  const [people, projects] = await Promise.all([
     trpc.person.getAll(),
     trpc.project.getAll(),
-    trpc.role.getAll(),
-    trpc.title.getAll(),
   ]);
-  return (
-    <PeopleTable
-      people={people}
-      projects={projects}
-      roles={roles}
-      titles={titles}
-    />
-  );
+  return <PeopleTable people={people} projects={projects} />;
 }
 
 async function EditPersonContent({ personId }: { personId: string }) {
@@ -97,8 +88,8 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       {params.manageTitles === "true" && (
         <TitleSheet returnPath={manageReturnPath(params)} />
       )}
-      {params.manageRoles === "true" && (
-        <RoleSheet returnPath={manageReturnPath(params)} />
+      {params.manageDepartments === "true" && (
+        <DepartmentSheet returnPath={manageReturnPath(params)} />
       )}
     </div>
   );

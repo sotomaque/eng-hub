@@ -4,6 +4,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -24,17 +31,21 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [newName, setNewName] = useState("");
+  const [newDeptId, setNewDeptId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [editingDeptId, setEditingDeptId] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
+  const departmentsQuery = useQuery(trpc.department.getAll.queryOptions());
 
   const createMutation = useMutation(
     trpc.title.create.mutationOptions({
       onSuccess: () => {
         toast.success("Title created");
         setNewName("");
+        setNewDeptId("");
         setIsAdding(false);
         titlesQuery.refetch();
       },
@@ -70,16 +81,24 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
   function handleAdd() {
     const trimmed = newName.trim();
     if (!trimmed) return;
-    createMutation.mutate({ name: trimmed });
+    createMutation.mutate({
+      name: trimmed,
+      departmentId: newDeptId || undefined,
+    });
   }
 
   function handleUpdate(id: string) {
     const trimmed = editingName.trim();
     if (!trimmed) return;
-    updateMutation.mutate({ id, name: trimmed });
+    updateMutation.mutate({
+      id,
+      name: trimmed,
+      departmentId: editingDeptId === "none" ? "" : editingDeptId || "",
+    });
   }
 
   const titles = titlesQuery.data ?? [];
+  const departments = departmentsQuery.data ?? [];
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
@@ -95,9 +114,9 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
             {titles.map((title) => (
-              <div key={title.id} className="flex items-center gap-2">
+              <div key={title.id} className="space-y-2">
                 {editingId === title.id ? (
-                  <>
+                  <div className="space-y-2">
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
@@ -107,30 +126,73 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                       className="flex-1"
                       autoFocus
                     />
-                    <Button
-                      size="sm"
-                      onClick={() => handleUpdate(title.id)}
-                      disabled={updateMutation.isPending}
+                    <Select
+                      value={editingDeptId}
+                      onValueChange={setEditingDeptId}
                     >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingId(null)}
-                    >
-                      Cancel
-                    </Button>
-                  </>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="No department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No department</SelectItem>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            <div className="flex items-center gap-1.5">
+                              {dept.color && (
+                                <span
+                                  className="size-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: dept.color }}
+                                />
+                              )}
+                              {dept.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdate(title.id)}
+                        disabled={updateMutation.isPending}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <span className="flex-1 text-sm">{title.name}</span>
+                  <div className="flex items-center gap-2">
+                    {title.department?.color && (
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: title.department.color }}
+                      />
+                    )}
+                    <div className="flex-1">
+                      <span className="text-sm">{title.name}</span>
+                      {title.department && (
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {title.department.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground text-xs">
+                      {title._count.people}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => {
                         setEditingId(title.id);
                         setEditingName(title.name);
+                        setEditingDeptId(title.departmentId ?? "none");
                       }}
                     >
                       <Pencil className="size-4" />
@@ -145,7 +207,7 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                       <Trash2 className="size-4" />
                       <span className="sr-only">Delete</span>
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             ))}
@@ -159,35 +221,57 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
 
           <div className="border-t bg-background p-4">
             {isAdding ? (
-              <div className="flex items-center gap-2">
+              <div className="space-y-2">
                 <Input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                   placeholder="Title name"
-                  className="flex-1"
                   autoFocus
                 />
-                <Button
-                  size="sm"
-                  onClick={handleAdd}
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending && (
-                    <Loader2 className="animate-spin" />
-                  )}
-                  Add
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAdding(false);
-                    setNewName("");
-                  }}
-                >
-                  Cancel
-                </Button>
+                <Select value={newDeptId} onValueChange={setNewDeptId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select department (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        <div className="flex items-center gap-1.5">
+                          {dept.color && (
+                            <span
+                              className="size-2 shrink-0 rounded-full"
+                              style={{ backgroundColor: dept.color }}
+                            />
+                          )}
+                          {dept.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleAdd}
+                    disabled={createMutation.isPending}
+                  >
+                    {createMutation.isPending && (
+                      <Loader2 className="animate-spin" />
+                    )}
+                    Add
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAdding(false);
+                      setNewName("");
+                      setNewDeptId("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             ) : (
               <Button

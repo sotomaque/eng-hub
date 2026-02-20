@@ -1,7 +1,6 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import type { Role } from "@prisma/client";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -24,7 +23,7 @@ interface TeamMemberData {
     lastName: string;
     callsign: string | null;
     imageUrl?: string | null;
-    role: Role | null;
+    department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
 }
@@ -149,7 +148,7 @@ export function DroppableTeamCard({
                 lastName={member.person.lastName}
                 callsign={member.person.callsign}
                 title={member.person.title}
-                role={member.person.role}
+                department={member.person.department}
                 sourceTeamId={teamId}
                 imageUrl={member.person.imageUrl}
               />

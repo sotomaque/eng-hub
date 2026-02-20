@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { RoleSheet } from "@/components/role-sheet";
+import { DepartmentSheet } from "@/components/department-sheet";
 import { TeamEditSheet } from "@/components/team-edit-sheet";
 import { TeamMemberSheet } from "@/components/team-member-sheet";
 import { TeamSection } from "@/components/team-section";
@@ -29,7 +29,7 @@ interface PageProps {
     addTeam?: string;
     editTeam?: string;
     manageTeams?: string;
-    manageRoles?: string;
+    manageDepartments?: string;
     manageTitles?: string;
   }>;
 }
@@ -98,8 +98,8 @@ export default async function TeamPage({ params, searchParams }: PageProps) {
       )}
 
       {sp.manageTeams === "true" && <TeamSheet projectId={id} />}
-      {sp.manageRoles === "true" && (
-        <RoleSheet returnPath={manageReturnPath(id, sp)} />
+      {sp.manageDepartments === "true" && (
+        <DepartmentSheet returnPath={manageReturnPath(id, sp)} />
       )}
       {sp.manageTitles === "true" && (
         <TitleSheet returnPath={manageReturnPath(id, sp)} />

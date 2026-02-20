@@ -1,7 +1,6 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import type { Role } from "@prisma/client";
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
 import { useState } from "react";
@@ -14,7 +13,7 @@ interface MemberData {
     lastName: string;
     callsign: string | null;
     imageUrl?: string | null;
-    role: Role | null;
+    department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
 }
@@ -37,7 +36,7 @@ export function MemberPool({ members }: MemberPoolProps) {
           `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`
             .toLowerCase()
             .includes(search.toLowerCase()) ||
-          (m.person.role?.name ?? "")
+          (m.person.department?.name ?? "")
             .toLowerCase()
             .includes(search.toLowerCase()) ||
           (m.person.title?.name ?? "")
@@ -46,13 +45,13 @@ export function MemberPool({ members }: MemberPoolProps) {
       )
     : members;
 
-  // Group by role
-  const byRole = new Map<string, MemberData[]>();
+  // Group by department
+  const byDepartment = new Map<string, MemberData[]>();
   for (const member of filtered) {
-    const roleName = member.person.role?.name ?? "No Role";
-    const group = byRole.get(roleName) ?? [];
+    const departmentName = member.person.department?.name ?? "No Department";
+    const group = byDepartment.get(departmentName) ?? [];
     group.push(member);
-    byRole.set(roleName, group);
+    byDepartment.set(departmentName, group);
   }
 
   return (
@@ -87,28 +86,30 @@ export function MemberPool({ members }: MemberPoolProps) {
               : "No matches found"}
           </p>
         ) : (
-          Array.from(byRole.entries()).map(([roleName, roleMembers]) => (
-            <div key={roleName}>
-              <h4 className="text-muted-foreground mb-1.5 text-xs font-medium uppercase tracking-wider">
-                {roleName}
-              </h4>
-              <div className="space-y-1.5">
-                {roleMembers.map((member) => (
-                  <DraggableMemberChip
-                    key={member.id}
-                    id={member.id}
-                    firstName={member.person.firstName}
-                    lastName={member.person.lastName}
-                    callsign={member.person.callsign}
-                    title={member.person.title}
-                    role={member.person.role}
-                    sourceTeamId={null}
-                    imageUrl={member.person.imageUrl}
-                  />
-                ))}
+          Array.from(byDepartment.entries()).map(
+            ([departmentName, deptMembers]) => (
+              <div key={departmentName}>
+                <h4 className="text-muted-foreground mb-1.5 text-xs font-medium uppercase tracking-wider">
+                  {departmentName}
+                </h4>
+                <div className="space-y-1.5">
+                  {deptMembers.map((member) => (
+                    <DraggableMemberChip
+                      key={member.id}
+                      id={member.id}
+                      firstName={member.person.firstName}
+                      lastName={member.person.lastName}
+                      callsign={member.person.callsign}
+                      title={member.person.title}
+                      department={member.person.department}
+                      sourceTeamId={null}
+                      imageUrl={member.person.imageUrl}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            ),
+          )
         )}
       </div>
     </div>

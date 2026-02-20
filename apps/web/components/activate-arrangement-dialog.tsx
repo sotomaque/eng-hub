@@ -38,7 +38,7 @@ export function ActivateArrangementDialog({
   const activateMutation = useMutation(
     trpc.arrangement.activate.mutationOptions({
       onSuccess: () => {
-        toast.success("Arrangement activated — live teams updated");
+        toast.success("Configuration activated — live teams updated");
         onOpenChange(false);
         router.refresh();
       },
