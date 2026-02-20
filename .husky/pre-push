@@ -1,3 +1,3 @@
 export PATH="$HOME/.bun/bin:$PATH"
-echo "Running tests, type check, and build before push..."
-bun run --filter=web test && bun --filter=web lint:types && bun run build
+echo "Running knip, tests, type check, and build before push..."
+bun run knip && bun run --filter=web test && bun --filter=web lint:types && bun run build

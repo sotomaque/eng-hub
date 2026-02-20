@@ -405,7 +405,7 @@ export function PeopleTable({
             <DataTableToolbar
               table={table}
               searchColumn="name"
-              searchPlaceholder="Search people\u2026"
+              searchPlaceholder="Search people…"
               searchValue={searchInput}
               onSearchChange={handleSearchChange}
             >

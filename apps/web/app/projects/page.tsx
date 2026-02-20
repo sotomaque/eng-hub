@@ -43,7 +43,10 @@ async function ProjectsContent({
         name: p.name,
         imageUrl: p.imageUrl,
         description: p.description,
-        updatedAt: p.updatedAt.toISOString(),
+        updatedAt:
+          typeof p.updatedAt === "string"
+            ? p.updatedAt
+            : p.updatedAt.toISOString(),
         healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
       }))}
       totalCount={totalCount}

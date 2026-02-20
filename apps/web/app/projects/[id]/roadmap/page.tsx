@@ -22,8 +22,9 @@ interface PageProps {
   }>;
 }
 
-function serializeDate(d: Date | null): string | null {
-  return d?.toISOString() ?? null;
+function serializeDate(d: Date | string | null): string | null {
+  if (!d) return null;
+  return typeof d === "string" ? d : d.toISOString();
 }
 
 async function RoadmapContent({ id }: { id: string }) {
@@ -74,7 +75,7 @@ async function EditMilestoneContent({
         id: milestone.id,
         title: milestone.title,
         description: milestone.description,
-        targetDate: milestone.targetDate?.toISOString() ?? null,
+        targetDate: serializeDate(milestone.targetDate),
         status: milestone.status,
         parentId: milestone.parentId,
         assignments: milestone.assignments,
@@ -102,7 +103,7 @@ async function EditGoalContent({
         title: goal.title,
         description: goal.description,
         quarter: goal.quarter,
-        targetDate: goal.targetDate?.toISOString() ?? null,
+        targetDate: serializeDate(goal.targetDate),
         status: goal.status,
         parentId: goal.parentId,
         assignments: goal.assignments,

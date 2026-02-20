@@ -61,38 +61,3 @@ export function TeamCompositionBar({
     </div>
   );
 }
-
-interface TeamCompositionLegendProps {
-  titleColorMap: TitleColorMap;
-  showNoTitle?: boolean;
-  className?: string;
-}
-
-export function TeamCompositionLegend({
-  titleColorMap,
-  showNoTitle = false,
-  className,
-}: TeamCompositionLegendProps) {
-  return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      {[...titleColorMap.entries()].map(([name, color]) => (
-        <div key={name} className="flex items-center gap-1.5">
-          <span
-            className="size-2.5 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          <span className="text-muted-foreground text-xs">{name}</span>
-        </div>
-      ))}
-      {showNoTitle && (
-        <div className="flex items-center gap-1.5">
-          <span
-            className="size-2.5 rounded-full"
-            style={{ backgroundColor: TITLE_NO_TITLE_COLOR }}
-          />
-          <span className="text-muted-foreground text-xs">No title</span>
-        </div>
-      )}
-    </div>
-  );
-}

@@ -299,7 +299,7 @@ export function ProjectsTable({
     [handleEdit, handleDelete, deletingId],
   );
 
-  if (projects.length === 0) {
+  if (projects.length === 0 && !search) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">

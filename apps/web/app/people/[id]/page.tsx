@@ -21,13 +21,21 @@ async function PersonContent({ id }: { id: string }) {
         milestoneAssignments: person.milestoneAssignments.map((a) => ({
           milestone: {
             ...a.milestone,
-            targetDate: a.milestone.targetDate?.toISOString() ?? null,
+            targetDate: a.milestone.targetDate
+              ? typeof a.milestone.targetDate === "string"
+                ? a.milestone.targetDate
+                : a.milestone.targetDate.toISOString()
+              : null,
           },
         })),
         quarterlyGoalAssignments: person.quarterlyGoalAssignments.map((a) => ({
           quarterlyGoal: {
             ...a.quarterlyGoal,
-            targetDate: a.quarterlyGoal.targetDate?.toISOString() ?? null,
+            targetDate: a.quarterlyGoal.targetDate
+              ? typeof a.quarterlyGoal.targetDate === "string"
+                ? a.quarterlyGoal.targetDate
+                : a.quarterlyGoal.targetDate.toISOString()
+              : null,
           },
         })),
       }}
