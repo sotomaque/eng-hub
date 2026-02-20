@@ -19,6 +19,8 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useTRPC } from "@/lib/trpc/client";
 
+const EMPTY_MEETINGS: Meeting[] = [];
+
 const TiptapEditor = dynamic(
   () =>
     import("@/components/tiptap-editor").then((m) => ({
@@ -59,7 +61,8 @@ function MeetingsList({ personId }: { personId: string }) {
     trpc.meeting.getByPersonId.queryOptions({ personId }),
   );
 
-  const meetings = (meetingsQuery.data ?? []) as Meeting[];
+  const meetings =
+    (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
 
   return (
     <Card>

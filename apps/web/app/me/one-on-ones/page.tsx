@@ -22,6 +22,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
+const EMPTY_MEETINGS: Meeting[] = [];
+
 interface Meeting {
   id: string;
   date: string;
@@ -51,7 +53,8 @@ export default function OneOnOnesPage() {
     }),
   );
 
-  const meetings = (meetingsQuery.data ?? []) as Meeting[];
+  const meetings =
+    (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
 
   // Group meetings by person
   const grouped = useMemo(() => {

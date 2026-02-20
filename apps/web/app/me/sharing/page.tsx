@@ -28,9 +28,12 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { Loader2, Share2, Trash2, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
+
+const EMPTY_GRANTS: Grant[] = [];
+const EMPTY_PEOPLE: Person[] = [];
 
 interface Grant {
   id: string;
@@ -80,12 +83,18 @@ export default function SharingPage() {
     }),
   );
 
-  const grants = (grantsQuery.data ?? []) as Grant[];
-  const granteeIds = new Set(grants.map((g) => g.grantee.id));
+  const grants = (grantsQuery.data as Grant[] | undefined) ?? EMPTY_GRANTS;
+  const allPeople = (peopleQuery.data as Person[] | undefined) ?? EMPTY_PEOPLE;
   const myId = meQuery.data?.id;
 
-  const availablePeople = (peopleQuery.data ?? []).filter(
-    (p: Person) => p.id !== myId && !granteeIds.has(p.id),
+  const granteeIds = useMemo(
+    () => new Set(grants.map((g) => g.grantee.id)),
+    [grants],
+  );
+
+  const availablePeople = useMemo(
+    () => allPeople.filter((p) => p.id !== myId && !granteeIds.has(p.id)),
+    [allPeople, myId, granteeIds],
   );
 
   const hasDirectReports = (meQuery.data?.directReports?.length ?? 0) > 0;
