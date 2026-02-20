@@ -36,6 +36,7 @@
       "ignoreDependencies": ["next"]
     },
     "packages/api": {
+      "entry": ["src/**/__tests__/**/*.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/db": {
