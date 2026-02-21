@@ -1,3 +1,5 @@
+import type { Trend } from "@workspace/db";
+
 export interface ContributorCommitData {
   username: string;
   totalCommits: number;
@@ -35,10 +37,10 @@ export interface ContributorAggregated {
   deletions: number;
   avgWeeklyCommits: number;
   recentWeeklyCommits: number;
-  trend: "up" | "down" | "stable";
+  trend: Trend;
   avgWeeklyReviews: number;
   recentWeeklyReviews: number;
-  reviewTrend: "up" | "down" | "stable";
+  reviewTrend: Trend;
 }
 
 export function parseGitHubUrl(
@@ -267,7 +269,7 @@ export async function fetchPRStats(
   return allPRs;
 }
 
-function computeTrend(avg: number, recent: number): "up" | "down" | "stable" {
+function computeTrend(avg: number, recent: number): Trend {
   if (avg === 0) return recent > 0 ? "up" : "stable";
   if (recent >= avg * 1.2) return "up";
   if (recent <= avg * 0.8) return "down";

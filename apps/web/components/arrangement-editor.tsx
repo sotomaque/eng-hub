@@ -1,6 +1,6 @@
 "use client";
 
-import type { Person, TeamMember } from "@prisma/client";
+import type { TeamMember } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -16,7 +16,12 @@ import { buildTitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRole = TeamMember & {
-  person: Person & {
+  person: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    callsign: string | null;
+    imageUrl: string | null;
     department: { name: string; color: string | null } | null;
     title: { name: string; sortOrder: number } | null;
   };

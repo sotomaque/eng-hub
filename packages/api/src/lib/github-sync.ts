@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { type StatsPeriod, db } from "@workspace/db";
+
 import { invalidateGithubStats } from "./cache";
 import {
   aggregateStats,
@@ -59,7 +60,7 @@ export async function syncGitHubStatsForProject(
 
       function toRecord(
         s: (typeof allTime)[number],
-        period: "all_time" | "ytd",
+        period: StatsPeriod,
       ) {
         return {
           projectId,

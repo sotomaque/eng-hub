@@ -1,6 +1,6 @@
 "use client";
 
-import type { Project, Team, TeamMembership } from "@prisma/client";
+import type { Team, TeamMembership } from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -42,7 +42,7 @@ import { useTRPC } from "@/lib/trpc/client";
 type MembershipWithRelations = {
   id: string;
   projectId: string;
-  project: Project;
+  project: { id: string; name: string };
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 

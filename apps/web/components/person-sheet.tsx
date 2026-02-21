@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Project, Team, TeamMembership } from "@prisma/client";
+import type { Team, TeamMembership } from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Combobox } from "@workspace/ui/components/combobox";
@@ -44,7 +44,7 @@ type PersonWithMemberships = {
   projectMemberships: {
     id: string;
     projectId: string;
-    project: Project;
+    project: { id: string; name: string };
     teamMemberships: (TeamMembership & { team: Team })[];
   }[];
 };

@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Project } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -28,7 +27,14 @@ import {
 } from "@/lib/validations/project";
 
 interface ProjectSheetProps {
-  project?: Project;
+  project?: {
+    id: string;
+    name: string;
+    description: string | null;
+    githubUrl: string | null;
+    gitlabUrl: string | null;
+    imageUrl: string | null;
+  };
 }
 
 export function ProjectSheet({ project }: ProjectSheetProps) {
