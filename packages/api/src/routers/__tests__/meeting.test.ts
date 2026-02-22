@@ -185,16 +185,11 @@ describe("meeting.getByPersonId", () => {
     expect(result[0]?.id).toBe("meeting-1");
   });
 
-  test("throws FORBIDDEN when canViewMeetings returns false", async () => {
+  test("returns null when canViewMeetings returns false", async () => {
     mockCanViewMeetings.mockResolvedValue(false);
 
-    await expect(
-      caller.getByPersonId({ personId: "person-1" }),
-    ).rejects.toThrow(
-      expect.objectContaining({
-        code: "FORBIDDEN",
-      }),
-    );
+    const result = await caller.getByPersonId({ personId: "person-1" });
+    expect(result).toBeNull();
   });
 });
 

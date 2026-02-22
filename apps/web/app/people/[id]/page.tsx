@@ -54,9 +54,7 @@ export default async function PersonPage({ params }: PageProps) {
         <Suspense fallback={<PersonProfileSkeleton />}>
           <PersonContent id={id} />
         </Suspense>
-        <Suspense>
-          <PersonMeetings personId={id} />
-        </Suspense>
+        <PersonMeetings personId={id} />
         <PersonComments personId={id} />
       </main>
     </div>

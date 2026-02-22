@@ -45,21 +45,12 @@ interface PersonMeetingsProps {
 
 export function PersonMeetings({ personId }: PersonMeetingsProps) {
   const trpc = useTRPC();
-  const canViewQuery = useQuery(
-    trpc.meeting.canView.queryOptions({ personId }),
-  );
-
-  if (canViewQuery.isLoading) return null;
-  if (!canViewQuery.data) return null;
-
-  return <MeetingsList personId={personId} />;
-}
-
-function MeetingsList({ personId }: { personId: string }) {
-  const trpc = useTRPC();
   const meetingsQuery = useQuery(
     trpc.meeting.getByPersonId.queryOptions({ personId }),
   );
+
+  // null means no access — hide the section entirely
+  if (meetingsQuery.isLoading || meetingsQuery.data === null) return null;
 
   const meetings =
     (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;

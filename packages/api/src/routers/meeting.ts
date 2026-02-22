@@ -64,22 +64,11 @@ export const meetingRouter = createTRPCRouter({
     return meetings.map(serializeMeeting);
   }),
 
-  canView: protectedProcedure
-    .input(z.object({ personId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return canViewMeetings(ctx.userId, input.personId);
-    }),
-
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
     .query(async ({ ctx, input }) => {
       const hasAccess = await canViewMeetings(ctx.userId, input.personId);
-      if (!hasAccess) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this person's meeting notes.",
-        });
-      }
+      if (!hasAccess) return null;
 
       const meetings = await db.meeting.findMany({
         where: { personId: input.personId },

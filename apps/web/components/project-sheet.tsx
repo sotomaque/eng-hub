@@ -49,7 +49,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
 
   const isOpen = isEditing || searchParams.get("create") === "true";
 
-  const projectsQuery = useQuery(trpc.project.getAll.queryOptions());
+  const projectsQuery = useQuery(trpc.project.listNames.queryOptions());
   const allProjects = projectsQuery.data ?? [];
   const selectableProjects = allProjects.filter(
     (p) => !project || p.id !== project.id,

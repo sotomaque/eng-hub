@@ -135,6 +135,14 @@ export const projectRouter = createTRPCRouter({
     );
   }),
 
+  /** Lightweight list returning only id + name — use for comboboxes/selects. */
+  listNames: protectedProcedure.query(async () => {
+    return db.project.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+  }),
+
   list: protectedProcedure
     .input(
       z.object({
