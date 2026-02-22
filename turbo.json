@@ -8,7 +8,7 @@
       "outputs": [".next/**", "!.next/cache/**"],
       "env": [
         "CLERK_SECRET_KEY",
-        "DATABASE_URL",
+        "POSTGRES_PRISMA_URL",
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
         "NEXT_PUBLIC_APP_URL",
         "SKIP_ENV_VALIDATION",
