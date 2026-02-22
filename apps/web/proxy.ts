@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/trpc/health.ping(.*)",
   "/api/uploadthing(.*)",
   "/api/cron(.*)",
+  "/api/e2e(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
