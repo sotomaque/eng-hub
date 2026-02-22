@@ -291,9 +291,7 @@ export const projectRouter = createTRPCRouter({
       if (old?.parentId) idsToInvalidate.push(old.parentId);
       if (old?.fundedById) idsToInvalidate.push(old.fundedById);
       after(() =>
-        Promise.all(
-          idsToInvalidate.map((pid) => invalidateProjectCache(pid)),
-        ),
+        Promise.all(idsToInvalidate.map((pid) => invalidateProjectCache(pid))),
       );
 
       return result;
