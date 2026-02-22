@@ -155,9 +155,25 @@ bunx supabase db pull                            # pull baseline migration from 
 | `bunx supabase db pull` | Pull remote schema as a migration |
 | `bunx supabase db push` | Push local migrations to remote |
 
-### Preview environments (Supabase Branching)
+### Preview environments & deployment pipeline
 
-When a PR is opened, Supabase automatically creates an isolated preview database from the migrations in `supabase/migrations/`. Seed data from `supabase/seed.sql` is applied after migrations. On merge, migrations run against production automatically. The preview branch database is deleted on PR close.
+The project uses **Supabase Branching** + **Vercel Previews** for a fully automated PR-to-production pipeline. No manual database steps are needed.
+
+**When a PR is opened:**
+
+1. **Supabase** creates an isolated preview database, runs all migrations from `supabase/migrations/`, then applies `supabase/seed.sql`
+2. **Vercel** deploys a preview of the app with the Supabase-provided preview DB env vars injected automatically
+3. **CI** runs lint, typecheck, and unit tests; then E2E tests run against the Vercel preview URL
+
+**When a PR is merged to `main`:**
+
+1. **Supabase** deletes the preview branch database
+2. **Supabase** applies any **new** migration files to the production database automatically
+3. **Vercel** deploys to production (with production DB env vars)
+
+**Important:** Production migrations come from the `.sql` files in `supabase/migrations/`, not from Prisma's `db push`. The `db push` command does a direct schema diff and is only safe for local development — never use it against production. Always generate a migration file (`bun run db:migrate:new`) and commit it with your PR.
+
+**PRs with no migration files** (e.g. test-only or frontend-only changes) skip the database step entirely — the production DB is unchanged.
 
 ---
 
