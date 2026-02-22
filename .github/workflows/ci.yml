@@ -71,6 +71,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     needs: [lint, typecheck, test]
+    permissions:
+      deployments: read
+      statuses: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
