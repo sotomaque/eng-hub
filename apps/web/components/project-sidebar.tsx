@@ -21,7 +21,9 @@ import {
   Activity,
   ArrowLeft,
   BarChart3,
+  DollarSign,
   Flag,
+  FolderUp,
   Layers,
   LayoutDashboard,
   Link as LinkIcon,
@@ -36,6 +38,8 @@ interface ProjectSidebarProps {
   projectId: string;
   projectName: string;
   projectImageUrl?: string | null;
+  parentProject?: { id: string; name: string; imageUrl: string | null } | null;
+  fundedByProject?: { id: string; name: string } | null;
 }
 
 const navItems = [
@@ -53,6 +57,8 @@ export function ProjectSidebar({
   projectId,
   projectName,
   projectImageUrl,
+  parentProject,
+  fundedByProject,
 }: ProjectSidebarProps) {
   const pathname = usePathname();
   const basePath = `/projects/${projectId}`;
@@ -88,6 +94,40 @@ export function ProjectSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        {parentProject && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Parent Project</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={`/projects/${parentProject.id}`}>
+                      <FolderUp />
+                      <span>{parentProject.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {fundedByProject && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Funded By</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={`/projects/${fundedByProject.id}`}>
+                      <DollarSign />
+                      <span>{fundedByProject.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>

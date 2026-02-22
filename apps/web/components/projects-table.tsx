@@ -54,6 +54,8 @@ type ProjectItem = {
   description: string | null;
   updatedAt: string;
   healthStatus: HealthStatus | null;
+  parentId: string | null;
+  parentName: string | null;
 };
 
 interface ProjectsTableProps {
@@ -183,20 +185,30 @@ export function ProjectsTable({
         cell: ({ row }) => {
           const project = row.original;
           return (
-            <Link
-              href={`/projects/${project.id}`}
-              className="flex items-center gap-2 hover:underline"
-            >
+            <div className="flex items-center gap-2">
               <Avatar className="size-7 shrink-0 rounded-md">
                 <AvatarImage src={project.imageUrl ?? undefined} />
                 <AvatarFallback className="rounded-md text-xs">
                   {project.name[0]}
                 </AvatarFallback>
               </Avatar>
-              <span className="font-medium uppercase tracking-wide">
-                {project.name}
-              </span>
-            </Link>
+              <div className="flex flex-col">
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="font-medium uppercase tracking-wide hover:underline"
+                >
+                  {project.name}
+                </Link>
+                {project.parentId && project.parentName && (
+                  <Link
+                    href={`/projects/${project.parentId}`}
+                    className="text-muted-foreground text-xs hover:underline"
+                  >
+                    Sub-project of {project.parentName}
+                  </Link>
+                )}
+              </div>
+            </div>
           );
         },
       },

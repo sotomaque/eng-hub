@@ -6,6 +6,8 @@ export const createProjectSchema = z.object({
   githubUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   gitlabUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  parentId: z.string().optional().or(z.literal("")),
+  fundedById: z.string().optional().or(z.literal("")),
 });
 
 export const updateProjectSchema = createProjectSchema.extend({

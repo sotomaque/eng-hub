@@ -45,6 +45,12 @@ model Project {
   githubUrl   String?  @map("github_url")
   gitlabUrl   String?  @map("gitlab_url")
   imageUrl    String?  @map("image_url")
+  parentId    String?  @map("parent_id")
+  parent      Project? @relation("ProjectHierarchy", fields: [parentId], references: [id])
+  children    Project[] @relation("ProjectHierarchy")
+  fundedById  String?  @map("funded_by_id")
+  fundedBy    Project? @relation("ProjectFunding", fields: [fundedById], references: [id])
+  fundedProjects Project[] @relation("ProjectFunding")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -58,6 +64,8 @@ model Project {
   githubSync       GitHubSync?
   contributorStats ContributorStats[]
 
+  @@index([parentId])
+  @@index([fundedById])
   @@map("projects")
 }
 

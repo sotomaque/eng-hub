@@ -32,6 +32,8 @@ async function OverviewContent({ id }: { id: string }) {
         (project.githubUrl ? 1 : 0) +
         (project.gitlabUrl ? 1 : 0)
       }
+      subProjects={project.children}
+      fundedBy={project.fundedBy ?? null}
     />
   );
 }
