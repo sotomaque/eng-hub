@@ -106,7 +106,7 @@ jobs:
 
       - name: Reset preview database
         run: |
-          response=$(curl -sf -w "\n%{http_code}" --max-time 30 -X POST \
+          response=$(curl -s -w "\n%{http_code}" --max-time 30 -X POST \
             "${{ steps.vercel.outputs.url }}/api/e2e/reset" \
             -H "x-e2e-reset-token: ${{ secrets.E2E_RESET_SECRET }}")
           http_code=$(echo "$response" | tail -1)
