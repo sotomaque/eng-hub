@@ -120,7 +120,7 @@ export const teamMemberRouter = createTRPCRouter({
               gitlabUsername: input.gitlabUsername || null,
               imageUrl: input.imageUrl || null,
               managerId,
-              departmentId: input.departmentId,
+              departmentId: input.departmentId || null,
               titleId: input.titleId || null,
             },
           });
@@ -208,7 +208,7 @@ export const teamMemberRouter = createTRPCRouter({
           gitlabUsername: data.gitlabUsername || null,
           imageUrl: data.imageUrl || null,
           managerId: newManagerId,
-          departmentId: data.departmentId,
+          departmentId: data.departmentId || null,
           titleId: data.titleId || null,
         };
 

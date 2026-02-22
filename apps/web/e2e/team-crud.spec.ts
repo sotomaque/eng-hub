@@ -43,9 +43,11 @@ test.describe("Team member CRUD", () => {
 
     // Wait for mutation response and assert success
     const response = await responsePromise;
+    const requestBody = response.request().postData();
+    const responseBody = await response.text();
     expect(
       response.ok(),
-      `tRPC mutation failed with status ${response.status()}: ${await response.text()}`,
+      `tRPC mutation failed (status ${response.status()})\nRequest body: ${requestBody}\nResponse: ${responseBody}`,
     ).toBe(true);
 
     // Sheet closes on success
