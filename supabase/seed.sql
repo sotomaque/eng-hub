@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Seed data for E2E tests
 -- Runs automatically after migrations on every Supabase preview branch.
+-- Prisma equivalent: packages/db/src/seed.ts (keep in sync)
 -- =============================================================================
 
 -- Reset all data for a clean, deterministic seed.

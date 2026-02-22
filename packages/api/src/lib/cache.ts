@@ -74,6 +74,18 @@ export async function invalidateMeetingTemplates() {
   await redis.del(cacheKeys.meetingTemplates);
 }
 
+export async function flushAllCache() {
+  let cursor = "0";
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, {
+      match: "enghub:*",
+      count: 100,
+    });
+    cursor = nextCursor;
+    if (keys.length > 0) await redis.del(...keys);
+  } while (cursor !== "0");
+}
+
 /**
  * Invalidate person-me caches for people identified by their Person IDs.
  * Looks up their clerkUserIds and busts the corresponding caches.

@@ -1,3 +1,4 @@
+export { flushAllCache } from "./lib/cache";
 export {
   syncAllGitHubStats,
   syncGitHubStatsForProject,

@@ -71,6 +71,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     needs: [lint, typecheck, test]
+    concurrency:
+      group: e2e-${{ github.head_ref }}
+      cancel-in-progress: true
     permissions:
       contents: read
       deployments: read
@@ -100,6 +103,19 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
         working-directory: apps/web
+
+      - name: Reset preview database
+        run: |
+          response=$(curl -sf -w "\n%{http_code}" --max-time 30 -X POST \
+            "${{ steps.vercel.outputs.url }}/api/e2e/reset" \
+            -H "x-e2e-reset-token: ${{ secrets.E2E_RESET_SECRET }}")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | sed '$d')
+          echo "Response ($http_code): $body"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Database reset failed with HTTP $http_code"
+            exit 1
+          fi
 
       - name: Run E2E tests
         run: bun run test:e2e
