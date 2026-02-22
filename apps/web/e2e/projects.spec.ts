@@ -3,14 +3,17 @@ import { expect, test } from "./helpers";
 test.describe("Projects", () => {
   test("projects list shows seeded projects", async ({ page }) => {
     await page.goto("/projects");
+    await page.getByPlaceholder("Search projects").fill("Alpha");
     await expect(
       page.getByRole("link", { name: "Alpha", exact: true }),
     ).toBeVisible();
+    await page.getByPlaceholder("Search projects").fill("Gamma");
     await expect(page.getByRole("link", { name: "Gamma" })).toBeVisible();
   });
 
   test("Beta is listed as a sub-project of Alpha", async ({ page }) => {
     await page.goto("/projects");
+    await page.getByPlaceholder("Search projects").fill("Beta");
     await expect(
       page.getByRole("link", { name: "Sub-project of Alpha" }),
     ).toBeVisible();
