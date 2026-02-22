@@ -41,3 +41,7 @@ npm-debug.log*
 # Prisma
 *.db
 *.db-journal
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/

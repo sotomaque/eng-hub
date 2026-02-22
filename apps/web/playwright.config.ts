@@ -21,17 +21,22 @@ export default defineConfig({
 
   projects: [
     {
+      name: "setup",
+      testMatch: /global\.setup\.ts/,
+    },
+    {
       name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-      },
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
   ],
 
-  webServer: {
-    command: "bun run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  webServer: process.env.PLAYWRIGHT_TEST_BASE_URL
+    ? undefined
+    : {
+        command: "bun run dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: true,
+        timeout: 120 * 1000,
+      },
 });
