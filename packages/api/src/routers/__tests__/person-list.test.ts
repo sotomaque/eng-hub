@@ -13,6 +13,8 @@ mock.module("../../lib/cache", () => ({
   invalidateMgmtChain: mock(() => Promise.resolve()),
   invalidatePersonMeByIds: mock(() => Promise.resolve()),
   invalidateReferenceData: mock(() => Promise.resolve()),
+  invalidateGithubStats: mock(() => Promise.resolve()),
+  invalidateMeetingTemplates: mock(() => Promise.resolve()),
 }));
 
 mock.module("../../lib/sync-arrangement", () => ({
