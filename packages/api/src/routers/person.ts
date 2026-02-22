@@ -272,7 +272,12 @@ export const personRouter = createTRPCRouter({
       // Get current state
       const current = await db.person.findUniqueOrThrow({
         where: { id },
-        select: { managerId: true, clerkUserId: true, departmentId: true, titleId: true },
+        select: {
+          managerId: true,
+          clerkUserId: true,
+          departmentId: true,
+          titleId: true,
+        },
       });
 
       // Cycle detection

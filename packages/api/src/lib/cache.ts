@@ -79,9 +79,7 @@ export async function invalidateMeetingTemplates() {
  * Looks up their clerkUserIds and busts the corresponding caches.
  * Use when a manager relationship changes and the manager's /me data is stale.
  */
-export async function invalidatePersonMeByIds(
-  ...personIds: (string | null)[]
-) {
+export async function invalidatePersonMeByIds(...personIds: (string | null)[]) {
   const ids = personIds.filter(Boolean) as string[];
   if (ids.length === 0) return;
   const people = await db.person.findMany({

@@ -182,7 +182,10 @@ describe("invalidation helpers", () => {
     ]);
     await invalidatePersonMeByIds("person-a", "person-b");
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { id: { in: ["person-a", "person-b"] }, clerkUserId: { not: null } },
+      where: {
+        id: { in: ["person-a", "person-b"] },
+        clerkUserId: { not: null },
+      },
       select: { clerkUserId: true },
     });
     expect(mockDel).toHaveBeenCalledWith(

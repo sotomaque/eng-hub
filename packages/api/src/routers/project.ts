@@ -227,8 +227,7 @@ export const projectRouter = createTRPCRouter({
         if (hasCycle) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message:
-              "Setting this parent would create a circular hierarchy.",
+            message: "Setting this parent would create a circular hierarchy.",
           });
         }
       }

@@ -1,4 +1,4 @@
-import { type StatsPeriod, db } from "@workspace/db";
+import { db, type StatsPeriod } from "@workspace/db";
 
 import { invalidateGithubStats } from "./cache";
 import {
@@ -58,10 +58,7 @@ export async function syncGitHubStatsForProject(
     await db.$transaction(async (tx) => {
       await tx.contributorStats.deleteMany({ where: { projectId } });
 
-      function toRecord(
-        s: (typeof allTime)[number],
-        period: StatsPeriod,
-      ) {
+      function toRecord(s: (typeof allTime)[number], period: StatsPeriod) {
         return {
           projectId,
           githubUsername: s.githubUsername,

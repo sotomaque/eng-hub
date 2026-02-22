@@ -104,10 +104,7 @@ export const titleRouter = createTRPCRouter({
           where: { id: { in: input.mergeIds } },
         });
       });
-      await Promise.all([
-        invalidateReferenceData(),
-        invalidatePeopleCache(),
-      ]);
+      await Promise.all([invalidateReferenceData(), invalidatePeopleCache()]);
       return result;
     }),
 });

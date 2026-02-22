@@ -58,11 +58,12 @@ export async function detectProjectCycle(
     if (visited.has(currentId)) break;
     visited.add(currentId);
     depth++;
-    const row: { parentId: string | null } | null =
-      await db.project.findUnique({
+    const row: { parentId: string | null } | null = await db.project.findUnique(
+      {
         where: { id: currentId },
         select: { parentId: true },
-      });
+      },
+    );
     currentId = row?.parentId ?? null;
   }
   return false;

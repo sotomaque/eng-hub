@@ -1,10 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import {
-  invalidatePeopleCache,
-  invalidateProjectCache,
-} from "../lib/cache";
+import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const arrangementRouter = createTRPCRouter({
@@ -353,7 +350,11 @@ export const arrangementRouter = createTRPCRouter({
             liveTeamId,
           },
         });
-        return { arrTeam, projectId: arrangement.projectId, isActive: arrangement.isActive };
+        return {
+          arrTeam,
+          projectId: arrangement.projectId,
+          isActive: arrangement.isActive,
+        };
       });
       if (result.isActive) {
         await invalidateProjectCache(result.projectId);
@@ -378,7 +379,11 @@ export const arrangementRouter = createTRPCRouter({
           });
         }
 
-        return { arrTeam, touchedLive: !!arrTeam.liveTeamId, projectId: arrTeam.arrangement.projectId };
+        return {
+          arrTeam,
+          touchedLive: !!arrTeam.liveTeamId,
+          projectId: arrTeam.arrangement.projectId,
+        };
       });
       if (result.touchedLive) {
         await invalidateProjectCache(result.projectId);
@@ -400,7 +405,10 @@ export const arrangementRouter = createTRPCRouter({
         }
 
         await tx.arrangementTeam.delete({ where: { id: input.teamId } });
-        return { touchedLive: !!arrTeam.liveTeamId, projectId: arrTeam.arrangement.projectId };
+        return {
+          touchedLive: !!arrTeam.liveTeamId,
+          projectId: arrTeam.arrangement.projectId,
+        };
       });
       if (result.touchedLive) {
         await Promise.all([
@@ -459,7 +467,8 @@ export const arrangementRouter = createTRPCRouter({
           },
         });
 
-        const touchedLive = arrTeam.arrangement.isActive && !!arrTeam.liveTeamId;
+        const touchedLive =
+          arrTeam.arrangement.isActive && !!arrTeam.liveTeamId;
 
         // Sync to live team if arrangement is active
         if (arrTeam.arrangement.isActive && arrTeam.liveTeamId) {
@@ -478,7 +487,11 @@ export const arrangementRouter = createTRPCRouter({
           });
         }
 
-        return { assignment, touchedLive, projectId: arrTeam.arrangement.projectId };
+        return {
+          assignment,
+          touchedLive,
+          projectId: arrTeam.arrangement.projectId,
+        };
       });
       if (result.touchedLive) {
         await Promise.all([
@@ -510,7 +523,8 @@ export const arrangementRouter = createTRPCRouter({
           },
         });
 
-        const touchedLive = arrTeam.arrangement.isActive && !!arrTeam.liveTeamId;
+        const touchedLive =
+          arrTeam.arrangement.isActive && !!arrTeam.liveTeamId;
 
         // Sync to live team if arrangement is active
         if (arrTeam.arrangement.isActive && arrTeam.liveTeamId) {
@@ -591,7 +605,11 @@ export const arrangementRouter = createTRPCRouter({
           }
         }
 
-        return { assignment, touchedLive, projectId: toArrTeam.arrangement.projectId };
+        return {
+          assignment,
+          touchedLive,
+          projectId: toArrTeam.arrangement.projectId,
+        };
       });
       if (result.touchedLive) {
         await Promise.all([

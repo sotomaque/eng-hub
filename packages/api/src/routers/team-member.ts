@@ -191,7 +191,11 @@ export const teamMemberRouter = createTRPCRouter({
       const result = await db.$transaction(async (tx) => {
         const existing = await tx.teamMember.findUniqueOrThrow({
           where: { id },
-          include: { person: { select: { managerId: true, departmentId: true, titleId: true } } },
+          include: {
+            person: {
+              select: { managerId: true, departmentId: true, titleId: true },
+            },
+          },
         });
 
         // Update Person identity fields + managerId + role/title
