@@ -72,6 +72,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [lint, typecheck, test]
     permissions:
+      contents: read
       deployments: read
       statuses: read
     steps:
