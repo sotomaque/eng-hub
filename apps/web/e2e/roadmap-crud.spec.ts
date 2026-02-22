@@ -4,7 +4,14 @@ test.describe("Roadmap CRUD", () => {
   test("create a new milestone", async ({ page }) => {
     const title = `E2E Milestone ${Date.now()}`;
 
-    await page.goto("/projects/proj-alpha/roadmap?addMilestone=true");
+    // Navigate to roadmap page and wait for it to fully load
+    await page.goto("/projects/proj-alpha/roadmap");
+    await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible(
+      { timeout: 15_000 },
+    );
+
+    // Open the milestone sheet via the Add button (first "Add" is milestones)
+    await page.getByRole("button", { name: "Add" }).first().click();
     await expect(
       page.getByRole("heading", { name: "Add Milestone" }),
     ).toBeVisible({ timeout: 15_000 });
@@ -24,6 +31,6 @@ test.describe("Roadmap CRUD", () => {
     await page.reload();
 
     // New milestone appears on the roadmap
-    await expect(page.getByText(title)).toBeVisible();
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
   });
 });

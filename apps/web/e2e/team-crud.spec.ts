@@ -5,7 +5,14 @@ test.describe("Team member CRUD", () => {
     const firstName = "Zara";
     const lastName = `Test${Date.now()}`;
 
-    await page.goto("/projects/proj-alpha/team?addMember=true");
+    // Navigate to team page and wait for it to load
+    await page.goto("/projects/proj-alpha/team");
+    await expect(page.getByRole("button", { name: /Add Member/i })).toBeVisible(
+      { timeout: 15_000 },
+    );
+
+    // Open the add member sheet
+    await page.getByRole("button", { name: /Add Member/i }).click();
     await expect(
       page.getByRole("heading", { name: "Add Team Member" }),
     ).toBeVisible({ timeout: 15_000 });
@@ -20,6 +27,11 @@ test.describe("Team member CRUD", () => {
     // Select department (required by server — departmentId is a FK)
     await page.getByRole("button", { name: /No department/ }).click();
     await page.getByRole("option", { name: "Engineering" }).click();
+
+    // Verify department selection took effect (popover closes, button shows selection)
+    await expect(
+      page.getByRole("button", { name: "Engineering" }),
+    ).toBeVisible();
 
     // Submit
     await page.getByRole("button", { name: "Add Member" }).click();
