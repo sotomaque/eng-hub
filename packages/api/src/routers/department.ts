@@ -1,4 +1,5 @@
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
 import {
   cached,
@@ -36,7 +37,7 @@ export const departmentRouter = createTRPCRouter({
           color: input.color ?? null,
         },
       });
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -53,7 +54,7 @@ export const departmentRouter = createTRPCRouter({
         where: { id: input.id },
         data: { name: input.name, color: input.color },
       });
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -61,7 +62,7 @@ export const departmentRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const result = await db.department.delete({ where: { id: input.id } });
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -86,7 +87,9 @@ export const departmentRouter = createTRPCRouter({
           where: { id: { in: input.mergeIds } },
         });
       });
-      await Promise.all([invalidateReferenceData(), invalidatePeopleCache()]);
+      after(() =>
+        Promise.all([invalidateReferenceData(), invalidatePeopleCache()]),
+      );
       return result;
     }),
 });

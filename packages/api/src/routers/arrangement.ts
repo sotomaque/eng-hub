@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
 import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
@@ -313,10 +314,12 @@ export const arrangementRouter = createTRPCRouter({
 
         return arrangement.projectId;
       });
-      await Promise.all([
-        invalidateProjectCache(projectId),
-        invalidatePeopleCache(),
-      ]);
+      after(() =>
+        Promise.all([
+          invalidateProjectCache(projectId),
+          invalidatePeopleCache(),
+        ]),
+      );
     }),
 
   // --- Team management within arrangement ---
@@ -357,7 +360,7 @@ export const arrangementRouter = createTRPCRouter({
         };
       });
       if (result.isActive) {
-        await invalidateProjectCache(result.projectId);
+        after(() => invalidateProjectCache(result.projectId));
       }
       return result.arrTeam;
     }),
@@ -386,7 +389,7 @@ export const arrangementRouter = createTRPCRouter({
         };
       });
       if (result.touchedLive) {
-        await invalidateProjectCache(result.projectId);
+        after(() => invalidateProjectCache(result.projectId));
       }
       return result.arrTeam;
     }),
@@ -411,10 +414,12 @@ export const arrangementRouter = createTRPCRouter({
         };
       });
       if (result.touchedLive) {
-        await Promise.all([
-          invalidateProjectCache(result.projectId),
-          invalidatePeopleCache(),
-        ]);
+        after(() =>
+          Promise.all([
+            invalidateProjectCache(result.projectId),
+            invalidatePeopleCache(),
+          ]),
+        );
       }
     }),
 
@@ -494,10 +499,12 @@ export const arrangementRouter = createTRPCRouter({
         };
       });
       if (result.touchedLive) {
-        await Promise.all([
-          invalidateProjectCache(result.projectId),
-          invalidatePeopleCache(),
-        ]);
+        after(() =>
+          Promise.all([
+            invalidateProjectCache(result.projectId),
+            invalidatePeopleCache(),
+          ]),
+        );
       }
       return result.assignment;
     }),
@@ -539,10 +546,12 @@ export const arrangementRouter = createTRPCRouter({
         return { touchedLive, projectId: arrTeam.arrangement.projectId };
       });
       if (result.touchedLive) {
-        await Promise.all([
-          invalidateProjectCache(result.projectId),
-          invalidatePeopleCache(),
-        ]);
+        after(() =>
+          Promise.all([
+            invalidateProjectCache(result.projectId),
+            invalidatePeopleCache(),
+          ]),
+        );
       }
     }),
 
@@ -612,10 +621,12 @@ export const arrangementRouter = createTRPCRouter({
         };
       });
       if (result.touchedLive) {
-        await Promise.all([
-          invalidateProjectCache(result.projectId),
-          invalidatePeopleCache(),
-        ]);
+        after(() =>
+          Promise.all([
+            invalidateProjectCache(result.projectId),
+            invalidatePeopleCache(),
+          ]),
+        );
       }
       return result.assignment;
     }),

@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
 import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { detectGoalCycle } from "../lib/roadmap-hierarchy";
@@ -91,7 +92,7 @@ export const quarterlyGoalRouter = createTRPCRouter({
           sortOrder: input.sortOrder ?? 0,
         },
       });
-      await invalidateProjectCache(input.projectId);
+      after(() => invalidateProjectCache(input.projectId));
       return result;
     }),
 
@@ -131,7 +132,7 @@ export const quarterlyGoalRouter = createTRPCRouter({
           sortOrder: data.sortOrder ?? 0,
         },
       });
-      await invalidateProjectCache(result.projectId);
+      after(() => invalidateProjectCache(result.projectId));
       return result;
     }),
 
@@ -141,7 +142,7 @@ export const quarterlyGoalRouter = createTRPCRouter({
       const result = await db.quarterlyGoal.delete({
         where: { id: input.id },
       });
-      await invalidateProjectCache(result.projectId);
+      after(() => invalidateProjectCache(result.projectId));
       return result;
     }),
 
@@ -170,9 +171,11 @@ export const quarterlyGoalRouter = createTRPCRouter({
           });
         }
       });
-      await Promise.all([
-        invalidateProjectCache(goal.projectId),
-        invalidatePeopleCache(),
-      ]);
+      after(() =>
+        Promise.all([
+          invalidateProjectCache(goal.projectId),
+          invalidatePeopleCache(),
+        ]),
+      );
     }),
 });

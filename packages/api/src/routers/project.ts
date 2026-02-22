@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
 import { cached, cacheKeys, invalidateProjectCache, ttl } from "../lib/cache";
 import { detectProjectCycle } from "../lib/roadmap-hierarchy";
@@ -199,11 +200,13 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      const cacheInvalidations = [invalidateProjectCache(result.id)];
-      if (parentId) cacheInvalidations.push(invalidateProjectCache(parentId));
-      if (fundedById && fundedById !== parentId)
-        cacheInvalidations.push(invalidateProjectCache(fundedById));
-      await Promise.all(cacheInvalidations);
+      after(() => {
+        const cacheInvalidations = [invalidateProjectCache(result.id)];
+        if (parentId) cacheInvalidations.push(invalidateProjectCache(parentId));
+        if (fundedById && fundedById !== parentId)
+          cacheInvalidations.push(invalidateProjectCache(fundedById));
+        return Promise.all(cacheInvalidations);
+      });
 
       return result;
     }),
@@ -255,8 +258,10 @@ export const projectRouter = createTRPCRouter({
       if (old?.fundedById) idsToInvalidate.add(old.fundedById);
       if (parentId) idsToInvalidate.add(parentId);
       if (fundedById) idsToInvalidate.add(fundedById);
-      await Promise.all(
-        [...idsToInvalidate].map((pid) => invalidateProjectCache(pid)),
+      after(() =>
+        Promise.all(
+          [...idsToInvalidate].map((pid) => invalidateProjectCache(pid)),
+        ),
       );
 
       return result;
@@ -277,8 +282,10 @@ export const projectRouter = createTRPCRouter({
       const idsToInvalidate = [input.id];
       if (old?.parentId) idsToInvalidate.push(old.parentId);
       if (old?.fundedById) idsToInvalidate.push(old.fundedById);
-      await Promise.all(
-        idsToInvalidate.map((pid) => invalidateProjectCache(pid)),
+      after(() =>
+        Promise.all(
+          idsToInvalidate.map((pid) => invalidateProjectCache(pid)),
+        ),
       );
 
       return result;

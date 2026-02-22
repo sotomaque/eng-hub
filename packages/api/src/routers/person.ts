@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
 import {
   cached,
@@ -256,10 +257,12 @@ export const personRouter = createTRPCRouter({
         });
       }
 
-      await invalidatePeopleCache();
-      if (managerId) {
-        await invalidatePersonMeByIds(managerId);
-      }
+      after(async () => {
+        await invalidatePeopleCache();
+        if (managerId) {
+          await invalidatePersonMeByIds(managerId);
+        }
+      });
       return person;
     }),
 
@@ -309,7 +312,8 @@ export const personRouter = createTRPCRouter({
       });
 
       // Log manager change if it changed
-      if (newManagerId !== current.managerId) {
+      const managerChanged = newManagerId !== current.managerId;
+      if (managerChanged) {
         await db.managerChange.create({
           data: {
             personId: id,
@@ -318,19 +322,23 @@ export const personRouter = createTRPCRouter({
             changedBy: ctx.userId,
           },
         });
-        // Invalidate management chain caches
-        await invalidateManagerChains(id);
-        // Invalidate old and new managers' person-me caches (directReports changed)
-        await invalidatePersonMeByIds(current.managerId, newManagerId);
       }
 
       const deptOrTitleChanged =
         (data.departmentId || null) !== current.departmentId ||
         (data.titleId || null) !== current.titleId;
-      await Promise.all([
-        invalidatePeopleCache(current.clerkUserId),
-        ...(deptOrTitleChanged ? [invalidateReferenceData()] : []),
-      ]);
+      after(async () => {
+        await Promise.all([
+          invalidatePeopleCache(current.clerkUserId),
+          ...(managerChanged
+            ? [
+                invalidateManagerChains(id),
+                invalidatePersonMeByIds(current.managerId, newManagerId),
+              ]
+            : []),
+          ...(deptOrTitleChanged ? [invalidateReferenceData()] : []),
+        ]);
+      });
       return person;
     }),
 
@@ -342,11 +350,13 @@ export const personRouter = createTRPCRouter({
         select: { clerkUserId: true, managerId: true },
       });
       const result = await db.person.delete({ where: { id: input.id } });
-      await Promise.all([
-        invalidatePeopleCache(person?.clerkUserId),
-        invalidateManagerChains(input.id),
-        invalidatePersonMeByIds(person?.managerId ?? null),
-      ]);
+      after(async () => {
+        await Promise.all([
+          invalidatePeopleCache(person?.clerkUserId),
+          invalidateManagerChains(input.id),
+          invalidatePersonMeByIds(person?.managerId ?? null),
+        ]);
+      });
       return result;
     }),
 
@@ -380,10 +390,12 @@ export const personRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.projectId);
         return member;
       });
-      await Promise.all([
-        invalidatePeopleCache(),
-        invalidateProjectCache(input.projectId),
-      ]);
+      after(async () => {
+        await Promise.all([
+          invalidatePeopleCache(),
+          invalidateProjectCache(input.projectId),
+        ]);
+      });
       return result;
     }),
 
@@ -428,11 +440,13 @@ export const personRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.toProjectId);
         return member;
       });
-      await Promise.all([
-        invalidatePeopleCache(),
-        invalidateProjectCache(input.fromProjectId),
-        invalidateProjectCache(input.toProjectId),
-      ]);
+      after(async () => {
+        await Promise.all([
+          invalidatePeopleCache(),
+          invalidateProjectCache(input.fromProjectId),
+          invalidateProjectCache(input.toProjectId),
+        ]);
+      });
       return result;
     }),
 
@@ -455,10 +469,12 @@ export const personRouter = createTRPCRouter({
         });
         await syncLiveToActiveArrangement(tx, input.projectId);
       });
-      await Promise.all([
-        invalidatePeopleCache(),
-        invalidateProjectCache(input.projectId),
-      ]);
+      after(async () => {
+        await Promise.all([
+          invalidatePeopleCache(),
+          invalidateProjectCache(input.projectId),
+        ]);
+      });
       return result;
     }),
 
@@ -483,8 +499,12 @@ export const personRouter = createTRPCRouter({
         where: { id: input.personId },
         data: { clerkUserId: ctx.userId },
       });
-      await invalidatePeopleCache(ctx.userId);
-      await redis.del(cacheKeys.clerkPerson(ctx.userId));
+      after(async () => {
+        await Promise.all([
+          invalidatePeopleCache(ctx.userId),
+          redis.del(cacheKeys.clerkPerson(ctx.userId)),
+        ]);
+      });
       return result;
     }),
 
@@ -493,7 +513,11 @@ export const personRouter = createTRPCRouter({
       where: { clerkUserId: ctx.userId },
       data: { clerkUserId: null },
     });
-    await invalidatePeopleCache(ctx.userId);
-    await redis.del(cacheKeys.clerkPerson(ctx.userId));
+    after(async () => {
+      await Promise.all([
+        invalidatePeopleCache(ctx.userId),
+        redis.del(cacheKeys.clerkPerson(ctx.userId)),
+      ]);
+    });
   }),
 });
