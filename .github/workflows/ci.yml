@@ -87,6 +87,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           max_timeout: 600
+          path: /api/health
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
