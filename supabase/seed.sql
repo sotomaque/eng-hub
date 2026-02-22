@@ -3,6 +3,11 @@
 -- Runs automatically after migrations on every Supabase preview branch.
 -- =============================================================================
 
+-- Reset all data for a clean, deterministic seed.
+-- Prevents E2E test artifacts from accumulating across CI runs.
+-- CASCADE ensures all dependent tables (team_members, milestones, etc.) are also cleared.
+TRUNCATE roles, projects, meeting_templates CASCADE;
+
 -- Departments (table: roles)
 INSERT INTO roles (id, name, color) VALUES
   ('dept-eng', 'Engineering', '#3B82F6'),
