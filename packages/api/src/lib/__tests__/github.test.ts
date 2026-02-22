@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   aggregateStats,
-  parseGitHubUrl,
   type ContributorCommitData,
   type PRData,
+  parseGitHubUrl,
 } from "../github";
 
 // ── parseGitHubUrl ──────────────────────────────────────────
@@ -59,8 +59,18 @@ describe("aggregateStats", () => {
         additions: 500,
         deletions: 100,
         weeklyData: [
-          { week: weekTs(new Date("2025-01-06")), additions: 250, deletions: 50, commits: 5 },
-          { week: weekTs(new Date("2025-01-13")), additions: 250, deletions: 50, commits: 5 },
+          {
+            week: weekTs(new Date("2025-01-06")),
+            additions: 250,
+            deletions: 50,
+            commits: 5,
+          },
+          {
+            week: weekTs(new Date("2025-01-13")),
+            additions: 250,
+            deletions: 50,
+            commits: 5,
+          },
         ],
       },
     ];

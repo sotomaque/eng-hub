@@ -5,9 +5,7 @@ import { syncLiveToActiveArrangement } from "../sync-arrangement";
 
 const mockFindFirst = mock(() => Promise.resolve(null as unknown));
 const mockDeleteMany = mock(() => Promise.resolve({ count: 0 }));
-const mockCreate = mock(() =>
-  Promise.resolve({ id: "arr-team-1" } as unknown),
-);
+const mockCreate = mock(() => Promise.resolve({ id: "arr-team-1" } as unknown));
 const mockAssignmentCreateMany = mock(() => Promise.resolve({ count: 0 }));
 const mockTeamFindMany = mock(() => Promise.resolve([] as unknown[]));
 const mockMembershipFindMany = mock(() => Promise.resolve([] as unknown[]));
