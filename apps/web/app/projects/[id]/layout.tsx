@@ -41,6 +41,8 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         projectId={id}
         projectName={project.name}
         projectImageUrl={project.imageUrl}
+        parentProject={project.parent ?? null}
+        fundedByProject={project.fundedBy ?? null}
       />
       <SidebarInset>
         <ProjectSiteHeader projectId={id} projectName={project.name} />

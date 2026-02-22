@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/app-header";
 import { PersonComments } from "@/components/person-comments";
+import { PersonMeetings } from "@/components/person-meetings";
 import { PersonProfile } from "@/components/person-profile";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { getCachedPerson } from "./_lib/queries";
@@ -53,6 +54,7 @@ export default async function PersonPage({ params }: PageProps) {
         <Suspense fallback={<PersonProfileSkeleton />}>
           <PersonContent id={id} />
         </Suspense>
+        <PersonMeetings personId={id} />
         <PersonComments personId={id} />
       </main>
     </div>

@@ -1,3 +1,5 @@
+import type { Trend } from "@workspace/db";
+
 export interface ContributorCommitData {
   username: string;
   totalCommits: number;
@@ -35,10 +37,10 @@ export interface ContributorAggregated {
   deletions: number;
   avgWeeklyCommits: number;
   recentWeeklyCommits: number;
-  trend: "up" | "down" | "stable";
+  trend: Trend;
   avgWeeklyReviews: number;
   recentWeeklyReviews: number;
-  reviewTrend: "up" | "down" | "stable";
+  reviewTrend: Trend;
 }
 
 export function parseGitHubUrl(
@@ -49,7 +51,10 @@ export function parseGitHubUrl(
     if (u.hostname !== "github.com") return null;
     const parts = u.pathname.split("/").filter(Boolean);
     if (parts.length < 2) return null;
-    return { owner: parts[0]!, repo: parts[1]!.replace(/\.git$/, "") };
+    return {
+      owner: parts[0] ?? "",
+      repo: (parts[1] ?? "").replace(/\.git$/, ""),
+    };
   } catch {
     return null;
   }
@@ -237,7 +242,7 @@ export async function fetchPRStats(
     };
 
     if (json.errors?.length) {
-      throw new Error(`GitHub GraphQL: ${json.errors[0]!.message}`);
+      throw new Error(`GitHub GraphQL: ${json.errors[0]?.message}`);
     }
 
     const prs = json.data?.repository?.pullRequests;
@@ -267,7 +272,7 @@ export async function fetchPRStats(
   return allPRs;
 }
 
-function computeTrend(avg: number, recent: number): "up" | "down" | "stable" {
+function computeTrend(avg: number, recent: number): Trend {
   if (avg === 0) return recent > 0 ? "up" : "stable";
   if (recent >= avg * 1.2) return "up";
   if (recent <= avg * 0.8) return "down";

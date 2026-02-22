@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Project } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import { Combobox } from "@workspace/ui/components/combobox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
@@ -18,7 +18,7 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
@@ -28,10 +28,20 @@ import {
 } from "@/lib/validations/project";
 
 interface ProjectSheetProps {
-  project?: Project;
+  project?: {
+    id: string;
+    name: string;
+    description: string | null;
+    githubUrl: string | null;
+    gitlabUrl: string | null;
+    imageUrl: string | null;
+    parentId: string | null;
+    fundedById: string | null;
+  };
+  defaultParentId?: string;
 }
 
-export function ProjectSheet({ project }: ProjectSheetProps) {
+export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();
@@ -39,10 +49,21 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
 
   const isOpen = isEditing || searchParams.get("create") === "true";
 
+  const projectsQuery = useQuery(trpc.project.listNames.queryOptions());
+  const allProjects = projectsQuery.data ?? [];
+  const selectableProjects = allProjects.filter(
+    (p) => !project || p.id !== project.id,
+  );
+
+  const initialParentId = project?.parentId ?? defaultParentId ?? "";
+
   const {
     register,
+    control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(createProjectSchema),
@@ -51,8 +72,12 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
       description: project?.description ?? "",
       githubUrl: project?.githubUrl ?? "",
       gitlabUrl: project?.gitlabUrl ?? "",
+      parentId: initialParentId,
+      fundedById: project?.fundedById ?? initialParentId,
     },
   });
+
+  const currentFundedById = watch("fundedById");
 
   const [imageUrl, setImageUrl] = useState<string | null>(
     project?.imageUrl ?? null,
@@ -185,6 +210,62 @@ export function ProjectSheet({ project }: ProjectSheetProps) {
                   {errors.gitlabUrl.message}
                 </p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Parent Project</Label>
+              <Controller
+                name="parentId"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "None (top-level)" },
+                      ...selectableProjects.map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) => {
+                      const newParentId = val === "__none__" ? "" : val;
+                      field.onChange(newParentId);
+                      if (newParentId && !currentFundedById) {
+                        setValue("fundedById", newParentId, {
+                          shouldDirty: true,
+                        });
+                      }
+                    }}
+                    placeholder="Select parent project…"
+                    searchPlaceholder="Search projects…"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Funded By</Label>
+              <Controller
+                name="fundedById"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    options={[
+                      { value: "__none__", label: "None" },
+                      ...selectableProjects.map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      })),
+                    ]}
+                    value={field.value || "__none__"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "__none__" ? "" : val)
+                    }
+                    placeholder="Select funding project…"
+                    searchPlaceholder="Search projects…"
+                  />
+                )}
+              />
             </div>
           </div>
           <SheetFooter>

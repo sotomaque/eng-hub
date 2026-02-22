@@ -7,7 +7,8 @@
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate:new": "supabase db diff -f",
+    "db:reset": "supabase db reset",
     "db:studio": "prisma studio",
     "lint:types": "tsc --noEmit"
   },
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@workspace/typescript-config": "workspace:*",
     "prisma": "~6.9.0",
+    "supabase": "^2.76.12",
     "typescript": "^5.9.2"
   },
   "exports": {

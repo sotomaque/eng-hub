@@ -90,3 +90,36 @@ export async function isInManagementChain(
   const chain = await getManagementChain(personId);
   return chain.includes(viewerId);
 }
+
+/**
+ * Check if a Clerk user can view meetings for a given person.
+ * Access is granted if the user is in the management chain above the person,
+ * OR if the person's direct manager has granted the user a visibility grant.
+ */
+export async function canViewMeetings(
+  clerkUserId: string,
+  personId: string,
+): Promise<boolean> {
+  const inChain = await isInManagementChain(clerkUserId, personId);
+  if (inChain) return true;
+
+  const viewerId = await resolveClerkPerson(clerkUserId);
+  if (!viewerId) return false;
+
+  const person = await db.person.findUnique({
+    where: { id: personId },
+    select: { managerId: true },
+  });
+  if (!person?.managerId) return false;
+
+  const grant = await db.meetingVisibilityGrant.findUnique({
+    where: {
+      granterId_granteeId: {
+        granterId: person.managerId,
+        granteeId: viewerId,
+      },
+    },
+    select: { id: true },
+  });
+  return grant !== null;
+}

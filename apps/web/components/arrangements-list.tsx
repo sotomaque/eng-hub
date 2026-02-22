@@ -31,8 +31,8 @@ interface ArrangementData {
   id: string;
   name: string;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string | Date;
+  updatedAt: string | Date;
   teams: {
     id: string;
     name: string;

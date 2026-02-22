@@ -1,5 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 
+export type {
+  HealthStatus,
+  PrismaClient,
+  RoadmapStatus,
+  StatsPeriod,
+  SyncStatus,
+  Trend,
+} from "@prisma/client";
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -17,4 +26,4 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
 }
 
-export type { PrismaClient };
+export { resetAndSeed } from "./seed";

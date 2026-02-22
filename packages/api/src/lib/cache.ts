@@ -1,3 +1,4 @@
+import { db } from "@workspace/db";
 import { redis } from "./redis";
 
 // ── Key Builders ──────────────────────────────────────────────
@@ -71,4 +72,36 @@ export async function invalidateGithubStats(projectId: string) {
 
 export async function invalidateMeetingTemplates() {
   await redis.del(cacheKeys.meetingTemplates);
+}
+
+export async function flushAllCache() {
+  let cursor = "0";
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, {
+      match: "enghub:*",
+      count: 100,
+    });
+    cursor = nextCursor;
+    if (keys.length > 0) await redis.del(...keys);
+  } while (cursor !== "0");
+}
+
+/**
+ * Invalidate person-me caches for people identified by their Person IDs.
+ * Looks up their clerkUserIds and busts the corresponding caches.
+ * Use when a manager relationship changes and the manager's /me data is stale.
+ */
+export async function invalidatePersonMeByIds(...personIds: (string | null)[]) {
+  const ids = personIds.filter(Boolean) as string[];
+  if (ids.length === 0) return;
+  const people = await db.person.findMany({
+    where: { id: { in: ids }, clerkUserId: { not: null } },
+    select: { clerkUserId: true },
+  });
+  const keys = people
+    .filter((p): p is { clerkUserId: string } => p.clerkUserId !== null)
+    .map((p) => cacheKeys.personMe(p.clerkUserId));
+  if (keys.length > 0) {
+    await redis.del(...keys);
+  }
 }

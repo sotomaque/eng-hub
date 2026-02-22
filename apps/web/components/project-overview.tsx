@@ -1,16 +1,31 @@
 import type { HealthStatus, RoadmapStatus } from "@prisma/client";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
+import { Button } from "@workspace/ui/components/button";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   ArrowRight,
+  DollarSign,
   Flag,
+  FolderOpen,
   Link as LinkIcon,
+  Plus,
   Target,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
+
+type ChildProject = {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+};
 
 interface ProjectOverviewProps {
   projectId: string;
@@ -21,6 +36,8 @@ interface ProjectOverviewProps {
   milestones: { status: RoadmapStatus }[];
   quarterlyGoals: { status: RoadmapStatus }[];
   linkCount: number;
+  subProjects: ChildProject[];
+  fundedBy: { id: string; name: string } | null;
 }
 
 function countByStatus(items: { status: RoadmapStatus }[]) {
@@ -92,6 +109,8 @@ export function ProjectOverview({
   milestones,
   quarterlyGoals,
   linkCount,
+  subProjects,
+  fundedBy,
 }: ProjectOverviewProps) {
   const basePath = `/projects/${projectId}`;
   const milestoneStats = countByStatus(milestones);
@@ -99,10 +118,23 @@ export function ProjectOverview({
 
   return (
     <div className="space-y-8">
-      {description && (
-        <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-          {description}
-        </p>
+      {(description || fundedBy) && (
+        <div className="space-y-2">
+          {fundedBy && (
+            <Link
+              href={`/projects/${fundedBy.id}`}
+              className="text-muted-foreground inline-flex items-center gap-1.5 text-sm hover:underline"
+            >
+              <DollarSign className="size-3.5" />
+              Funded by {fundedBy.name}
+            </Link>
+          )}
+          {description && (
+            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+              {description}
+            </p>
+          )}
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -197,6 +229,52 @@ export function ProjectOverview({
             {linkCount === 1 ? "resource" : "resources"}
           </p>
         </MetricCard>
+      </div>
+
+      {/* Sub-Projects */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold tracking-tight">Sub-Projects</h3>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/projects?create=true&parentId=${projectId}`}>
+              <Plus className="size-4" />
+              Add Sub-Project
+            </Link>
+          </Button>
+        </div>
+
+        {subProjects.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {subProjects.map((child) => (
+              <Link
+                key={child.id}
+                href={`/projects/${child.id}`}
+                className="group flex items-center gap-3 rounded-xl border bg-card p-4 transition-colors hover:border-border hover:bg-accent/50"
+              >
+                <Avatar className="size-8 shrink-0 rounded-md">
+                  <AvatarImage src={child.imageUrl ?? undefined} />
+                  <AvatarFallback className="rounded-md text-xs">
+                    {child.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate font-medium">{child.name}</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center">
+            <FolderOpen className="text-muted-foreground/50 size-8" />
+            <p className="text-muted-foreground mt-2 text-sm">
+              No sub-projects yet
+            </p>
+            <Button asChild size="sm" variant="outline" className="mt-3">
+              <Link href={`/projects?create=true&parentId=${projectId}`}>
+                <Plus className="size-4" />
+                Add Sub-Project
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

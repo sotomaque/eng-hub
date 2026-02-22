@@ -14,11 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { cn } from "@workspace/ui/lib/utils";
 import { format } from "date-fns";
 import { NotebookPen, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
+
+const EMPTY_MEETINGS: Meeting[] = [];
 
 interface Meeting {
   id: string;
@@ -36,6 +40,7 @@ interface Meeting {
 
 export default function OneOnOnesPage() {
   const trpc = useTRPC();
+  const [filterPersonId, setFilterPersonId] = useState<string | null>(null);
   const meetingsQuery = useQuery(trpc.meeting.getMyMeetings.queryOptions());
 
   const deleteMutation = useMutation(
@@ -48,21 +53,41 @@ export default function OneOnOnesPage() {
     }),
   );
 
-  const meetings = (meetingsQuery.data ?? []) as Meeting[];
+  const meetings =
+    (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
 
   // Group meetings by person
-  const grouped = new Map<
-    string,
-    { person: Meeting["person"]; meetings: Meeting[] }
-  >();
-  for (const m of meetings) {
-    const existing = grouped.get(m.person.id);
-    if (existing) {
-      existing.meetings.push(m);
-    } else {
-      grouped.set(m.person.id, { person: m.person, meetings: [m] });
+  const grouped = useMemo(() => {
+    const map = new Map<
+      string,
+      { person: Meeting["person"]; meetings: Meeting[] }
+    >();
+    for (const m of meetings) {
+      const existing = map.get(m.person.id);
+      if (existing) {
+        existing.meetings.push(m);
+      } else {
+        map.set(m.person.id, { person: m.person, meetings: [m] });
+      }
     }
-  }
+    return map;
+  }, [meetings]);
+
+  // Unique people for filter chips
+  const people = useMemo(
+    () =>
+      Array.from(grouped.values())
+        .map((g) => g.person)
+        .sort((a, b) => a.firstName.localeCompare(b.firstName)),
+    [grouped],
+  );
+
+  // Filtered groups
+  const visibleGroups = useMemo(() => {
+    if (!filterPersonId) return Array.from(grouped.values());
+    const match = grouped.get(filterPersonId);
+    return match ? [match] : [];
+  }, [grouped, filterPersonId]);
 
   return (
     <div className="space-y-6">
@@ -91,9 +116,52 @@ export default function OneOnOnesPage() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-8">
-          {Array.from(grouped.values()).map(
-            ({ person, meetings: personMeetings }) => (
+        <div className="space-y-6">
+          {people.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFilterPersonId(null)}
+                className={cn(
+                  "inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                  !filterPersonId
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border hover:bg-accent",
+                )}
+              >
+                All
+              </button>
+              {people.map((person) => (
+                <button
+                  key={person.id}
+                  type="button"
+                  onClick={() =>
+                    setFilterPersonId(
+                      filterPersonId === person.id ? null : person.id,
+                    )
+                  }
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                    filterPersonId === person.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border hover:bg-accent",
+                  )}
+                >
+                  <Avatar className="size-5">
+                    <AvatarImage src={person.imageUrl ?? undefined} />
+                    <AvatarFallback className="text-[10px]">
+                      {person.firstName[0]}
+                      {person.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  {person.firstName} {person.lastName}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-8">
+            {visibleGroups.map(({ person, meetings: personMeetings }) => (
               <div key={person.id} className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Avatar className="size-8">
@@ -146,8 +214,8 @@ export default function OneOnOnesPage() {
                   ))}
                 </div>
               </div>
-            ),
-          )}
+            ))}
+          </div>
         </div>
       )}
     </div>

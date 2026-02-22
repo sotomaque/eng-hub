@@ -6,6 +6,9 @@ node_modules
 # Local env files
 .env
 .env.local
+.env.local.*
+.env.prod
+.env.preview
 .env.development.local
 .env.test.local
 .env.production.local
@@ -18,6 +21,8 @@ coverage
 /apps/web/blob-report/
 /apps/web/test-results/
 /apps/web/e2e/.auth/
+/apps/web/playwright/.clerk/
+playwright-report/
 
 # Turbo
 .turbo
@@ -27,6 +32,7 @@ coverage
 
 # Build Outputs
 .next/
+next-env.d.ts
 out/
 build
 dist
@@ -41,3 +47,7 @@ npm-debug.log*
 # Prisma
 *.db
 *.db-journal
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/

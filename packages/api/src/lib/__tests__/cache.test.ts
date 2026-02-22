@@ -3,12 +3,21 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 const mockGet = mock(() => Promise.resolve(null));
 const mockSet = mock(() => Promise.resolve("OK"));
 const mockDel = mock(() => Promise.resolve(1));
+const mockFindMany = mock(() => Promise.resolve([]));
 
 mock.module("../redis", () => ({
   redis: {
     get: mockGet,
     set: mockSet,
     del: mockDel,
+  },
+}));
+
+mock.module("@workspace/db", () => ({
+  db: {
+    person: {
+      findMany: mockFindMany,
+    },
   },
 }));
 
@@ -19,6 +28,7 @@ const {
   invalidateMeetingTemplates,
   invalidateMgmtChain,
   invalidatePeopleCache,
+  invalidatePersonMeByIds,
   invalidateProjectCache,
   invalidateReferenceData,
   ttl,
@@ -113,6 +123,7 @@ describe("cached", () => {
 describe("invalidation helpers", () => {
   beforeEach(() => {
     mockDel.mockReset();
+    mockFindMany.mockReset();
   });
 
   test("invalidateReferenceData deletes department and title keys", async () => {
@@ -162,5 +173,37 @@ describe("invalidation helpers", () => {
   test("invalidateMeetingTemplates deletes the templates key", async () => {
     await invalidateMeetingTemplates();
     expect(mockDel).toHaveBeenCalledWith("enghub:meeting-templates:all");
+  });
+
+  test("invalidatePersonMeByIds looks up clerkUserIds and deletes personMe keys", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      { clerkUserId: "clerk-1" },
+      { clerkUserId: "clerk-2" },
+    ]);
+    await invalidatePersonMeByIds("person-a", "person-b");
+    expect(mockFindMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ["person-a", "person-b"] },
+        clerkUserId: { not: null },
+      },
+      select: { clerkUserId: true },
+    });
+    expect(mockDel).toHaveBeenCalledWith(
+      "enghub:person-me:clerk-1",
+      "enghub:person-me:clerk-2",
+    );
+  });
+
+  test("invalidatePersonMeByIds skips null/empty personIds", async () => {
+    await invalidatePersonMeByIds(null, null);
+    expect(mockFindMany).not.toHaveBeenCalled();
+    expect(mockDel).not.toHaveBeenCalled();
+  });
+
+  test("invalidatePersonMeByIds skips redis.del when no clerkUserIds found", async () => {
+    mockFindMany.mockResolvedValueOnce([]);
+    await invalidatePersonMeByIds("person-x");
+    expect(mockFindMany).toHaveBeenCalled();
+    expect(mockDel).not.toHaveBeenCalled();
   });
 });

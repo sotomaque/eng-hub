@@ -58,6 +58,12 @@ const mutationLimiter = new Ratelimit({
 });
 
 const rateLimitMiddleware = t.middleware(async ({ ctx, next, type }) => {
+  // Skip rate limiting on Vercel preview deployments — E2E tests share a
+  // single Clerk userId and rapidly load pages, exhausting the sliding window.
+  if (process.env.VERCEL_ENV === "preview") {
+    return next();
+  }
+
   const identifier = ctx.userId ?? "anonymous";
   const limiter = type === "mutation" ? mutationLimiter : generalLimiter;
   const { success, reset } = await limiter.limit(identifier);
@@ -80,6 +86,8 @@ const strictLimiter = new Ratelimit({
 });
 
 export async function enforceStrictRateLimit(userId: string): Promise<void> {
+  if (process.env.VERCEL_ENV === "preview") return;
+
   const { success, reset } = await strictLimiter.limit(userId);
   if (!success) {
     throw new TRPCError({

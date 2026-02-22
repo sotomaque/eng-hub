@@ -1,6 +1,13 @@
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
-import { cached, cacheKeys, invalidateReferenceData, ttl } from "../lib/cache";
+import {
+  cached,
+  cacheKeys,
+  invalidatePeopleCache,
+  invalidateReferenceData,
+  ttl,
+} from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const titleRouter = createTRPCRouter({
@@ -34,7 +41,7 @@ export const titleRouter = createTRPCRouter({
           sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
         },
       });
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -54,7 +61,7 @@ export const titleRouter = createTRPCRouter({
           departmentId: input.departmentId || null,
         },
       });
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -62,7 +69,7 @@ export const titleRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const result = await db.title.delete({ where: { id: input.id } });
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -77,7 +84,7 @@ export const titleRouter = createTRPCRouter({
           }),
         ),
       );
-      await invalidateReferenceData();
+      after(() => invalidateReferenceData());
       return result;
     }),
 
@@ -98,7 +105,9 @@ export const titleRouter = createTRPCRouter({
           where: { id: { in: input.mergeIds } },
         });
       });
-      await invalidateReferenceData();
+      after(() =>
+        Promise.all([invalidateReferenceData(), invalidatePeopleCache()]),
+      );
       return result;
     }),
 });

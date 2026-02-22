@@ -49,9 +49,180 @@ packages/ui     → Shared UI components (shadcn/ui)
 ```bash
 bun install
 cp apps/web/.env.example apps/web/.env.local   # fill in your keys
-cd packages/db && bun run db:push              # push schema to Supabase
 bun dev                                        # start dev server
 ```
+
+See [Environment Setup](#environment-setup) for detailed configuration.
+
+---
+
+## Development Workflows
+
+### Running local dev
+
+1. Copy the example env and fill in your keys:
+   ```bash
+   cp apps/web/.env.example apps/web/.env.local
+   ```
+2. Add your database URLs to `apps/web/.env.local` (pooled + direct) and `packages/db/.env` (same two URLs).
+3. Generate the Prisma client and start the dev server:
+   ```bash
+   cd packages/db && bun run db:generate
+   bun dev
+   ```
+
+The app runs at `http://localhost:3000` with Turbopack HMR.
+
+### Pointing at a deployed preview branch
+
+When you open a PR, Supabase automatically creates an isolated preview database from `supabase/migrations/` and applies `supabase/seed.sql`. Vercel deploys a preview of the app with the Supabase-provided env vars injected automatically.
+
+To point your **local** dev server at a preview branch database:
+
+1. Go to [Supabase dashboard](https://supabase.com/dashboard) → your project → the preview branch → **Settings → Database → Connection string**
+2. Copy the pooled (port 6543) and direct (port 5432) connection strings
+3. Paste them into `apps/web/.env.local.preview` and `packages/db/.env.preview`
+4. Switch your local environment:
+   ```bash
+   cd apps/web && bun run env:preview
+   ```
+5. Start the dev server:
+   ```bash
+   bun dev
+   ```
+
+The preview database has seed data (projects, people, teams) so you can develop and run E2E tests locally against real data.
+
+### Running locally against production
+
+To switch back to the production database:
+
+```bash
+cd apps/web && bun run env:prod
+```
+
+This copies `apps/web/.env.local.prod` → `.env.local` and `packages/db/.env.prod` → `packages/db/.env`.
+
+> **Tip:** The toggle scripts update both the web app env and the Prisma CLI env, so `prisma db push` and `prisma studio` will also point at the correct database.
+
+### Environment file layout
+
+```
+apps/web/
+  .env               ← shared keys (Clerk, Redis, GitHub, etc.) — gitignored
+  .env.local          ← DB URLs for current session — gitignored, swapped by toggle scripts
+  .env.local.prod     ← production DB URLs — gitignored
+  .env.local.preview  ← preview branch DB URLs — gitignored
+  .env.example        ← template with all required keys — committed
+
+packages/db/
+  .env                ← DB URLs for Prisma CLI — gitignored, swapped by toggle scripts
+  .env.prod           ← production DB URLs — gitignored
+  .env.preview        ← preview branch DB URLs — gitignored
+```
+
+---
+
+## Database (Supabase)
+
+The project uses **Supabase** for PostgreSQL with **Prisma** as the ORM. Schema changes go through Supabase migrations (not `prisma migrate`), and Prisma is used only for client generation.
+
+### First-time setup
+
+```bash
+bunx supabase login                              # authenticate with Supabase
+bunx supabase link --project-ref <PROJECT_REF>   # link to your Supabase project
+bunx supabase db pull                            # pull baseline migration from production
+```
+
+### Making schema changes
+
+1. Edit `packages/db/prisma/schema.prisma`
+2. Apply to local/dev DB: `cd packages/db && bunx prisma db push`
+3. Generate migration: `cd packages/db && bun run db:migrate:new <descriptive_name>`
+4. Verify: `bunx supabase db reset` (replays all migrations + seed)
+5. Generate Prisma client: `cd packages/db && bun run db:generate`
+6. Commit both `schema.prisma` and the new `supabase/migrations/<timestamp>_<name>.sql`
+
+### Key commands
+
+| Command | Description |
+|---------|-------------|
+| `cd packages/db && bun run db:generate` | Regenerate Prisma client |
+| `cd packages/db && bun run db:migrate:new <name>` | Generate a new migration from schema diff |
+| `cd packages/db && bun run db:reset` | Drop & recreate DB from migrations + seed |
+| `cd packages/db && bun run db:studio` | Open Prisma Studio |
+| `bunx supabase db pull` | Pull remote schema as a migration |
+| `bunx supabase db push` | Push local migrations to remote |
+
+### Preview environments & deployment pipeline
+
+The project uses **Supabase Branching** + **Vercel Previews** for a fully automated PR-to-production pipeline. No manual database steps are needed.
+
+**When a PR is opened:**
+
+1. **Supabase** creates an isolated preview database, runs all migrations from `supabase/migrations/`, then applies `supabase/seed.sql`
+2. **Vercel** deploys a preview of the app with the Supabase-provided preview DB env vars injected automatically
+3. **CI** runs lint, typecheck, and unit tests; then E2E tests run against the Vercel preview URL
+
+**When a PR is merged to `main`:**
+
+1. **Supabase** deletes the preview branch database
+2. **Supabase** applies any **new** migration files to the production database automatically
+3. **Vercel** deploys to production (with production DB env vars)
+
+**Important:** Production migrations come from the `.sql` files in `supabase/migrations/`, not from Prisma's `db push`. The `db push` command does a direct schema diff and is only safe for local development — never use it against production. Always generate a migration file (`bun run db:migrate:new`) and commit it with your PR.
+
+**PRs with no migration files** (e.g. test-only or frontend-only changes) skip the database step entirely — the production DB is unchanged.
+
+---
+
+## Testing
+
+### Unit tests
+
+Unit tests use `bun:test` and live in `__tests__/` directories alongside the code they test.
+
+```bash
+cd apps/web && bun run test              # run all unit tests
+cd apps/web && bun run test:watch        # watch mode
+cd packages/api && bun test             # run API package tests directly
+```
+
+### E2E tests
+
+E2E tests use [Playwright](https://playwright.dev) with [Clerk Testing Tokens](https://clerk.com/docs/testing/playwright) for authentication bypass. Tests run against seed data in `supabase/seed.sql`.
+
+**Running locally against a preview branch** (recommended):
+
+1. Switch to the preview database: `cd apps/web && bun run env:preview`
+2. Start the dev server: `bun dev`
+3. In a separate terminal, run the tests:
+   ```bash
+   cd apps/web && bun run test:e2e
+   ```
+
+**Other modes:**
+
+```bash
+cd apps/web && bun run test:e2e          # headless (starts dev server if needed)
+cd apps/web && bun run test:e2e:ui       # Playwright UI mode
+cd apps/web && bun run test:e2e:headed   # headed browser
+cd apps/web && bun run test:e2e:debug    # step-through debugger
+```
+
+**Running against a deployed preview URL:**
+
+```bash
+PLAYWRIGHT_TEST_BASE_URL=https://your-preview.vercel.app \
+  cd apps/web && bun run test:e2e
+```
+
+Tests live in `apps/web/e2e/` and import `{ test, expect }` from `./helpers` (which injects Clerk testing tokens).
+
+In CI, the E2E job waits for the Vercel preview deployment, then runs tests against it.
+
+---
 
 ## Scripts
 
@@ -66,5 +237,8 @@ bun run --filter web dev           # start web app only
 | `bun run --filter web lint:fix` | Lint + auto-fix |
 | `bun run --filter web typecheck` | TypeScript type-check |
 | `bun run --filter web test` | Run unit tests |
+| `bun run --filter web test:e2e` | Run E2E tests |
 | `bun run --filter web ci` | Lint + typecheck + test |
 | `bun run knip` | Check for dead code and unused dependencies |
+| `cd apps/web && bun run env:prod` | Switch local env to production DB |
+| `cd apps/web && bun run env:preview` | Switch local env to preview branch DB |

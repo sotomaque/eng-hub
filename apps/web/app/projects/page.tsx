@@ -20,6 +20,7 @@ interface PageProps {
     search?: string;
     sortBy?: string;
     sortOrder?: string;
+    parentId?: string;
   }>;
 }
 
@@ -56,6 +57,8 @@ async function ProjectsContent({
             ? p.updatedAt
             : p.updatedAt.toISOString(),
         healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
+        parentId: p.parentId,
+        parentName: p.parent?.name ?? null,
       }))}
       totalCount={totalCount}
       page={page}
@@ -103,7 +106,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
         </Suspense>
       </main>
 
-      {isCreating && <ProjectSheet />}
+      {isCreating && <ProjectSheet defaultParentId={params.parentId} />}
 
       {editProjectId && (
         <Suspense fallback={null}>

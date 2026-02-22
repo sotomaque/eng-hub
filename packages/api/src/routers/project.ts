@@ -1,6 +1,9 @@
+import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
+import { after } from "next/server";
 import { z } from "zod";
 import { cached, cacheKeys, invalidateProjectCache, ttl } from "../lib/cache";
+import { detectProjectCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const createProjectSchema = z.object({
@@ -9,6 +12,8 @@ const createProjectSchema = z.object({
   githubUrl: z.string().url().optional().or(z.literal("")),
   gitlabUrl: z.string().url().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  parentId: z.string().optional().or(z.literal("")),
+  fundedById: z.string().optional().or(z.literal("")),
 });
 
 const updateProjectSchema = createProjectSchema.extend({
@@ -108,6 +113,12 @@ function fetchProject(id: string) {
         },
       },
       links: true,
+      parent: { select: { id: true, name: true, imageUrl: true } },
+      children: {
+        select: { id: true, name: true, imageUrl: true },
+        orderBy: { name: "asc" },
+      },
+      fundedBy: { select: { id: true, name: true, imageUrl: true } },
     },
   });
 }
@@ -122,6 +133,14 @@ export const projectRouter = createTRPCRouter({
         },
       }),
     );
+  }),
+
+  /** Lightweight list returning only id + name — use for comboboxes/selects. */
+  listNames: protectedProcedure.query(async () => {
+    return db.project.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
   }),
 
   list: protectedProcedure
@@ -153,6 +172,7 @@ export const projectRouter = createTRPCRouter({
           orderBy,
           include: {
             healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
+            parent: { select: { id: true, name: true } },
           },
           skip: (input.page - 1) * input.pageSize,
           take: input.pageSize,
@@ -173,6 +193,9 @@ export const projectRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createProjectSchema)
     .mutation(async ({ input }) => {
+      const parentId = input.parentId || null;
+      const fundedById = input.fundedById || null;
+
       const result = await db.project.create({
         data: {
           name: input.name,
@@ -180,9 +203,19 @@ export const projectRouter = createTRPCRouter({
           githubUrl: input.githubUrl || null,
           gitlabUrl: input.gitlabUrl || null,
           imageUrl: input.imageUrl || null,
+          parentId,
+          fundedById,
         },
       });
-      await invalidateProjectCache(result.id);
+
+      after(() => {
+        const cacheInvalidations = [invalidateProjectCache(result.id)];
+        if (parentId) cacheInvalidations.push(invalidateProjectCache(parentId));
+        if (fundedById && fundedById !== parentId)
+          cacheInvalidations.push(invalidateProjectCache(fundedById));
+        return Promise.all(cacheInvalidations);
+      });
+
       return result;
     }),
 
@@ -190,6 +223,31 @@ export const projectRouter = createTRPCRouter({
     .input(updateProjectSchema)
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
+      const parentId = data.parentId || null;
+      const fundedById = data.fundedById || null;
+
+      if (parentId === id || fundedById === id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A project cannot reference itself.",
+        });
+      }
+
+      if (parentId) {
+        const hasCycle = await detectProjectCycle(id, parentId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Setting this parent would create a circular hierarchy.",
+          });
+        }
+      }
+
+      const old = await db.project.findUnique({
+        where: { id },
+        select: { parentId: true, fundedById: true },
+      });
+
       const result = await db.project.update({
         where: { id },
         data: {
@@ -198,19 +256,44 @@ export const projectRouter = createTRPCRouter({
           githubUrl: data.githubUrl || null,
           gitlabUrl: data.gitlabUrl || null,
           imageUrl: data.imageUrl || null,
+          parentId,
+          fundedById,
         },
       });
-      await invalidateProjectCache(id);
+
+      const idsToInvalidate = new Set([id]);
+      if (old?.parentId) idsToInvalidate.add(old.parentId);
+      if (old?.fundedById) idsToInvalidate.add(old.fundedById);
+      if (parentId) idsToInvalidate.add(parentId);
+      if (fundedById) idsToInvalidate.add(fundedById);
+      after(() =>
+        Promise.all(
+          [...idsToInvalidate].map((pid) => invalidateProjectCache(pid)),
+        ),
+      );
+
       return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
+      const old = await db.project.findUnique({
+        where: { id: input.id },
+        select: { parentId: true, fundedById: true },
+      });
+
       const result = await db.project.delete({
         where: { id: input.id },
       });
-      await invalidateProjectCache(input.id);
+
+      const idsToInvalidate = [input.id];
+      if (old?.parentId) idsToInvalidate.push(old.parentId);
+      if (old?.fundedById) idsToInvalidate.push(old.fundedById);
+      after(() =>
+        Promise.all(idsToInvalidate.map((pid) => invalidateProjectCache(pid))),
+      );
+
       return result;
     }),
 });

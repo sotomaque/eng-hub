@@ -4,7 +4,9 @@ import { z } from "zod";
 import {
   invalidateMgmtChain,
   invalidatePeopleCache,
+  invalidatePersonMeByIds,
   invalidateProjectCache,
+  invalidateReferenceData,
 } from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
@@ -106,6 +108,7 @@ export const teamMemberRouter = createTRPCRouter({
         let person = await tx.person.findUnique({
           where: { email: input.email },
         });
+        const affectedManagerIds: (string | null)[] = [];
         if (!person) {
           person = await tx.person.create({
             data: {
@@ -117,12 +120,13 @@ export const teamMemberRouter = createTRPCRouter({
               gitlabUsername: input.gitlabUsername || null,
               imageUrl: input.imageUrl || null,
               managerId,
-              departmentId: input.departmentId,
+              departmentId: input.departmentId || null,
               titleId: input.titleId || null,
             },
           });
 
           if (managerId) {
+            affectedManagerIds.push(managerId);
             await tx.managerChange.create({
               data: {
                 personId: person.id,
@@ -133,6 +137,7 @@ export const teamMemberRouter = createTRPCRouter({
             });
           }
         } else if (managerId && person.managerId !== managerId) {
+          affectedManagerIds.push(person.managerId, managerId);
           const oldManagerId = person.managerId;
           await tx.person.update({
             where: { id: person.id },
@@ -165,15 +170,16 @@ export const teamMemberRouter = createTRPCRouter({
         }
 
         await syncLiveToActiveArrangement(tx, input.projectId);
-        return member;
+        return { member, affectedManagerIds };
       });
       after(async () => {
         await Promise.all([
           invalidateProjectCache(input.projectId),
           invalidatePeopleCache(),
+          invalidatePersonMeByIds(...result.affectedManagerIds),
         ]);
       });
-      return result;
+      return result.member;
     }),
 
   update: protectedProcedure
@@ -185,7 +191,11 @@ export const teamMemberRouter = createTRPCRouter({
       const result = await db.$transaction(async (tx) => {
         const existing = await tx.teamMember.findUniqueOrThrow({
           where: { id },
-          include: { person: { select: { managerId: true } } },
+          include: {
+            person: {
+              select: { managerId: true, departmentId: true, titleId: true },
+            },
+          },
         });
 
         // Update Person identity fields + managerId + role/title
@@ -198,7 +208,7 @@ export const teamMemberRouter = createTRPCRouter({
           gitlabUsername: data.gitlabUsername || null,
           imageUrl: data.imageUrl || null,
           managerId: newManagerId,
-          departmentId: data.departmentId,
+          departmentId: data.departmentId || null,
           titleId: data.titleId || null,
         };
 
@@ -236,10 +246,17 @@ export const teamMemberRouter = createTRPCRouter({
           where: { id },
         });
         await syncLiveToActiveArrangement(tx, member.projectId);
+        const deptOrTitleChanged =
+          data.departmentId !== existing.person.departmentId ||
+          (data.titleId || null) !== existing.person.titleId;
+
         return {
           member,
           personId: existing.personId,
           managerChanged: newManagerId !== existing.person.managerId,
+          oldManagerId: existing.person.managerId,
+          newManagerId,
+          deptOrTitleChanged,
         };
       });
       after(async () => {
@@ -247,8 +264,15 @@ export const teamMemberRouter = createTRPCRouter({
           invalidateProjectCache(result.member.projectId),
           invalidatePeopleCache(),
           ...(result.managerChanged
-            ? [invalidateMgmtChain(result.personId)]
+            ? [
+                invalidateMgmtChain(result.personId),
+                invalidatePersonMeByIds(
+                  result.oldManagerId,
+                  result.newManagerId,
+                ),
+              ]
             : []),
+          ...(result.deptOrTitleChanged ? [invalidateReferenceData()] : []),
         ]);
       });
       return result.member;

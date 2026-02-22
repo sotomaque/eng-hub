@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 enum HealthStatus {
@@ -20,6 +21,23 @@ enum RoadmapStatus {
   AT_RISK
 }
 
+enum SyncStatus {
+  idle
+  syncing
+  error
+}
+
+enum StatsPeriod {
+  all_time
+  ytd
+}
+
+enum Trend {
+  up
+  down
+  stable
+}
+
 model Project {
   id          String   @id @default(cuid())
   name        String
@@ -27,6 +45,12 @@ model Project {
   githubUrl   String?  @map("github_url")
   gitlabUrl   String?  @map("gitlab_url")
   imageUrl    String?  @map("image_url")
+  parentId    String?  @map("parent_id")
+  parent      Project? @relation("ProjectHierarchy", fields: [parentId], references: [id])
+  children    Project[] @relation("ProjectHierarchy")
+  fundedById  String?  @map("funded_by_id")
+  fundedBy    Project? @relation("ProjectFunding", fields: [fundedById], references: [id])
+  fundedProjects Project[] @relation("ProjectFunding")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -40,6 +64,8 @@ model Project {
   githubSync       GitHubSync?
   contributorStats ContributorStats[]
 
+  @@index([parentId])
+  @@index([fundedById])
   @@map("projects")
 }
 
@@ -64,6 +90,7 @@ model Team {
 
   arrangementTeam ArrangementTeam?
 
+  @@index([projectId])
   @@map("teams")
 }
 
@@ -95,6 +122,7 @@ model HealthAssessment {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([projectId])
   @@map("health_assessments")
 }
 
@@ -138,7 +166,12 @@ model Person {
   authoredComments      PersonComment[] @relation("PersonCommentAuthors")
   milestoneAssignments      MilestoneAssignment[]
   quarterlyGoalAssignments  QuarterlyGoalAssignment[]
+  visibilityGrantsGiven    MeetingVisibilityGrant[] @relation("GrantedVisibility")
+  visibilityGrantsReceived MeetingVisibilityGrant[] @relation("ReceivedVisibility")
 
+  @@index([managerId])
+  @@index([departmentId])
+  @@index([titleId])
   @@map("people")
 }
 
@@ -153,6 +186,7 @@ model ManagerChange {
   changedBy    String   @map("changed_by")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  @@index([personId])
   @@map("manager_changes")
 }
 
@@ -167,6 +201,8 @@ model TeamMember {
   arrangementAssignments ArrangementAssignment[]
 
   @@unique([personId, projectId])
+  @@index([projectId])
+  @@index([personId])
   @@map("team_members")
 }
 
@@ -198,6 +234,8 @@ model Milestone {
   assignments MilestoneAssignment[]
   keyResults  KeyResult[]
 
+  @@index([projectId])
+  @@index([parentId])
   @@map("milestones")
 }
 
@@ -219,6 +257,8 @@ model QuarterlyGoal {
   assignments QuarterlyGoalAssignment[]
   keyResults  KeyResult[]
 
+  @@index([projectId])
+  @@index([parentId])
   @@map("quarterly_goals")
 }
 
@@ -229,6 +269,7 @@ model ProjectLink {
   projectId String  @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([projectId])
   @@map("project_links")
 }
 
@@ -243,6 +284,7 @@ model TeamArrangement {
 
   teams ArrangementTeam[]
 
+  @@index([projectId])
   @@map("team_arrangements")
 }
 
@@ -257,6 +299,7 @@ model ArrangementTeam {
 
   assignments ArrangementAssignment[]
 
+  @@index([arrangementId])
   @@map("arrangement_teams")
 }
 
@@ -272,40 +315,41 @@ model ArrangementAssignment {
 }
 
 model GitHubSync {
-  id         String    @id @default(cuid())
-  projectId  String    @unique @map("project_id")
-  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  lastSyncAt DateTime? @map("last_sync_at")
-  syncStatus String    @default("idle") @map("sync_status")
-  syncError  String?   @map("sync_error")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id         String     @id @default(cuid())
+  projectId  String     @unique @map("project_id")
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  lastSyncAt DateTime?  @map("last_sync_at")
+  syncStatus SyncStatus @default(idle) @map("sync_status")
+  syncError  String?    @map("sync_error")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
 
   @@map("github_syncs")
 }
 
 model ContributorStats {
-  id             String   @id @default(cuid())
-  projectId      String   @map("project_id")
-  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  githubUsername  String   @map("github_username")
-  period         String
-  commits        Int      @default(0)
-  prsOpened      Int      @default(0) @map("prs_opened")
-  prsMerged      Int      @default(0) @map("prs_merged")
-  reviewsDone    Int      @default(0) @map("reviews_done")
-  additions      Int      @default(0)
-  deletions           Int      @default(0)
-  avgWeeklyCommits    Float    @default(0) @map("avg_weekly_commits")
-  recentWeeklyCommits Float    @default(0) @map("recent_weekly_commits")
-  trend               String   @default("stable")
-  avgWeeklyReviews    Float    @default(0) @map("avg_weekly_reviews")
-  recentWeeklyReviews Float    @default(0) @map("recent_weekly_reviews")
-  reviewTrend         String   @default("stable") @map("review_trend")
+  id             String      @id @default(cuid())
+  projectId      String      @map("project_id")
+  project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  githubUsername  String      @map("github_username")
+  period         StatsPeriod
+  commits        Int         @default(0)
+  prsOpened      Int         @default(0) @map("prs_opened")
+  prsMerged      Int         @default(0) @map("prs_merged")
+  reviewsDone    Int         @default(0) @map("reviews_done")
+  additions      Int         @default(0)
+  deletions           Int    @default(0)
+  avgWeeklyCommits    Float  @default(0) @map("avg_weekly_commits")
+  recentWeeklyCommits Float  @default(0) @map("recent_weekly_commits")
+  trend               Trend  @default(stable)
+  avgWeeklyReviews    Float  @default(0) @map("avg_weekly_reviews")
+  recentWeeklyReviews Float  @default(0) @map("recent_weekly_reviews")
+  reviewTrend         Trend  @default(stable) @map("review_trend")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
   @@unique([projectId, githubUsername, period])
+  @@index([projectId])
   @@map("contributor_stats")
 }
 
@@ -335,7 +379,20 @@ model Meeting {
   createdAt  DateTime          @default(now()) @map("created_at")
   updatedAt  DateTime          @updatedAt @map("updated_at")
 
+  @@index([personId])
   @@map("meetings")
+}
+
+model MeetingVisibilityGrant {
+  id        String   @id @default(cuid())
+  granterId String   @map("granter_id")
+  granter   Person   @relation("GrantedVisibility", fields: [granterId], references: [id], onDelete: Cascade)
+  granteeId String   @map("grantee_id")
+  grantee   Person   @relation("ReceivedVisibility", fields: [granteeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([granterId, granteeId])
+  @@map("meeting_visibility_grants")
 }
 
 model PersonComment {
@@ -349,6 +406,7 @@ model PersonComment {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
+  @@index([personId])
   @@map("person_comments")
 }
 
