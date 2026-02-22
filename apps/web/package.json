@@ -17,7 +17,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug"
+    "test:e2e:debug": "playwright test --debug",
+    "env:prod": "cp .env.local.prod .env.local && cp ../../packages/db/.env.prod ../../packages/db/.env && echo 'Switched to PRODUCTION database'",
+    "env:preview": "cp .env.local.preview .env.local && cp ../../packages/db/.env.preview ../../packages/db/.env && echo 'Switched to PREVIEW database'"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",

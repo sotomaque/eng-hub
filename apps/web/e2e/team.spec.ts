@@ -18,9 +18,9 @@ test.describe("Project team", () => {
 
   test("team page shows team groupings", async ({ page }) => {
     await page.goto("/projects/proj-alpha/team");
-    await expect(page.getByText("Frontend")).toBeVisible();
-    await expect(page.getByText("Backend")).toBeVisible();
-    await expect(page.getByText("Design")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Frontend" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Backend" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Design" })).toBeVisible();
   });
 
   test("team search filters members", async ({ page }) => {
