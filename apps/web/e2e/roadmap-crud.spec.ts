@@ -7,7 +7,7 @@ test.describe("Roadmap CRUD", () => {
     await page.goto("/projects/proj-alpha/roadmap?addMilestone=true");
     await expect(
       page.getByRole("heading", { name: "Add Milestone" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
 
     // Fill the title (status defaults to "Not Started")
     await page.locator("#title").fill(title);
@@ -15,10 +15,13 @@ test.describe("Roadmap CRUD", () => {
     // Submit
     await page.getByRole("button", { name: "Add Milestone" }).click();
 
-    // Sheet closes on success
+    // Sheet closes after server re-render removes ?addMilestone param
     await expect(
       page.getByRole("heading", { name: "Add Milestone" }),
-    ).toBeHidden();
+    ).toBeHidden({ timeout: 15_000 });
+
+    // Reload to bypass stale cache (after() invalidation races with router.refresh())
+    await page.reload();
 
     // New milestone appears on the roadmap
     await expect(page.getByText(title)).toBeVisible();

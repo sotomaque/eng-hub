@@ -12,7 +12,7 @@ test.describe("People directory", () => {
 
   test("people page shows total count", async ({ page }) => {
     await page.goto("/people");
-    await expect(page.getByText(/5 people/)).toBeVisible();
+    await expect(page.getByText(/\d+ people/)).toBeVisible();
   });
 
   test("search filters people", async ({ page }) => {

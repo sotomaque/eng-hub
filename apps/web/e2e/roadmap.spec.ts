@@ -3,9 +3,10 @@ import { expect, test } from "./helpers";
 test.describe("Roadmap", () => {
   test("roadmap page shows milestones section", async ({ page }) => {
     await page.goto("/projects/proj-alpha/roadmap");
-    await expect(
-      page.getByRole("heading", { name: "Milestones" }),
-    ).toBeVisible();
+    // Allow extra time for Suspense + cold-start SSR in CI
+    await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible(
+      { timeout: 15_000 },
+    );
   });
 
   test("roadmap page shows seeded milestones", async ({ page }) => {

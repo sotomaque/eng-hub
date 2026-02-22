@@ -32,8 +32,10 @@ test.describe("Project CRUD", () => {
     // Verify the correct project is loaded
     await expect(page.locator("#name")).toHaveValue("Gamma");
 
-    // Update the description
-    await page.locator("#description").fill("Updated by E2E test");
+    // Update the description (use timestamp so isDirty is always true across runs)
+    await page
+      .locator("#description")
+      .fill(`Updated by E2E test ${Date.now()}`);
     await page.getByRole("button", { name: "Save Changes" }).click();
 
     // Sheet closes on success
