@@ -1,3 +1,4 @@
+export { resetAndSeed } from "@workspace/db";
 export { flushAllCache } from "./lib/cache";
 export {
   syncAllGitHubStats,

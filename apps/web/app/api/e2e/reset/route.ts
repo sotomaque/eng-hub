@@ -1,5 +1,4 @@
-import { flushAllCache } from "@workspace/api";
-import { resetAndSeed } from "@workspace/db";
+import { flushAllCache, resetAndSeed } from "@workspace/api";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request): Promise<Response> {
