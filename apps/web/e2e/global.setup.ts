@@ -8,6 +8,15 @@ export const authFile = path.join(__dirname, "../playwright/.clerk/user.json");
 
 setup("authenticate", async ({ page }) => {
   await clerkSetup();
+
+  // Flush stale Redis caches so E2E tests read fresh seed data from PostgreSQL.
+  // The endpoint only runs on Vercel preview deployments; local 404s are ignored.
+  const baseUrl =
+    process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";
+  await fetch(`${baseUrl}/api/e2e/flush-cache`, { method: "POST" }).catch(
+    () => {},
+  );
+
   await page.goto("/");
   await clerk.signIn({
     page,
