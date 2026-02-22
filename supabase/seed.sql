@@ -20,22 +20,22 @@ INSERT INTO titles (id, name, sort_order, department_id) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- People (no clerk_user_id — E2E tests use Clerk Testing Tokens)
-INSERT INTO people (id, first_name, last_name, email, role_id, title_id) VALUES
-  ('person-alice', 'Alice', 'Smith', 'alice@test.com', 'dept-eng', 'title-em'),
-  ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe'),
-  ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe'),
-  ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer'),
-  ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm')
+INSERT INTO people (id, first_name, last_name, email, role_id, title_id, updated_at) VALUES
+  ('person-alice', 'Alice', 'Smith', 'alice@test.com', 'dept-eng', 'title-em', NOW()),
+  ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe', NOW()),
+  ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe', NOW()),
+  ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer', NOW()),
+  ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Manager relationships (Alice manages Bob and Carol)
 UPDATE people SET manager_id = 'person-alice' WHERE id IN ('person-bob', 'person-carol');
 
 -- Projects
-INSERT INTO projects (id, name, description) VALUES
-  ('proj-alpha', 'Alpha', 'Main test project for E2E tests'),
-  ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing'),
-  ('proj-gamma', 'Gamma', 'Standalone project for isolation testing')
+INSERT INTO projects (id, name, description, updated_at) VALUES
+  ('proj-alpha', 'Alpha', 'Main test project for E2E tests', NOW()),
+  ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', NOW()),
+  ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Sub-project + funded-by relationships
