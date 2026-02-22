@@ -51,7 +51,10 @@ export function parseGitHubUrl(
     if (u.hostname !== "github.com") return null;
     const parts = u.pathname.split("/").filter(Boolean);
     if (parts.length < 2) return null;
-    return { owner: parts[0] ?? "", repo: (parts[1] ?? "").replace(/\.git$/, "") };
+    return {
+      owner: parts[0] ?? "",
+      repo: (parts[1] ?? "").replace(/\.git$/, ""),
+    };
   } catch {
     return null;
   }
