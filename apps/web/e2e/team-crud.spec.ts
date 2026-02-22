@@ -33,8 +33,20 @@ test.describe("Team member CRUD", () => {
       page.getByRole("button", { name: "Engineering" }),
     ).toBeVisible();
 
+    // Intercept tRPC mutation response for diagnostics on failure
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().includes("/trpc/") && r.request().method() === "POST",
+    );
+
     // Submit
     await page.getByRole("button", { name: "Add Member" }).click();
+
+    // Wait for mutation response and assert success
+    const response = await responsePromise;
+    expect(
+      response.ok(),
+      `tRPC mutation failed with status ${response.status()}: ${await response.text()}`,
+    ).toBe(true);
 
     // Sheet closes on success
     await expect(

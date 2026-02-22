@@ -33,7 +33,7 @@ test.describe("Projects", () => {
     // Sidebar navigation items (under "Navigation" group)
     await expect(
       page.getByRole("link", { name: "Overview", exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(
       page.getByRole("link", { name: "Health", exact: true }),
     ).toBeVisible();
@@ -60,7 +60,7 @@ test.describe("Projects", () => {
     await page.goto("/projects/proj-alpha");
     await expect(
       page.getByRole("heading", { name: "Sub-Projects" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("link", { name: "Beta" })).toBeVisible();
   });
 

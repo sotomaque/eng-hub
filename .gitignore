@@ -22,6 +22,7 @@ coverage
 /apps/web/test-results/
 /apps/web/e2e/.auth/
 /apps/web/playwright/.clerk/
+playwright-report/
 
 # Turbo
 .turbo
