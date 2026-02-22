@@ -26,7 +26,10 @@ export default defineConfig({
     },
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: path.join(__dirname, "playwright/.clerk/user.json"),
+      },
       dependencies: ["setup"],
     },
   ],
