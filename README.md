@@ -73,6 +73,35 @@ See [Environment Setup](#environment-setup) for detailed configuration.
 
 The app runs at `http://localhost:3000` with Turbopack HMR.
 
+### Running against local Supabase
+
+For fully offline development with seeded test data:
+
+1. Start the local Supabase stack (PostgreSQL, Auth, Storage, etc.):
+   ```bash
+   bunx supabase start
+   ```
+2. Switch your environment to local:
+   ```bash
+   cd apps/web && bun run env:local
+   ```
+3. Push the Prisma schema to the local database:
+   ```bash
+   cd packages/db && bun run db:push
+   ```
+4. (Optional) Reset the local database to re-apply migrations and seed data:
+   ```bash
+   cd packages/db && bun run db:reset
+   ```
+5. Start the dev server:
+   ```bash
+   bun dev
+   ```
+
+The local Supabase database runs on `localhost:54322` with seed data from `supabase/seed.sql`. Auth still goes through Clerk cloud, so you need valid Clerk dev keys in `apps/web/.env.local.local`.
+
+> **Note:** `SKIP_ENV_VALIDATION=1` is set in the local env file so the app starts even without optional services (UploadThing, Redis, QStash, GitHub).
+
 ### Pointing at a deployed preview branch
 
 When you open a PR, Supabase automatically creates an isolated preview database from `supabase/migrations/` and applies `supabase/seed.sql`. Vercel deploys a preview of the app with the Supabase-provided env vars injected automatically.
@@ -111,12 +140,14 @@ This copies `apps/web/.env.local.prod` → `.env.local` and `packages/db/.env.pr
 apps/web/
   .env               ← shared keys (Clerk, Redis, GitHub, etc.) — gitignored
   .env.local          ← DB URLs for current session — gitignored, swapped by toggle scripts
+  .env.local.local    ← local Supabase DB URLs — committed
   .env.local.prod     ← production DB URLs — gitignored
   .env.local.preview  ← preview branch DB URLs — gitignored
   .env.example        ← template with all required keys — committed
 
 packages/db/
   .env                ← DB URLs for Prisma CLI — gitignored, swapped by toggle scripts
+  .env.local-template ← local Supabase DB URLs — committed
   .env.prod           ← production DB URLs — gitignored
   .env.preview        ← preview branch DB URLs — gitignored
 ```
@@ -240,5 +271,6 @@ bun run --filter web dev           # start web app only
 | `bun run --filter web test:e2e` | Run E2E tests |
 | `bun run --filter web ci` | Lint + typecheck + test |
 | `bun run knip` | Check for dead code and unused dependencies |
+| `cd apps/web && bun run env:local` | Switch local env to local Supabase |
 | `cd apps/web && bun run env:prod` | Switch local env to production DB |
 | `cd apps/web && bun run env:preview` | Switch local env to preview branch DB |

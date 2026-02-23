@@ -21,14 +21,7 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-  FolderPlus,
-  Layers,
-  Pencil,
-  Plus,
-  Trash2,
-  UserCheck,
-} from "lucide-react";
+import { FolderPlus, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
@@ -160,17 +153,6 @@ export function PeopleTable({
 
   const meQuery = useQuery(trpc.person.me.queryOptions());
   const myPersonId = meQuery.data?.id ?? null;
-
-  const claimMutation = useMutation(
-    trpc.person.claimAsMe.mutationOptions({
-      onSuccess: () => {
-        toast.success("Linked as you");
-        meQuery.refetch();
-        router.refresh();
-      },
-      onError: (error) => toast.error(error.message),
-    }),
-  );
 
   const deleteMutation = useMutation(
     trpc.person.delete.mutationOptions({
@@ -327,47 +309,8 @@ export function PeopleTable({
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => {
           const person = row.original;
-          const isMe = person.id === myPersonId;
           return (
             <div className="flex items-center gap-1">
-              {!isMe && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="This is me"
-                      disabled={claimMutation.isPending}
-                    >
-                      <UserCheck className="size-4" />
-                      <span className="sr-only">This is me</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Link as you?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will link your account to &quot;{person.firstName}{" "}
-                        {person.lastName}&quot;.
-                        {myPersonId
-                          ? " Your current link will be removed."
-                          : ""}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() =>
-                          claimMutation.mutate({ personId: person.id })
-                        }
-                        disabled={claimMutation.isPending}
-                      >
-                        {claimMutation.isPending ? "Linking\u2026" : "Confirm"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -423,7 +366,7 @@ export function PeopleTable({
         enableSorting: false,
       },
     ],
-    [myPersonId, claimMutation, deleteMutation, deletingId, router],
+    [myPersonId, deleteMutation, deletingId, router],
   );
 
   return (

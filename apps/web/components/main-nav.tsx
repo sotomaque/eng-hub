@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@workspace/ui/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,10 +15,17 @@ const links = [
 
 export function MainNav() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const isAdmin =
+    (user?.publicMetadata as { role?: string } | undefined)?.role === "admin";
+
+  const visibleLinks = isAdmin
+    ? [...links, { href: "/admin", label: "Admin" }]
+    : links;
 
   return (
     <nav className="flex items-center gap-4">
-      {links.map((link) => {
+      {visibleLinks.map((link) => {
         const isActive =
           link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
         return (
