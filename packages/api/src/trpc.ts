@@ -5,10 +5,13 @@ import { ZodError } from "zod";
 import { redis } from "./lib/redis";
 
 export const createTRPCContext = async () => {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
+  const role =
+    (sessionClaims?.metadata as { role?: string } | undefined)?.role ?? null;
 
   return {
     userId,
+    role,
   };
 };
 
@@ -100,3 +103,17 @@ export async function enforceStrictRateLimit(userId: string): Promise<void> {
 export const protectedProcedure = t.procedure
   .use(enforceUserIsAuthed)
   .use(rateLimitMiddleware);
+
+// ── Admin Middleware ─────────────────────────────────────────
+
+const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
+  if (ctx.role !== "admin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin access required.",
+    });
+  }
+  return next();
+});
+
+export const adminProcedure = protectedProcedure.use(enforceUserIsAdmin);

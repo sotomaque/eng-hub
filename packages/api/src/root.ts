@@ -1,3 +1,4 @@
+import { adminRouter } from "./routers/admin";
 import { arrangementRouter } from "./routers/arrangement";
 import { departmentRouter } from "./routers/department";
 import { githubStatsRouter } from "./routers/github-stats";
@@ -19,6 +20,7 @@ import { titleRouter } from "./routers/title";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
+  admin: adminRouter,
   arrangement: arrangementRouter,
   githubStats: githubStatsRouter,
   health: healthRouter,
