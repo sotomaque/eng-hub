@@ -170,6 +170,7 @@ model Person {
   visibilityGrantsGiven    MeetingVisibilityGrant[] @relation("GrantedVisibility")
   visibilityGrantsReceived MeetingVisibilityGrant[] @relation("ReceivedVisibility")
   favoriteProjects         FavoriteProject[]
+  pendingInvites           PendingInvite[]
 
   @@index([managerId])
   @@index([departmentId])
@@ -452,6 +453,16 @@ model KeyResult {
   updatedAt       DateTime       @updatedAt @map("updated_at")
 
   @@map("key_results")
+}
+
+model PendingInvite {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  personId  String   @map("person_id")
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pending_invites")
 }
 
 model FavoriteProject {
