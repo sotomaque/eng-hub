@@ -2,49 +2,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mocks ────────────────────────────────────────────────────
 
-const mockInvalidateProjectCache = mock(() => Promise.resolve());
-const mockInvalidatePeopleCache = mock(() => Promise.resolve());
-
-mock.module("../../lib/cache", () => ({
-  cached: mock((_key: string, _ttl: number, fn: () => unknown) => fn()),
-  cacheKeys: { projectList: "pl", project: () => "p" },
-  ttl: { projectList: 1, project: 1 },
-  invalidateProjectCache: mockInvalidateProjectCache,
-  invalidatePeopleCache: mockInvalidatePeopleCache,
-  invalidateMgmtChain: mock(() => Promise.resolve()),
-  invalidatePersonMeByIds: mock(() => Promise.resolve()),
-  invalidateReferenceData: mock(() => Promise.resolve()),
-  invalidateGithubStats: mock(() => Promise.resolve()),
-  invalidateMeetingTemplates: mock(() => Promise.resolve()),
-  invalidateFavoritesCache: mock(() => Promise.resolve()),
-}));
-
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
-}));
-
-mock.module("next/server", () => ({
-  after: mock((fn: () => Promise<void>) => fn()),
-}));
-
 mock.module("@clerk/nextjs/server", () => ({
   auth: () => Promise.resolve({ userId: "test-user-id" }),
 }));
@@ -143,8 +100,6 @@ describe("arrangement.activate", () => {
     mockTxTeamCreate.mockReset().mockResolvedValue({ id: "live-t1" });
     mockTxArrTeamUpdate.mockReset().mockResolvedValue({});
     mockTxMembershipCreateMany.mockReset().mockResolvedValue({ count: 0 });
-    mockInvalidateProjectCache.mockReset();
-    mockInvalidatePeopleCache.mockReset();
   });
 
   test("deactivates all arrangements for the project", async () => {
@@ -264,12 +219,5 @@ describe("arrangement.activate", () => {
     await caller.activate({ id: "arr-1" });
 
     expect(mockTxMembershipCreateMany).not.toHaveBeenCalled();
-  });
-
-  test("invalidates project and people caches", async () => {
-    await caller.activate({ id: "arr-1" });
-
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidatePeopleCache).toHaveBeenCalled();
   });
 });

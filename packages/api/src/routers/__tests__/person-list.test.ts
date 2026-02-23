@@ -2,45 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mocks ────────────────────────────────────────────────────
 
-mock.module("../../lib/cache", () => ({
-  cached: mock((_key: string, _ttl: number, fn: () => Promise<unknown>) =>
-    fn(),
-  ),
-  cacheKeys: { people: "enghub:people:all" },
-  ttl: { people: 1800 },
-  invalidatePeopleCache: mock(() => Promise.resolve()),
-  invalidateProjectCache: mock(() => Promise.resolve()),
-  invalidateMgmtChain: mock(() => Promise.resolve()),
-  invalidatePersonMeByIds: mock(() => Promise.resolve()),
-  invalidateReferenceData: mock(() => Promise.resolve()),
-  invalidateGithubStats: mock(() => Promise.resolve()),
-  invalidateMeetingTemplates: mock(() => Promise.resolve()),
-}));
-
 mock.module("../../lib/sync-arrangement", () => ({
   syncLiveToActiveArrangement: mock(() => Promise.resolve()),
-}));
-
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
 }));
 
 mock.module("@clerk/nextjs/server", () => ({

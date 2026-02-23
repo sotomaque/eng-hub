@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const roadmapStatusEnum = z.enum([
@@ -33,24 +32,6 @@ const updateKeyResultSchema = z.object({
   unit: z.string().optional(),
   status: roadmapStatusEnum,
 });
-
-async function getProjectIdForKeyResult(input: {
-  milestoneId?: string;
-  quarterlyGoalId?: string;
-}): Promise<string> {
-  if (input.milestoneId) {
-    const m = await db.milestone.findUniqueOrThrow({
-      where: { id: input.milestoneId },
-      select: { projectId: true },
-    });
-    return m.projectId;
-  }
-  const g = await db.quarterlyGoal.findUniqueOrThrow({
-    where: { id: input.quarterlyGoalId },
-    select: { projectId: true },
-  });
-  return g.projectId;
-}
 
 export const keyResultRouter = createTRPCRouter({
   create: protectedProcedure
@@ -86,8 +67,6 @@ export const keyResultRouter = createTRPCRouter({
         },
       });
 
-      const projectId = await getProjectIdForKeyResult(input);
-      await invalidateProjectCache(projectId);
       return result;
     }),
 
@@ -103,11 +82,6 @@ export const keyResultRouter = createTRPCRouter({
           quarterlyGoal: { select: { projectId: true } },
         },
       });
-      const projectId =
-        result.milestone?.projectId ?? result.quarterlyGoal?.projectId;
-      if (projectId) {
-        await invalidateProjectCache(projectId);
-      }
       return result;
     }),
 
@@ -121,11 +95,6 @@ export const keyResultRouter = createTRPCRouter({
           quarterlyGoal: { select: { projectId: true } },
         },
       });
-      const projectId =
-        result.milestone?.projectId ?? result.quarterlyGoal?.projectId;
-      if (projectId) {
-        await invalidateProjectCache(projectId);
-      }
       return result;
     }),
 });

@@ -16,54 +16,8 @@ mock.module("../../lib/roadmap-hierarchy", () => ({
   detectProjectCycle: mock(() => Promise.resolve(false)),
 }));
 
-const mockInvalidateFavoritesCache = mock(() => Promise.resolve());
-
-mock.module("../../lib/cache", () => ({
-  cached: mock((_key: string, _ttl: number, fn: () => unknown) => fn()),
-  cacheKeys: {
-    projectList: "pl",
-    project: () => "p",
-    favoriteProjectIds: (id: string) => `fav:${id}`,
-  },
-  ttl: { projectList: 1, project: 1, favorites: 3600 },
-  invalidateProjectCache: mock(() => Promise.resolve()),
-  invalidatePeopleCache: mock(() => Promise.resolve()),
-  invalidateMgmtChain: mock(() => Promise.resolve()),
-  invalidatePersonMeByIds: mock(() => Promise.resolve()),
-  invalidateReferenceData: mock(() => Promise.resolve()),
-  invalidateGithubStats: mock(() => Promise.resolve()),
-  invalidateMeetingTemplates: mock(() => Promise.resolve()),
-  invalidateFavoritesCache: mockInvalidateFavoritesCache,
-}));
-
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
-}));
-
 mock.module("@clerk/nextjs/server", () => ({
   auth: () => Promise.resolve({ userId: "test-user-id" }),
-}));
-
-mock.module("next/server", () => ({
-  after: mock((fn: () => unknown) => fn()),
 }));
 
 // ── DB mock ──────────────────────────────────────────────────
@@ -180,7 +134,6 @@ describe("project.toggleFavorite", () => {
       projectId: "proj-1",
     });
     mockFavDelete.mockReset().mockResolvedValue({});
-    mockInvalidateFavoritesCache.mockReset().mockResolvedValue(undefined);
   });
 
   test("creates favorite when not existing", async () => {
@@ -216,11 +169,5 @@ describe("project.toggleFavorite", () => {
       code: "BAD_REQUEST",
       message: expect.stringContaining("No linked person"),
     });
-  });
-
-  test("invalidates favorites cache after toggle", async () => {
-    await caller.toggleFavorite({ projectId: "proj-1" });
-
-    expect(mockInvalidateFavoritesCache).toHaveBeenCalledWith("person-1");
   });
 });

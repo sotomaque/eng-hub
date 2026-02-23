@@ -1,4 +1,4 @@
-import { cacheKeys, db, invalidatePeopleCache, redis } from "@workspace/api";
+import { db } from "@workspace/api";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
@@ -90,16 +90,6 @@ export async function POST(req: Request) {
   // 4. Clean up the PendingInvite row if it existed
   if (email) {
     await db.pendingInvite.delete({ where: { email } }).catch(() => {});
-  }
-
-  // 5. Invalidate caches (best-effort — Redis may not be configured locally)
-  try {
-    await Promise.all([
-      invalidatePeopleCache(clerkUserId),
-      redis.del(cacheKeys.clerkPerson(clerkUserId)),
-    ]);
-  } catch {
-    // Redis unavailable — caches will expire naturally via TTL
   }
 
   return NextResponse.json({ received: true, linked: true });

@@ -1,6 +1,5 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const tagsSchema = z.array(z.string().min(1).max(50)).max(20).default([]);
@@ -47,7 +46,6 @@ export const projectLinkRouter = createTRPCRouter({
           tags: input.tags,
         },
       });
-      await invalidateProjectCache(input.projectId);
       return result;
     }),
 
@@ -63,7 +61,6 @@ export const projectLinkRouter = createTRPCRouter({
           tags: data.tags,
         },
       });
-      await invalidateProjectCache(result.projectId);
       return result;
     }),
 
@@ -84,7 +81,6 @@ export const projectLinkRouter = createTRPCRouter({
       const result = await db.projectLink.delete({
         where: { id: input.id },
       });
-      await invalidateProjectCache(result.projectId);
       return result;
     }),
 });

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { TRPCError } from "@trpc/server";
 
 // ── Mocks ────────────────────────────────────────────────────
 
@@ -8,32 +7,6 @@ mock.module("../../lib/hierarchy", () => ({
   canViewMeetings: mockCanViewMeetings,
   resolveClerkPerson: mock(() => Promise.resolve("person-1" as string | null)),
   isInManagementChain: mock(() => Promise.resolve(false)),
-}));
-
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
-}));
-
-mock.module("next/server", () => ({
-  after: mock((fn: () => Promise<void>) => fn()),
 }));
 
 mock.module("@clerk/nextjs/server", () => ({
