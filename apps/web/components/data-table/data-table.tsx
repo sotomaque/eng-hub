@@ -22,8 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
@@ -50,6 +49,10 @@ interface DataTableProps<TData, TValue> {
   ) => void;
   /** Initial column visibility (e.g. { multiProject: false }) */
   initialColumnVisibility?: VisibilityState;
+  /** ID accessor for each data row, used for drag-and-drop integration */
+  getRowId?: (originalRow: TData, index: number) => string;
+  /** Custom row wrapper, e.g. for drag-and-drop sortable rows */
+  renderRow?: (props: { rowId: string; children: ReactNode }) => ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -64,6 +67,8 @@ export function DataTable<TData, TValue>({
   sortOrder: serverSortOrder,
   onSortingChange: onServerSortingChange,
   initialColumnVisibility,
+  getRowId,
+  renderRow,
 }: DataTableProps<TData, TValue>) {
   const isServerPagination = serverPageCount !== undefined;
   const isServerSorting = onServerSortingChange !== undefined;
@@ -115,6 +120,7 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    ...(getRowId ? { getRowId } : {}),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     ...(isServerSorting
@@ -172,18 +178,26 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
+              table.getRowModel().rows.map((row) => {
+                const cells = row
+                  .getVisibleCells()
+                  .map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
                       )}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
+                  ));
+                if (renderRow) {
+                  return (
+                    <Fragment key={row.id}>
+                      {renderRow({ rowId: row.id, children: cells })}
+                    </Fragment>
+                  );
+                }
+                return <TableRow key={row.id}>{cells}</TableRow>;
+              })
             ) : (
               <TableRow>
                 <TableCell

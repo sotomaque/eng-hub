@@ -6,7 +6,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectSidebar } from "@/components/project-sidebar";
 import { ProjectSiteHeader } from "@/components/project-site-header";
+import { BreadcrumbProvider } from "@/lib/contexts/breadcrumb-context";
 import { getCachedProject } from "@/lib/trpc/cached-queries";
+import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +34,12 @@ interface LayoutProps {
 
 export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { id } = await params;
-  const project = await getCachedProject(id);
+  const [project, trpc] = await Promise.all([
+    getCachedProject(id),
+    createServerCaller(),
+  ]);
   if (!project) notFound();
+  const isFavorited = await trpc.project.isFavorited({ projectId: id });
 
   return (
     <SidebarProvider>
@@ -43,10 +49,13 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         projectImageUrl={project.imageUrl}
         parentProject={project.parent ?? null}
         fundedByProject={project.fundedBy ?? null}
+        isFavorited={isFavorited}
       />
       <SidebarInset>
-        <ProjectSiteHeader projectId={id} projectName={project.name} />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <BreadcrumbProvider>
+          <ProjectSiteHeader projectId={id} projectName={project.name} />
+          <main className="flex-1 p-4 md:p-6">{children}</main>
+        </BreadcrumbProvider>
       </SidebarInset>
     </SidebarProvider>
   );

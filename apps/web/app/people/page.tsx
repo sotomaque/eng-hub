@@ -27,6 +27,8 @@ interface PageProps {
     sortBy?: string;
     sortOrder?: string;
     multiProject?: string;
+    department?: string;
+    project?: string;
   }>;
 }
 
@@ -37,6 +39,8 @@ async function PeopleContent({
   sortBy,
   sortOrder,
   multiProject,
+  departments,
+  projects,
 }: {
   page: number;
   pageSize: number;
@@ -44,28 +48,38 @@ async function PeopleContent({
   sortBy?: "name" | "email" | "department";
   sortOrder?: "asc" | "desc";
   multiProject?: boolean;
+  departments?: string[];
+  projects?: string[];
 }) {
   const trpc = await createServerCaller();
-  const [listResult, projectsResult] = await Promise.allSettled([
-    trpc.person.list({
-      page,
-      pageSize,
-      search: search || undefined,
-      sortBy,
-      sortOrder,
-      multiProject,
-    }),
-    trpc.project.getAll(),
-  ]);
+  const [listResult, projectsResult, departmentsResult] =
+    await Promise.allSettled([
+      trpc.person.list({
+        page,
+        pageSize,
+        search: search || undefined,
+        departments,
+        projects,
+        sortBy,
+        sortOrder,
+        multiProject,
+      }),
+      trpc.project.getAll(),
+      trpc.department.getAll(),
+    ]);
   if (listResult.status === "rejected") throw listResult.reason;
   const { items, totalCount } = listResult.value;
-  const projects =
+  const allProjects =
     projectsResult.status === "fulfilled" ? projectsResult.value : [];
-  const projectNames = [...new Set(projects.map((p) => p.name))].sort();
+  const projectNames = [...new Set(allProjects.map((p) => p.name))].sort();
+  const allDepartments =
+    departmentsResult.status === "fulfilled" ? departmentsResult.value : [];
+  const departmentNames = allDepartments.map((d) => d.name).sort();
   return (
     <PeopleTable
       people={items}
       projectNames={projectNames}
+      departmentNames={departmentNames}
       totalCount={totalCount}
       page={page}
       pageSize={pageSize}
@@ -73,6 +87,8 @@ async function PeopleContent({
       sortBy={sortBy}
       sortOrder={sortOrder}
       multiProject={multiProject}
+      departments={departments}
+      projects={projects}
     />
   );
 }
@@ -117,6 +133,8 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       ? params.sortOrder
       : undefined;
   const multiProject = params.multiProject === "true" ? true : undefined;
+  const departments = params.department?.split(",").filter(Boolean);
+  const projects = params.project?.split(",").filter(Boolean);
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,6 +149,8 @@ export default async function PeoplePage({ searchParams }: PageProps) {
             sortBy={sortBy}
             sortOrder={sortOrder}
             multiProject={multiProject}
+            departments={departments}
+            projects={projects}
           />
         </Suspense>
       </main>

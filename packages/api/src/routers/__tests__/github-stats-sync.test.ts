@@ -33,6 +33,7 @@ mock.module("../../lib/cache", () => ({
   invalidatePersonMeByIds: mock(() => Promise.resolve()),
   invalidateReferenceData: mock(() => Promise.resolve()),
   invalidateMeetingTemplates: mock(() => Promise.resolve()),
+  invalidateFavoritesCache: mock(() => Promise.resolve()),
 }));
 
 mock.module("../../lib/redis", () => ({

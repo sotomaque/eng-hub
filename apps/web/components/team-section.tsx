@@ -16,7 +16,7 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Pencil, Plus, Search, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
 import { TeamMembersTable } from "@/components/team-members-table";
 import { buildTitleColorMap } from "@/lib/constants/team";
@@ -42,12 +42,21 @@ interface TeamSectionProps {
   projectId: string;
   members: MemberWithRelations[];
   teams: Team[];
+  filterTitle?: string[];
+  filterDepartment?: string[];
 }
 
-export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
+export function TeamSection({
+  projectId,
+  members,
+  teams,
+  filterTitle,
+  filterDepartment,
+}: TeamSectionProps) {
   const router = useRouter();
   const hasTeams = teams.length > 0;
   const [search, setSearch] = useState("");
+  const [, startTransition] = useTransition();
 
   const titleColorMap = useMemo(() => {
     const titles = members
@@ -56,20 +65,82 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
     return buildTitleColorMap(titles);
   }, [members]);
 
-  const filteredMembers = useMemo(() => {
-    if (!search) return members;
-    const q = search.toLowerCase();
-    return members.filter((m) => {
-      const name =
-        `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`.toLowerCase();
-      return (
-        name.includes(q) ||
-        m.person.email.toLowerCase().includes(q) ||
-        (m.person.department?.name ?? "").toLowerCase().includes(q) ||
-        (m.person.title?.name ?? "").toLowerCase().includes(q)
-      );
+  // Derive full option lists from unfiltered members
+  const titleOptions = useMemo(() => {
+    const names = [
+      ...new Set(
+        members.map((m) => m.person.title?.name).filter(Boolean) as string[],
+      ),
+    ];
+    names.sort();
+    return names.map((n) => ({ label: n, value: n }));
+  }, [members]);
+
+  const departmentOptions = useMemo(() => {
+    const names = [
+      ...new Set(
+        members
+          .map((m) => m.person.department?.name)
+          .filter(Boolean) as string[],
+      ),
+    ];
+    names.sort();
+    return names.map((n) => ({ label: n, value: n }));
+  }, [members]);
+
+  const handleFilterChange = useCallback(
+    (key: "title" | "department", values: string[]) => {
+      const params = new URLSearchParams();
+      const nextTitle = key === "title" ? values : filterTitle;
+      const nextDept = key === "department" ? values : filterDepartment;
+      if (nextTitle?.length) params.set("title", nextTitle.join(","));
+      if (nextDept?.length) params.set("department", nextDept.join(","));
+      startTransition(() => {
+        router.replace(
+          `/projects/${projectId}/team${params.size > 0 ? `?${params.toString()}` : ""}`,
+          { scroll: false },
+        );
+      });
+    },
+    [filterTitle, filterDepartment, projectId, router],
+  );
+
+  const handleResetFilters = useCallback(() => {
+    startTransition(() => {
+      router.replace(`/projects/${projectId}/team`, { scroll: false });
     });
-  }, [members, search]);
+  }, [projectId, router]);
+
+  const filterCount =
+    (filterTitle?.length ?? 0) + (filterDepartment?.length ?? 0);
+
+  const filteredMembers = useMemo(() => {
+    let result = members;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((m) => {
+        const name =
+          `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`.toLowerCase();
+        return (
+          name.includes(q) ||
+          m.person.email.toLowerCase().includes(q) ||
+          (m.person.department?.name ?? "").toLowerCase().includes(q) ||
+          (m.person.title?.name ?? "").toLowerCase().includes(q)
+        );
+      });
+    }
+    if (filterTitle?.length) {
+      result = result.filter((m) =>
+        filterTitle.includes(m.person.title?.name ?? ""),
+      );
+    }
+    if (filterDepartment?.length) {
+      result = result.filter((m) =>
+        filterDepartment.includes(m.person.department?.name ?? ""),
+      );
+    }
+    return result;
+  }, [members, search, filterTitle, filterDepartment]);
 
   // Group members by team (a member can appear under multiple teams)
   const orderedGroups = useMemo(() => {
@@ -207,6 +278,13 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
                   projectId={projectId}
                   members={group.members}
                   titleColorMap={titleColorMap}
+                  titleOptions={titleOptions}
+                  departmentOptions={departmentOptions}
+                  filterTitle={filterTitle}
+                  filterDepartment={filterDepartment}
+                  filterCount={filterCount}
+                  onFilterChange={handleFilterChange}
+                  onResetFilters={handleResetFilters}
                 />
               </div>
             ))}
@@ -214,8 +292,15 @@ export function TeamSection({ projectId, members, teams }: TeamSectionProps) {
         ) : (
           <TeamMembersTable
             projectId={projectId}
-            members={members}
+            members={filteredMembers}
             titleColorMap={titleColorMap}
+            titleOptions={titleOptions}
+            departmentOptions={departmentOptions}
+            filterTitle={filterTitle}
+            filterDepartment={filterDepartment}
+            filterCount={filterCount}
+            onFilterChange={handleFilterChange}
+            onResetFilters={handleResetFilters}
           />
         )}
       </CardContent>

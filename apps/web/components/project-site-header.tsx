@@ -12,6 +12,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { SidebarTrigger } from "@workspace/ui/components/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useBreadcrumbTitle } from "@/lib/contexts/breadcrumb-context";
 
 interface ProjectSiteHeaderProps {
   projectName: string;
@@ -33,13 +34,14 @@ export function ProjectSiteHeader({
   projectId,
 }: ProjectSiteHeaderProps) {
   const pathname = usePathname();
+  const { title: deepTitle } = useBreadcrumbTitle();
   const basePath = `/projects/${projectId}`;
 
-  // Determine the active section from the pathname
   const relativePath = pathname.replace(basePath, "").replace(/^\//, "");
   const segments = relativePath.split("/").filter(Boolean);
   const sectionSlug = segments[0];
   const sectionLabel = sectionSlug ? SEGMENT_LABELS[sectionSlug] : undefined;
+  const hasDeepSegments = segments.length > 1;
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
@@ -61,9 +63,27 @@ export function ProjectSiteHeader({
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
-              </BreadcrumbItem>
+              {hasDeepSegments ? (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={`${basePath}/${sectionSlug}`}>
+                        {sectionLabel}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="max-w-[200px] truncate">
+                      {deepTitle ?? "…"}
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              ) : (
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
+                </BreadcrumbItem>
+              )}
             </>
           ) : (
             <BreadcrumbItem>

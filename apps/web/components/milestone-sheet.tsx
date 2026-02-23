@@ -76,9 +76,14 @@ interface MilestoneData {
 interface MilestoneSheetProps {
   projectId: string;
   milestone?: MilestoneData;
+  defaultParentId?: string;
 }
 
-export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
+export function MilestoneSheet({
+  projectId,
+  milestone,
+  defaultParentId,
+}: MilestoneSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!milestone;
@@ -87,6 +92,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
     milestone?.assignments.map((a) => a.person.id) ?? [],
   );
   const [keyResultsVersion, setKeyResultsVersion] = useState(0);
+  const [createAnother, setCreateAnother] = useState(false);
 
   const milestonesQuery = useQuery(
     trpc.milestone.getByProjectId.queryOptions({ projectId }),
@@ -101,6 +107,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors, isDirty },
   } = useForm<CreateMilestoneInput>({
     resolver: zodResolver(createMilestoneSchema),
@@ -113,7 +120,7 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
         : undefined,
       status:
         (milestone?.status as CreateMilestoneInput["status"]) ?? "NOT_STARTED",
-      parentId: milestone?.parentId ?? null,
+      parentId: milestone?.parentId ?? defaultParentId ?? null,
     },
   });
 
@@ -133,8 +140,22 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
           });
         }
         toast.success("Milestone created");
-        handleClose();
-        router.refresh();
+        if (createAnother) {
+          const current = getValues();
+          reset({
+            projectId,
+            title: "",
+            description: "",
+            targetDate: undefined,
+            status: current.status,
+            parentId: current.parentId,
+          });
+          setAssigneeIds([]);
+          router.refresh();
+        } else {
+          handleClose();
+          router.refresh();
+        }
       },
       onError: (error) => toast.error(error.message),
     }),
@@ -160,7 +181,8 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    router.push(`/projects/${projectId}/roadmap`, { scroll: false });
+    const basePath = window.location.pathname;
+    router.push(basePath, { scroll: false });
     reset();
   }
 
@@ -351,6 +373,17 @@ export function MilestoneSheet({ projectId, milestone }: MilestoneSheetProps) {
             )}
           </div>
           <SheetFooter>
+            {!isEditing && (
+              <label className="mr-auto flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={createAnother}
+                  onChange={(e) => setCreateAnother(e.target.checked)}
+                  className="size-4 rounded border-input accent-primary"
+                />
+                Create another
+              </label>
+            )}
             <Button
               type="button"
               variant="outline"

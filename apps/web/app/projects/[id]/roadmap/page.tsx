@@ -19,6 +19,13 @@ interface PageProps {
     editMilestone?: string;
     addGoal?: string;
     editGoal?: string;
+    msStatus?: string;
+    msType?: string;
+    msAssignee?: string;
+    qgStatus?: string;
+    qgQuarter?: string;
+    qgType?: string;
+    qgAssignee?: string;
   }>;
 }
 
@@ -27,7 +34,25 @@ function serializeDate(d: Date | string | null): string | null {
   return typeof d === "string" ? d : d.toISOString();
 }
 
-async function RoadmapContent({ id }: { id: string }) {
+async function RoadmapContent({
+  id,
+  msStatus,
+  msType,
+  msAssignee,
+  qgStatus,
+  qgQuarter,
+  qgType,
+  qgAssignee,
+}: {
+  id: string;
+  msStatus?: string[];
+  msType?: string[];
+  msAssignee?: string[];
+  qgStatus?: string[];
+  qgQuarter?: string[];
+  qgType?: string[];
+  qgAssignee?: string[];
+}) {
   const project = await getCachedProject(id);
   if (!project) notFound();
 
@@ -54,6 +79,13 @@ async function RoadmapContent({ id }: { id: string }) {
       projectId={id}
       milestones={milestones}
       quarterlyGoals={quarterlyGoals}
+      msStatus={msStatus}
+      msType={msType}
+      msAssignee={msAssignee}
+      qgStatus={qgStatus}
+      qgQuarter={qgQuarter}
+      qgType={qgType}
+      qgAssignee={qgAssignee}
     />
   );
 }
@@ -117,10 +149,27 @@ export default async function RoadmapPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const sp = await searchParams;
 
+  const msStatus = sp.msStatus?.split(",").filter(Boolean);
+  const msType = sp.msType?.split(",").filter(Boolean);
+  const msAssignee = sp.msAssignee?.split(",").filter(Boolean);
+  const qgStatus = sp.qgStatus?.split(",").filter(Boolean);
+  const qgQuarter = sp.qgQuarter?.split(",").filter(Boolean);
+  const qgType = sp.qgType?.split(",").filter(Boolean);
+  const qgAssignee = sp.qgAssignee?.split(",").filter(Boolean);
+
   return (
     <>
       <Suspense fallback={null}>
-        <RoadmapContent id={id} />
+        <RoadmapContent
+          id={id}
+          msStatus={msStatus}
+          msType={msType}
+          msAssignee={msAssignee}
+          qgStatus={qgStatus}
+          qgQuarter={qgQuarter}
+          qgType={qgType}
+          qgAssignee={qgAssignee}
+        />
       </Suspense>
 
       {sp.addMilestone === "true" && <MilestoneSheet projectId={id} />}

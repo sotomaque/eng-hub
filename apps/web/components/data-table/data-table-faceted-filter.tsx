@@ -21,29 +21,46 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
   title: string;
   options: FilterOption[];
+  /** Controlled mode: current selected values */
+  value?: string[];
+  /** Controlled mode: called when selection changes */
+  onValueChange?: (values: string[]) => void;
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  value,
+  onValueChange,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const filterValue = (column?.getFilterValue() as string[]) ?? [];
+  const controlled = onValueChange !== undefined;
+  const filterValue = controlled
+    ? (value ?? [])
+    : ((column?.getFilterValue() as string[]) ?? []);
   const selectedValues = new Set(filterValue);
 
-  function toggleValue(value: string) {
+  function toggleValue(val: string) {
     const next = new Set(selectedValues);
-    if (next.has(value)) {
-      next.delete(value);
+    if (next.has(val)) {
+      next.delete(val);
     } else {
-      next.add(value);
+      next.add(val);
     }
     const arr = Array.from(next);
-    column?.setFilterValue(arr.length > 0 ? arr : undefined);
+    if (controlled) {
+      onValueChange(arr);
+    } else {
+      column?.setFilterValue(arr.length > 0 ? arr : undefined);
+    }
   }
 
   function clearAll() {
-    column?.setFilterValue(undefined);
+    if (controlled) {
+      onValueChange([]);
+    } else {
+      column?.setFilterValue(undefined);
+    }
   }
 
   return (

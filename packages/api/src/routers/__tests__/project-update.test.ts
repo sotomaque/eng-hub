@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const mockDetectProjectCycle = mock(() => Promise.resolve(false));
 
+mock.module("../../lib/hierarchy", () => ({
+  resolveClerkPerson: mock(() => Promise.resolve("person-1")),
+  isInManagementChain: mock(() => Promise.resolve(false)),
+  canViewMeetings: mock(() => Promise.resolve(false)),
+}));
+
 mock.module("../../lib/roadmap-hierarchy", () => ({
   detectProjectCycle: mockDetectProjectCycle,
 }));
@@ -24,6 +30,7 @@ mock.module("../../lib/cache", () => ({
   invalidateReferenceData: mock(() => Promise.resolve()),
   invalidateGithubStats: mock(() => Promise.resolve()),
   invalidateMeetingTemplates: mock(() => Promise.resolve()),
+  invalidateFavoritesCache: mock(() => Promise.resolve()),
 }));
 
 mock.module("../../lib/redis", () => ({
@@ -75,6 +82,12 @@ mock.module("@workspace/db", () => ({
       update: mockProjectUpdate,
       delete: mock(() => Promise.resolve({})),
       count: mock(() => Promise.resolve(0)),
+    },
+    favoriteProject: {
+      findUnique: mock(() => Promise.resolve(null)),
+      findMany: mock(() => Promise.resolve([])),
+      create: mock(() => Promise.resolve({ id: "fav-1" })),
+      delete: mock(() => Promise.resolve({})),
     },
     $transaction: mock((fn: (tx: unknown) => unknown) => fn({})),
   },

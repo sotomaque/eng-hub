@@ -63,6 +63,7 @@ type PersonWithMemberships = {
 interface PeopleTableProps {
   people: PersonWithMemberships[];
   projectNames: string[];
+  departmentNames: string[];
   totalCount: number;
   page: number;
   pageSize: number;
@@ -70,11 +71,14 @@ interface PeopleTableProps {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   multiProject?: boolean;
+  departments?: string[];
+  projects?: string[];
 }
 
 export function PeopleTable({
   people,
   projectNames,
+  departmentNames,
   totalCount,
   page,
   pageSize,
@@ -82,6 +86,8 @@ export function PeopleTable({
   sortBy,
   sortOrder,
   multiProject,
+  departments,
+  projects,
 }: PeopleTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -104,6 +110,8 @@ export function PeopleTable({
       sort?: string;
       order?: string;
       multiProject?: boolean;
+      departments?: string[];
+      projects?: string[];
     }) => {
       const params = new URLSearchParams();
       params.set("page", overrides.page ?? "1");
@@ -119,9 +127,21 @@ export function PeopleTable({
           ? overrides.multiProject
           : multiProject;
       if (mp) params.set("multiProject", "true");
+      const d = overrides.departments ?? departments;
+      if (d?.length) params.set("department", d.join(","));
+      const p = overrides.projects ?? projects;
+      if (p?.length) params.set("project", p.join(","));
       return params.toString();
     },
-    [pageSize, searchInput, sortBy, sortOrder, multiProject],
+    [
+      pageSize,
+      searchInput,
+      sortBy,
+      sortOrder,
+      multiProject,
+      departments,
+      projects,
+    ],
   );
 
   const handleSearchChange = useCallback(
@@ -166,20 +186,34 @@ export function PeopleTable({
     ? (deleteMutation.variables?.id ?? null)
     : null;
 
+  const handleFilterChange = useCallback(
+    (key: "departments" | "projects", values: string[]) => {
+      const qs = buildParams({ page: "1", [key]: values });
+      startSearchTransition(() => {
+        router.replace(`/people?${qs}`, { scroll: false });
+      });
+    },
+    [buildParams, router],
+  );
+
+  const handleResetFilters = useCallback(() => {
+    const qs = buildParams({ page: "1", departments: [], projects: [] });
+    startSearchTransition(() => {
+      router.replace(`/people?${qs}`, { scroll: false });
+    });
+  }, [buildParams, router]);
+
+  const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0);
+
   const projectOptions = useMemo(
     () => projectNames.map((n) => ({ label: n, value: n })),
     [projectNames],
   );
 
-  const departmentOptions = useMemo(() => {
-    const deptNames = new Set<string>();
-    for (const p of people) {
-      if (p.department) deptNames.add(p.department.name);
-    }
-    const sorted = [...deptNames];
-    sorted.sort();
-    return sorted.map((d) => ({ label: d, value: d }));
-  }, [people]);
+  const departmentOptions = useMemo(
+    () => departmentNames.map((d) => ({ label: d, value: d })),
+    [departmentNames],
+  );
 
   const columns: ColumnDef<PersonWithMemberships>[] = useMemo(
     () => [
@@ -254,12 +288,6 @@ export function PeopleTable({
             </div>
           );
         },
-        filterFn: (row, _id, value: string[]) => {
-          const memberships = row.original.projectMemberships;
-          return value.some((v) =>
-            memberships.some((m) => m.project.name === v),
-          );
-        },
       },
       {
         id: "departments",
@@ -273,10 +301,6 @@ export function PeopleTable({
             return <span className="text-muted-foreground">{"\u2014"}</span>;
           }
           return <span>{val}</span>;
-        },
-        filterFn: (row, _id, value: string[]) => {
-          const personDepartment = row.original.department?.name;
-          return personDepartment ? value.includes(personDepartment) : false;
         },
       },
       {
@@ -458,22 +482,25 @@ export function PeopleTable({
               searchPlaceholder="Search people…"
               searchValue={searchInput}
               onSearchChange={handleSearchChange}
+              filterCount={filterCount}
+              onResetFilters={handleResetFilters}
             >
-              {table.getColumn("projects") && projectOptions.length > 0 && (
+              {projectOptions.length > 0 && (
                 <DataTableFacetedFilter
-                  column={table.getColumn("projects")}
                   title="Project"
                   options={projectOptions}
+                  value={projects ?? []}
+                  onValueChange={(v) => handleFilterChange("projects", v)}
                 />
               )}
-              {table.getColumn("departments") &&
-                departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={table.getColumn("departments")}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
+              {departmentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  title="Department"
+                  options={departmentOptions}
+                  value={departments ?? []}
+                  onValueChange={(v) => handleFilterChange("departments", v)}
+                />
+              )}
               <Button
                 variant={multiProject ? "default" : "outline"}
                 size="sm"

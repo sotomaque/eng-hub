@@ -16,6 +16,7 @@ mock.module("../../lib/cache", () => ({
   invalidateReferenceData: mock(() => Promise.resolve()),
   invalidateGithubStats: mock(() => Promise.resolve()),
   invalidateMeetingTemplates: mock(() => Promise.resolve()),
+  invalidateFavoritesCache: mock(() => Promise.resolve()),
 }));
 
 mock.module("../../lib/redis", () => ({

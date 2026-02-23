@@ -18,6 +18,7 @@ mock.module("../../lib/cache", () => ({
   invalidateReferenceData: mockInvalidateReferenceData,
   invalidateGithubStats: mock(() => Promise.resolve()),
   invalidateMeetingTemplates: mock(() => Promise.resolve()),
+  invalidateFavoritesCache: mock(() => Promise.resolve()),
 }));
 
 mock.module("../../lib/sync-arrangement", () => ({
