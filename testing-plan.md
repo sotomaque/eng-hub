@@ -56,7 +56,7 @@ Zod schemas are the first line of defense against bad data. They're pure functio
 | 17 | Title color map | `apps/web/lib/constants/team.ts` | **Covered** (3 tests) |
 | 18 | Link icon matching | `apps/web/lib/constants/link-icons.ts` | **Covered** (19 tests) — all 15 services + case-insensitive + fallback |
 | 19 | GitHub URL parsing | `packages/api/src/lib/github.ts` (`parseGitHubUrl`) | **Covered** (6 tests in P0 github.test.ts) |
-| 20 | Cache key generation & invalidation | `packages/api/src/lib/cache.ts` | **Covered** (18 tests) — keys, TTLs, cached(), all invalidation helpers |
+| 20 | Cache key generation & invalidation | `packages/api/src/lib/cache.ts` | **Covered** (19 tests) — keys, TTLs, cached(), all invalidation helpers incl. favorites |
 
 ### P3: tRPC Procedure Logic
 
@@ -64,12 +64,14 @@ Only test procedures with non-trivial business logic beyond basic CRUD. Mock Pri
 
 | # | What to Test | Location | Status |
 |---|---|---|---|
-| 21 | `person.list` — pagination, search, multi-project grouping | `packages/api/src/routers/person.ts` | **Covered** (8 tests) |
+| 21 | `person.list` — pagination, search, multi-project grouping, department/project filters | `packages/api/src/routers/person.ts` | **Covered** (13 tests) — incl. department, project, and combined filter tests |
 | 22 | `person.update` — manager cycle detection, manager change logging | `packages/api/src/routers/person.ts` | **Covered** (8 tests) — self-ref, cycle detection, manager change log, cache invalidation |
 | 23 | `project.update` — parent cycle detection | `packages/api/src/routers/project.ts` | **Covered** (8 tests) — self-ref, cycle detection, parent/fundedBy cache invalidation |
 | 24 | `arrangement.activate` — replaces live teams atomically | `packages/api/src/routers/arrangement.ts` | **Covered** (10 tests) — deactivate all, clear liveTeamId, recreate teams + memberships |
 | 25 | `department.merge` / `title.merge` — re-parents entities then deletes sources | `packages/api/src/routers/department.ts`, `title.ts` | **Covered** (7 tests) — re-parent people/titles, delete merged, cache invalidation |
 | 26 | `githubStats.syncNow` — rate limiting | `packages/api/src/routers/github-stats.ts` | **Covered** (4 tests) — no URL, invalid URL, success, sync failure |
+| 27 | `project.list` — pagination, search, status/type/favorite filters | `packages/api/src/routers/project.ts` | **Covered** (17 tests) — status OR logic, NONE handling, type filter, favorite filter, combined filters |
+| 28 | `project.toggleFavorite` / `myFavoriteIds` / `isFavorited` — favorites CRUD | `packages/api/src/routers/project.ts` | **Covered** (10 tests) — toggle create/delete, no-person errors, cache invalidation |
 
 ---
 
@@ -94,7 +96,7 @@ These cover the primary read flows for each major feature.
 | # | Journey | File | Status |
 |---|---|---|---|
 | 4 | **Health assessments** — list shows assessments, dimension categories visible, new assessment button exists | `health.spec.ts` | **Covered** (3 tests) — verified against seed data |
-| 5 | **Roadmap** — milestones and quarterly goals sections visible with seeded data | `roadmap.spec.ts` | **Covered** (3 tests) — verified against seed data |
+| 5 | **Roadmap** — milestones and quarterly goals sections visible with seeded data, click-through to detail pages with key results | `roadmap.spec.ts` | **Covered** (5 tests) — list view + milestone detail + goal detail |
 | 6 | **People directory** — people page shows seeded people, search filters, add button | `people.spec.ts` | **Covered** (4 tests) |
 | 7 | **Project links** — links page loads, shows seeded links, add button, empty state | `links.spec.ts` | **Covered** (4 tests) |
 | 8 | **Org chart** — org chart renders with seeded team hierarchy, manager relationships | `org-chart.spec.ts` | **Covered** (3 tests) |
@@ -123,6 +125,7 @@ Lower priority — these are important features but less frequently used.
 | 17 | **GitHub stats** — stats page loads for project with GitHub URL, shows contributor table | `stats.spec.ts` | Not written |
 | 18 | **Settings** — departments page loads, create department, add title | `settings.spec.ts` | Not written |
 | 19 | **Department/title merge** — merge two departments, verify people reassigned | `settings.spec.ts` | Not written |
+| 20 | **Favorite projects** — star a project, verify star persists, filter by favorites shows only starred | `projects.spec.ts` | Not written |
 
 ---
 
@@ -136,6 +139,8 @@ E2E tests depend on `supabase/seed.sql`. As new E2E tests are written, expand th
 - Projects (Alpha with sub-project Beta, standalone Gamma)
 - Teams (Frontend, Backend, Design)
 - Team members (assigned to projects and teams)
+- Milestones (MVP Launch, Beta Release — with assignments and key results)
+- Quarterly goals (Improve Performance, Test Coverage 80% — with key results)
 
 **Still needed for future E2E tests:**
 
@@ -143,6 +148,7 @@ E2E tests depend on `supabase/seed.sql`. As new E2E tests are written, expand th
 |----------|-----------------|
 | 1:1 meetings (#14) | A Person record linked to the E2E test user's Clerk ID, with a direct report |
 | GitHub stats (#17) | A project with a real GitHub URL and some seeded `ContributorStats` rows |
+| Favorite projects (#20) | A Person record linked to the E2E test user's Clerk ID (same as meetings) |
 
 ---
 

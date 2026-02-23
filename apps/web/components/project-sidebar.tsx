@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FavoriteButton } from "@/components/favorite-button";
 import { ModeToggle } from "@/components/mode-toggle";
 
 interface ProjectSidebarProps {
@@ -40,6 +41,7 @@ interface ProjectSidebarProps {
   projectImageUrl?: string | null;
   parentProject?: { id: string; name: string; imageUrl: string | null } | null;
   fundedByProject?: { id: string; name: string } | null;
+  isFavorited?: boolean;
 }
 
 const navItems = [
@@ -59,6 +61,7 @@ export function ProjectSidebar({
   projectImageUrl,
   parentProject,
   fundedByProject,
+  isFavorited,
 }: ProjectSidebarProps) {
   const pathname = usePathname();
   const basePath = `/projects/${projectId}`;
@@ -76,20 +79,28 @@ export function ProjectSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href={basePath}>
-                <Avatar className="size-8 shrink-0 rounded-md">
-                  <AvatarImage src={projectImageUrl ?? undefined} />
-                  <AvatarFallback className="rounded-md text-sm">
-                    {projectName[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">{projectName}</span>
-                  <span className="text-muted-foreground text-xs">Project</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
+            <div className="flex items-center gap-1">
+              <SidebarMenuButton size="lg" asChild className="flex-1">
+                <Link href={basePath}>
+                  <Avatar className="size-8 shrink-0 rounded-md">
+                    <AvatarImage src={projectImageUrl ?? undefined} />
+                    <AvatarFallback className="rounded-md text-sm">
+                      {projectName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-0.5 leading-none">
+                    <span className="font-semibold">{projectName}</span>
+                    <span className="text-muted-foreground text-xs">
+                      Project
+                    </span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+              <FavoriteButton
+                projectId={projectId}
+                isFavorited={isFavorited ?? false}
+              />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

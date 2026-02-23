@@ -20,8 +20,12 @@ interface PageProps {
     addGoal?: string;
     editGoal?: string;
     msStatus?: string;
+    msType?: string;
+    msAssignee?: string;
     qgStatus?: string;
     qgQuarter?: string;
+    qgType?: string;
+    qgAssignee?: string;
   }>;
 }
 
@@ -33,13 +37,21 @@ function serializeDate(d: Date | string | null): string | null {
 async function RoadmapContent({
   id,
   msStatus,
+  msType,
+  msAssignee,
   qgStatus,
   qgQuarter,
+  qgType,
+  qgAssignee,
 }: {
   id: string;
   msStatus?: string[];
+  msType?: string[];
+  msAssignee?: string[];
   qgStatus?: string[];
   qgQuarter?: string[];
+  qgType?: string[];
+  qgAssignee?: string[];
 }) {
   const project = await getCachedProject(id);
   if (!project) notFound();
@@ -68,8 +80,12 @@ async function RoadmapContent({
       milestones={milestones}
       quarterlyGoals={quarterlyGoals}
       msStatus={msStatus}
+      msType={msType}
+      msAssignee={msAssignee}
       qgStatus={qgStatus}
       qgQuarter={qgQuarter}
+      qgType={qgType}
+      qgAssignee={qgAssignee}
     />
   );
 }
@@ -134,8 +150,12 @@ export default async function RoadmapPage({ params, searchParams }: PageProps) {
   const sp = await searchParams;
 
   const msStatus = sp.msStatus?.split(",").filter(Boolean);
+  const msType = sp.msType?.split(",").filter(Boolean);
+  const msAssignee = sp.msAssignee?.split(",").filter(Boolean);
   const qgStatus = sp.qgStatus?.split(",").filter(Boolean);
   const qgQuarter = sp.qgQuarter?.split(",").filter(Boolean);
+  const qgType = sp.qgType?.split(",").filter(Boolean);
+  const qgAssignee = sp.qgAssignee?.split(",").filter(Boolean);
 
   return (
     <>
@@ -143,8 +163,12 @@ export default async function RoadmapPage({ params, searchParams }: PageProps) {
         <RoadmapContent
           id={id}
           msStatus={msStatus}
+          msType={msType}
+          msAssignee={msAssignee}
           qgStatus={qgStatus}
           qgQuarter={qgQuarter}
+          qgType={qgType}
+          qgAssignee={qgAssignee}
         />
       </Suspense>
 

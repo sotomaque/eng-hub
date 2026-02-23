@@ -14,6 +14,8 @@ export const cacheKeys = {
   mgmtChain: (personId: string) => `enghub:mgmt-chain:${personId}`,
   githubStats: (projectId: string) => `enghub:github-stats:${projectId}`,
   meetingTemplates: "enghub:meeting-templates:all",
+  favoriteProjectIds: (personId: string) =>
+    `enghub:favorites:${personId}` as const,
 } as const;
 
 // ── TTLs (seconds) ───────────────────────────────────────────
@@ -28,6 +30,7 @@ export const ttl = {
   clerkPerson: 3600, // 1 hour
   mgmtChain: 1800, // 30 minutes
   githubStats: 3600, // 1 hour
+  favorites: 3600, // 1 hour
 } as const;
 
 // ── Cache-Aside Helper ──────────────────────────────────────
@@ -72,6 +75,10 @@ export async function invalidateGithubStats(projectId: string) {
 
 export async function invalidateMeetingTemplates() {
   await redis.del(cacheKeys.meetingTemplates);
+}
+
+export async function invalidateFavoritesCache(personId: string) {
+  await redis.del(cacheKeys.favoriteProjectIds(personId));
 }
 
 export async function flushAllCache() {

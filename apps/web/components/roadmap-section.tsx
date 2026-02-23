@@ -20,8 +20,12 @@ interface RoadmapSectionProps {
   milestones: MilestoneItem[];
   quarterlyGoals: QuarterlyGoalItem[];
   msStatus?: string[];
+  msType?: string[];
+  msAssignee?: string[];
   qgStatus?: string[];
   qgQuarter?: string[];
+  qgType?: string[];
+  qgAssignee?: string[];
 }
 
 function countWithChildren<T extends { children: { length: number } }>(
@@ -39,8 +43,12 @@ export function RoadmapSection({
   milestones,
   quarterlyGoals,
   msStatus,
+  msType,
+  msAssignee,
   qgStatus,
   qgQuarter,
+  qgType,
+  qgAssignee,
 }: RoadmapSectionProps) {
   const router = useRouter();
 
@@ -88,6 +96,8 @@ export function RoadmapSection({
               projectId={projectId}
               milestones={milestones}
               filterStatus={msStatus}
+              filterType={msType}
+              filterAssignee={msAssignee}
             />
           )}
         </div>
@@ -130,6 +140,8 @@ export function RoadmapSection({
               goals={quarterlyGoals}
               filterStatus={qgStatus}
               filterQuarter={qgQuarter}
+              filterType={qgType}
+              filterAssignee={qgAssignee}
             />
           )}
         </div>

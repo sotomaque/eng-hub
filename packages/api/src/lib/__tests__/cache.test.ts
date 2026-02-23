@@ -24,6 +24,7 @@ mock.module("@workspace/db", () => ({
 const {
   cached,
   cacheKeys,
+  invalidateFavoritesCache,
   invalidateGithubStats,
   invalidateMeetingTemplates,
   invalidateMgmtChain,
@@ -51,6 +52,9 @@ describe("cacheKeys", () => {
     );
     expect(cacheKeys.mgmtChain("person-1")).toBe("enghub:mgmt-chain:person-1");
     expect(cacheKeys.githubStats("proj-1")).toBe("enghub:github-stats:proj-1");
+    expect(cacheKeys.favoriteProjectIds("person-1")).toBe(
+      "enghub:favorites:person-1",
+    );
   });
 });
 
@@ -64,6 +68,7 @@ describe("ttl", () => {
     expect(ttl.clerkPerson).toBe(3600);
     expect(ttl.mgmtChain).toBe(1800);
     expect(ttl.githubStats).toBe(3600);
+    expect(ttl.favorites).toBe(3600);
   });
 });
 
@@ -205,5 +210,10 @@ describe("invalidation helpers", () => {
     await invalidatePersonMeByIds("person-x");
     expect(mockFindMany).toHaveBeenCalled();
     expect(mockDel).not.toHaveBeenCalled();
+  });
+
+  test("invalidateFavoritesCache deletes the favorites key for a person", async () => {
+    await invalidateFavoritesCache("person-1");
+    expect(mockDel).toHaveBeenCalledWith("enghub:favorites:person-1");
   });
 });

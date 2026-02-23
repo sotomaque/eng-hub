@@ -190,6 +190,78 @@ describe("person.list", () => {
     expect(callArgs.where?.id).toEqual({ in: [] });
   });
 
+  test("applies department filter to where clause", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      departments: ["Engineering", "Design"],
+    });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: { department?: { name: { in: string[] } } };
+    };
+    expect(callArgs.where?.department).toEqual({
+      name: { in: ["Engineering", "Design"] },
+    });
+  });
+
+  test("applies project filter to where clause", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      projects: ["Alpha", "Beta"],
+    });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: {
+        projectMemberships?: { some: { project: { name: { in: string[] } } } };
+      };
+    };
+    expect(callArgs.where?.projectMemberships).toEqual({
+      some: { project: { name: { in: ["Alpha", "Beta"] } } },
+    });
+  });
+
+  test("combines department + project + search filters", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      search: "alice",
+      departments: ["Engineering"],
+      projects: ["Alpha"],
+    });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: {
+        OR?: unknown[];
+        department?: { name: { in: string[] } };
+        projectMemberships?: { some: { project: { name: { in: string[] } } } };
+      };
+    };
+    expect(callArgs.where?.OR).toHaveLength(4);
+    expect(callArgs.where?.department).toEqual({
+      name: { in: ["Engineering"] },
+    });
+    expect(callArgs.where?.projectMemberships).toEqual({
+      some: { project: { name: { in: ["Alpha"] } } },
+    });
+  });
+
+  test("does NOT add department/project to where when arrays are empty", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      departments: [],
+      projects: [],
+    });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: Record<string, unknown>;
+    };
+    expect(callArgs.where?.department).toBeUndefined();
+    expect(callArgs.where?.projectMemberships).toBeUndefined();
+  });
+
   test("sorts by name ascending by default", async () => {
     await caller.list({ page: 1, pageSize: 10 });
 

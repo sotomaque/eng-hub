@@ -24,8 +24,18 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "ci": {
+      "dependsOn": ["lint", "test"]
     },
     "dev": {
       "cache": false,

@@ -2,7 +2,14 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { after } from "next/server";
 import { z } from "zod";
-import { cached, cacheKeys, invalidateProjectCache, ttl } from "../lib/cache";
+import {
+  cached,
+  cacheKeys,
+  invalidateFavoritesCache,
+  invalidateProjectCache,
+  ttl,
+} from "../lib/cache";
+import { resolveClerkPerson } from "../lib/hierarchy";
 import { detectProjectCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -149,14 +156,14 @@ export const projectRouter = createTRPCRouter({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
-        status: z
-          .array(z.enum(["GREEN", "YELLOW", "RED", "NONE"]))
-          .optional(),
+        status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
+        type: z.array(z.enum(["toplevel", "subproject"])).optional(),
+        favorite: z.boolean().optional(),
         sortBy: z.enum(["name", "updatedAt"]).optional().default("updatedAt"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {};
       if (input.search) {
         where.name = { contains: input.search, mode: "insensitive" as const };
@@ -176,6 +183,23 @@ export const projectRouter = createTRPCRouter({
           statusConditions.push({ healthAssessments: { none: {} } });
         }
         where.OR = statusConditions;
+      }
+      if (input.type?.length) {
+        const hasToplevel = input.type.includes("toplevel");
+        const hasSubproject = input.type.includes("subproject");
+        if (hasToplevel && !hasSubproject) {
+          where.parentId = null;
+        } else if (hasSubproject && !hasToplevel) {
+          where.parentId = { not: null };
+        }
+      }
+      if (input.favorite) {
+        const personId = await resolveClerkPerson(ctx.userId);
+        if (personId) {
+          where.favoritedBy = { some: { personId } };
+        } else {
+          return { items: [], totalCount: 0 };
+        }
       }
 
       const orderByMap: Record<string, object> = {
@@ -313,5 +337,61 @@ export const projectRouter = createTRPCRouter({
       );
 
       return result;
+    }),
+
+  myFavoriteIds: protectedProcedure.query(async ({ ctx }) => {
+    const personId = await resolveClerkPerson(ctx.userId);
+    if (!personId) return [];
+    return cached(
+      cacheKeys.favoriteProjectIds(personId),
+      ttl.favorites,
+      async () => {
+        const rows = await db.favoriteProject.findMany({
+          where: { personId },
+          select: { projectId: true },
+        });
+        return rows.map((r) => r.projectId);
+      },
+    );
+  }),
+
+  isFavorited: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const personId = await resolveClerkPerson(ctx.userId);
+      if (!personId) return false;
+      const row = await db.favoriteProject.findUnique({
+        where: {
+          personId_projectId: { personId, projectId: input.projectId },
+        },
+        select: { id: true },
+      });
+      return row !== null;
+    }),
+
+  toggleFavorite: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const personId = await resolveClerkPerson(ctx.userId);
+      if (!personId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No linked person record.",
+        });
+      }
+      const existing = await db.favoriteProject.findUnique({
+        where: {
+          personId_projectId: { personId, projectId: input.projectId },
+        },
+      });
+      if (existing) {
+        await db.favoriteProject.delete({ where: { id: existing.id } });
+      } else {
+        await db.favoriteProject.create({
+          data: { personId, projectId: input.projectId },
+        });
+      }
+      after(() => invalidateFavoritesCache(personId));
+      return { favorited: !existing };
     }),
 });

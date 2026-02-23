@@ -28,7 +28,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@workspace/ui/components/empty";
-import { FolderOpen, Pencil, Plus, Trash2 } from "lucide-react";
+import { FolderOpen, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
@@ -37,6 +37,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { FavoriteButton } from "@/components/favorite-button";
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -45,6 +46,11 @@ const HEALTH_FILTER_OPTIONS = [
   { label: "Neutral", value: "YELLOW" },
   { label: "Bad", value: "RED" },
   { label: "No status", value: "NONE" },
+];
+
+const TYPE_FILTER_OPTIONS = [
+  { label: "Top-level", value: "toplevel" },
+  { label: "Sub-project", value: "subproject" },
 ];
 
 type ProjectItem = {
@@ -56,6 +62,7 @@ type ProjectItem = {
   healthStatus: HealthStatus | null;
   parentId: string | null;
   parentName: string | null;
+  isFavorited: boolean;
 };
 
 interface ProjectsTableProps {
@@ -65,6 +72,8 @@ interface ProjectsTableProps {
   pageSize: number;
   search?: string;
   status?: string[];
+  type?: string[];
+  favorite?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
@@ -91,6 +100,8 @@ export function ProjectsTable({
   pageSize,
   search,
   status,
+  type,
+  favorite,
   sortBy,
   sortOrder,
 }: ProjectsTableProps) {
@@ -116,6 +127,8 @@ export function ProjectsTable({
       sort?: string;
       order?: string;
       status?: string[];
+      type?: string[];
+      favorite?: boolean;
     }) => {
       const params = new URLSearchParams();
       params.set("page", overrides.page ?? "1");
@@ -128,9 +141,13 @@ export function ProjectsTable({
       if (so) params.set("sortOrder", so);
       const st = overrides.status ?? status;
       if (st?.length) params.set("status", st.join(","));
+      const tp = overrides.type ?? type;
+      if (tp?.length) params.set("type", tp.join(","));
+      const fav = overrides.favorite ?? favorite;
+      if (fav) params.set("favorite", "true");
       return params.toString();
     },
-    [pageSize, searchInput, sortBy, sortOrder, status],
+    [pageSize, searchInput, sortBy, sortOrder, status, type, favorite],
   );
 
   const handleSearchChange = useCallback(
@@ -157,14 +174,37 @@ export function ProjectsTable({
     [buildParams, router],
   );
 
+  const handleTypeChange = useCallback(
+    (values: string[]) => {
+      const qs = buildParams({ page: "1", type: values });
+      startSearchTransition(() => {
+        router.replace(`/projects?${qs}`, { scroll: false });
+      });
+    },
+    [buildParams, router],
+  );
+
+  const handleFavoriteToggle = useCallback(() => {
+    const qs = buildParams({ page: "1", favorite: !favorite });
+    startSearchTransition(() => {
+      router.replace(`/projects?${qs}`, { scroll: false });
+    });
+  }, [buildParams, router, favorite]);
+
   const handleResetFilters = useCallback(() => {
-    const qs = buildParams({ page: "1", status: [] });
+    const qs = buildParams({
+      page: "1",
+      status: [],
+      type: [],
+      favorite: false,
+    });
     startSearchTransition(() => {
       router.replace(`/projects?${qs}`, { scroll: false });
     });
   }, [buildParams, router]);
 
-  const filterCount = status?.length ?? 0;
+  const filterCount =
+    (status?.length ?? 0) + (type?.length ?? 0) + (favorite ? 1 : 0);
 
   const deleteMutation = useMutation(
     trpc.project.delete.mutationOptions({
@@ -200,6 +240,18 @@ export function ProjectsTable({
 
   const columns = useMemo<ColumnDef<ProjectItem>[]>(
     () => [
+      {
+        id: "favorite",
+        header: () => <span className="sr-only">Favorite</span>,
+        cell: ({ row }) => (
+          <FavoriteButton
+            projectId={row.original.id}
+            isFavorited={row.original.isFavorited}
+          />
+        ),
+        enableSorting: false,
+        size: 40,
+      },
       {
         id: "name",
         accessorFn: (row) => row.name,
@@ -354,7 +406,13 @@ export function ProjectsTable({
     [handleEdit, handleDelete, deletingId],
   );
 
-  if (projects.length === 0 && !search && !status?.length) {
+  if (
+    projects.length === 0 &&
+    !search &&
+    !status?.length &&
+    !type?.length &&
+    !favorite
+  ) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -436,6 +494,27 @@ export function ProjectsTable({
               filterCount={filterCount}
               onResetFilters={handleResetFilters}
             >
+              <Button
+                variant={favorite ? "secondary" : "outline"}
+                size="sm"
+                className="h-8"
+                onClick={handleFavoriteToggle}
+              >
+                <Star
+                  className={
+                    favorite
+                      ? "size-3.5 fill-yellow-400 text-yellow-400"
+                      : "size-3.5"
+                  }
+                />
+                Favorites
+              </Button>
+              <DataTableFacetedFilter
+                title="Type"
+                options={TYPE_FILTER_OPTIONS}
+                value={type ?? []}
+                onValueChange={handleTypeChange}
+              />
               <DataTableFacetedFilter
                 title="Status"
                 options={HEALTH_FILTER_OPTIONS}

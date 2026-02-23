@@ -7,7 +7,9 @@ const MAX_DEPTH = 50;
 /**
  * Resolve a Clerk userId to a Person ID, with caching.
  */
-async function resolveClerkPerson(clerkUserId: string): Promise<string | null> {
+export async function resolveClerkPerson(
+  clerkUserId: string,
+): Promise<string | null> {
   const cached = await redis.get<string>(cacheKeys.clerkPerson(clerkUserId));
   if (cached) return cached;
 

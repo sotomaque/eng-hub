@@ -22,6 +22,8 @@ interface PageProps {
     sortOrder?: string;
     parentId?: string;
     status?: string;
+    type?: string;
+    favorite?: string;
   }>;
 }
 
@@ -30,6 +32,8 @@ async function ProjectsContent({
   pageSize,
   search,
   status,
+  type,
+  favorite,
   sortBy,
   sortOrder,
 }: {
@@ -37,18 +41,26 @@ async function ProjectsContent({
   pageSize: number;
   search?: string;
   status?: ("GREEN" | "YELLOW" | "RED" | "NONE")[];
+  type?: ("toplevel" | "subproject")[];
+  favorite?: boolean;
   sortBy?: "name" | "updatedAt";
   sortOrder?: "asc" | "desc";
 }) {
   const trpc = await createServerCaller();
-  const { items, totalCount } = await trpc.project.list({
-    page,
-    pageSize,
-    search: search || undefined,
-    status,
-    sortBy,
-    sortOrder,
-  });
+  const [{ items, totalCount }, favoriteIds] = await Promise.all([
+    trpc.project.list({
+      page,
+      pageSize,
+      search: search || undefined,
+      status,
+      type,
+      favorite,
+      sortBy,
+      sortOrder,
+    }),
+    trpc.project.myFavoriteIds(),
+  ]);
+  const favoriteSet = new Set(favoriteIds);
   return (
     <ProjectsTable
       projects={items.map((p) => ({
@@ -63,12 +75,15 @@ async function ProjectsContent({
         healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
         parentId: p.parentId,
         parentName: p.parent?.name ?? null,
+        isFavorited: favoriteSet.has(p.id),
       }))}
       totalCount={totalCount}
       page={page}
       pageSize={pageSize}
       search={search}
       status={status}
+      type={type}
+      favorite={favorite}
       sortBy={sortBy}
       sortOrder={sortOrder}
     />
@@ -100,6 +115,13 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     .filter((s): s is (typeof validStatuses)[number] =>
       (validStatuses as readonly string[]).includes(s),
     );
+  const validTypes = ["toplevel", "subproject"] as const;
+  const type = params.type
+    ?.split(",")
+    .filter((t): t is (typeof validTypes)[number] =>
+      (validTypes as readonly string[]).includes(t),
+    );
+  const favorite = params.favorite === "true" ? true : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,6 +134,8 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             pageSize={pageSize}
             search={params.search}
             status={status}
+            type={type}
+            favorite={favorite}
             sortBy={sortBy}
             sortOrder={sortOrder}
           />

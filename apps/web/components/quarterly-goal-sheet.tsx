@@ -77,11 +77,13 @@ interface GoalData {
 interface QuarterlyGoalSheetProps {
   projectId: string;
   goal?: GoalData;
+  defaultParentId?: string;
 }
 
 export function QuarterlyGoalSheet({
   projectId,
   goal,
+  defaultParentId,
 }: QuarterlyGoalSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -91,6 +93,7 @@ export function QuarterlyGoalSheet({
     goal?.assignments.map((a) => a.person.id) ?? [],
   );
   const [keyResultsVersion, setKeyResultsVersion] = useState(0);
+  const [createAnother, setCreateAnother] = useState(false);
 
   const goalsQuery = useQuery(
     trpc.quarterlyGoal.getByProjectId.queryOptions({ projectId }),
@@ -105,6 +108,7 @@ export function QuarterlyGoalSheet({
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors, isDirty },
   } = useForm<CreateQuarterlyGoalInput>({
     resolver: zodResolver(createQuarterlyGoalSchema),
@@ -116,7 +120,7 @@ export function QuarterlyGoalSheet({
       targetDate: goal?.targetDate ? new Date(goal.targetDate) : undefined,
       status:
         (goal?.status as CreateQuarterlyGoalInput["status"]) ?? "NOT_STARTED",
-      parentId: goal?.parentId ?? null,
+      parentId: goal?.parentId ?? defaultParentId ?? null,
     },
   });
 
@@ -136,8 +140,23 @@ export function QuarterlyGoalSheet({
           });
         }
         toast.success("Quarterly goal created");
-        handleClose();
-        router.refresh();
+        if (createAnother) {
+          const current = getValues();
+          reset({
+            projectId,
+            title: "",
+            description: "",
+            quarter: current.quarter,
+            targetDate: undefined,
+            status: current.status,
+            parentId: current.parentId,
+          });
+          setAssigneeIds([]);
+          router.refresh();
+        } else {
+          handleClose();
+          router.refresh();
+        }
       },
       onError: (error) => toast.error(error.message),
     }),
@@ -163,7 +182,8 @@ export function QuarterlyGoalSheet({
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    router.push(`/projects/${projectId}/roadmap`, { scroll: false });
+    const basePath = window.location.pathname;
+    router.push(basePath, { scroll: false });
     reset();
   }
 
@@ -381,6 +401,17 @@ export function QuarterlyGoalSheet({
             )}
           </div>
           <SheetFooter>
+            {!isEditing && (
+              <label className="mr-auto flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={createAnother}
+                  onChange={(e) => setCreateAnother(e.target.checked)}
+                  className="size-4 rounded border-input accent-primary"
+                />
+                Create another
+              </label>
+            )}
             <Button
               type="button"
               variant="outline"

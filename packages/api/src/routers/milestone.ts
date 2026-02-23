@@ -142,6 +142,27 @@ export const milestoneRouter = createTRPCRouter({
       return result;
     }),
 
+  reorder: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        parentId: z.string().nullable(),
+        ids: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const result = await db.$transaction(
+        input.ids.map((id, index) =>
+          db.milestone.update({
+            where: { id },
+            data: { sortOrder: index },
+          }),
+        ),
+      );
+      after(() => invalidateProjectCache(input.projectId));
+      return result;
+    }),
+
   setAssignees: protectedProcedure
     .input(
       z.object({
