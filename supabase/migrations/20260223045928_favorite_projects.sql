@@ -1,5 +1,5 @@
 
-  create table "public"."favorite_projects" (
+  create table if not exists "public"."favorite_projects" (
     "id" text not null,
     "person_id" text not null,
     "project_id" text not null,
@@ -7,23 +7,33 @@
       );
 
 
-CREATE INDEX favorite_projects_person_id_idx ON public.favorite_projects USING btree (person_id);
+CREATE INDEX IF NOT EXISTS favorite_projects_person_id_idx ON public.favorite_projects USING btree (person_id);
 
-CREATE UNIQUE INDEX favorite_projects_person_id_project_id_key ON public.favorite_projects USING btree (person_id, project_id);
+CREATE UNIQUE INDEX IF NOT EXISTS favorite_projects_person_id_project_id_key ON public.favorite_projects USING btree (person_id, project_id);
 
-CREATE UNIQUE INDEX favorite_projects_pkey ON public.favorite_projects USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS favorite_projects_pkey ON public.favorite_projects USING btree (id);
 
-CREATE INDEX favorite_projects_project_id_idx ON public.favorite_projects USING btree (project_id);
+CREATE INDEX IF NOT EXISTS favorite_projects_project_id_idx ON public.favorite_projects USING btree (project_id);
 
-alter table "public"."favorite_projects" add constraint "favorite_projects_pkey" PRIMARY KEY using index "favorite_projects_pkey";
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'favorite_projects_pkey') THEN
+    alter table "public"."favorite_projects" add constraint "favorite_projects_pkey" PRIMARY KEY using index "favorite_projects_pkey";
+  END IF;
+END $$;
 
-alter table "public"."favorite_projects" add constraint "favorite_projects_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'favorite_projects_person_id_fkey') THEN
+    alter table "public"."favorite_projects" add constraint "favorite_projects_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+    alter table "public"."favorite_projects" validate constraint "favorite_projects_person_id_fkey";
+  END IF;
+END $$;
 
-alter table "public"."favorite_projects" validate constraint "favorite_projects_person_id_fkey";
-
-alter table "public"."favorite_projects" add constraint "favorite_projects_project_id_fkey" FOREIGN KEY (project_id) REFERENCES public.projects(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
-
-alter table "public"."favorite_projects" validate constraint "favorite_projects_project_id_fkey";
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'favorite_projects_project_id_fkey') THEN
+    alter table "public"."favorite_projects" add constraint "favorite_projects_project_id_fkey" FOREIGN KEY (project_id) REFERENCES public.projects(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+    alter table "public"."favorite_projects" validate constraint "favorite_projects_project_id_fkey";
+  END IF;
+END $$;
 
 grant delete on table "public"."favorite_projects" to "anon";
 
@@ -66,5 +76,3 @@ grant trigger on table "public"."favorite_projects" to "service_role";
 grant truncate on table "public"."favorite_projects" to "service_role";
 
 grant update on table "public"."favorite_projects" to "service_role";
-
-

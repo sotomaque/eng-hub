@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ProjectLink } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -16,8 +16,9 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { TagInput } from "@/components/tag-input";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   type CreateProjectLinkInput,
@@ -33,10 +34,15 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!link;
+  const { data: existingTags = [] } = useQuery(
+    trpc.projectLink.getDistinctTags.queryOptions({ projectId }),
+  );
+
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isDirty },
   } = useForm<CreateProjectLinkInput>({
     resolver: zodResolver(createProjectLinkSchema),
@@ -44,6 +50,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
       projectId,
       label: link?.label ?? "",
       url: link?.url ?? "",
+      tags: link?.tags ?? [],
     },
   });
 
@@ -129,6 +136,22 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
               {errors.url && (
                 <p className="text-destructive text-sm">{errors.url.message}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <Controller
+                name="tags"
+                control={control}
+                render={({ field }) => (
+                  <TagInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    suggestions={existingTags}
+                    placeholder="Add tags..."
+                  />
+                )}
+              />
             </div>
           </div>
           <SheetFooter>
