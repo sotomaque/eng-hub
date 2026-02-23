@@ -1,5 +1,4 @@
-import { cacheKeys, invalidatePeopleCache, redis } from "@workspace/api";
-import { db } from "@workspace/db";
+import { cacheKeys, db, invalidatePeopleCache, redis } from "@workspace/api";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";

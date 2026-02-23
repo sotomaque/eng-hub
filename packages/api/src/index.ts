@@ -1,4 +1,4 @@
-export { resetAndSeed } from "@workspace/db";
+export { db, resetAndSeed } from "@workspace/db";
 export {
   cacheKeys,
   flushAllCache,
