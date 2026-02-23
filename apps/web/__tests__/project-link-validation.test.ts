@@ -9,6 +9,7 @@ describe("createProjectLinkSchema", () => {
     projectId: "proj-1",
     label: "GitHub Repo",
     url: "https://github.com/org/repo",
+    tags: [],
   };
 
   test("accepts valid input", () => {
@@ -69,6 +70,7 @@ describe("updateProjectLinkSchema", () => {
       id: "link-1",
       label: "Updated",
       url: "https://example.com",
+      tags: [],
     });
     expect(result.success).toBe(true);
   });
@@ -79,6 +81,7 @@ describe("updateProjectLinkSchema", () => {
       projectId: "proj-1",
       label: "Updated",
       url: "https://example.com",
+      tags: [],
     });
     expect(result.success).toBe(true);
     if (result.success) {

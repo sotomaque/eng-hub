@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -20,12 +21,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { cn } from "@workspace/ui/lib/utils";
 import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { getLinkMeta } from "@/lib/constants/link-icons";
+import { getTagColor } from "@/lib/tag-colors";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface LinksSectionProps {
@@ -38,10 +42,12 @@ interface LinksSectionProps {
 function LinkRow({
   url,
   label,
+  tags,
   actions,
 }: {
   url: string;
   label: string;
+  tags?: string[];
   actions?: React.ReactNode;
 }) {
   const meta = getLinkMeta(url);
@@ -49,11 +55,23 @@ function LinkRow({
 
   return (
     <div className="flex items-center justify-between rounded-md border p-3">
-      <div className="flex items-center gap-3">
-        <Icon className={`size-4 ${meta.color}`} />
-        <span className="text-sm font-medium">{label}</span>
+      <div className="flex min-w-0 items-center gap-3">
+        <Icon className={`size-4 shrink-0 ${meta.color}`} />
+        <span className="truncate text-sm font-medium">{label}</span>
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <Badge
+                key={tag}
+                className={cn("border-0 px-1.5 py-0 text-xs", getTagColor(tag))}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <a
           href={url}
           target="_blank"
@@ -78,6 +96,18 @@ export function LinksSection({
   const router = useRouter();
   const trpc = useTRPC();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const allTags = Array.from(new Set(links.flatMap((l) => l.tags ?? [])))
+    .sort()
+    .map((tag) => ({ label: tag, value: tag }));
+
+  const filteredLinks =
+    selectedTags.length > 0
+      ? links.filter((link) =>
+          selectedTags.some((tag) => link.tags?.includes(tag)),
+        )
+      : links;
 
   const deleteMutation = useMutation(
     trpc.projectLink.delete.mutationOptions({
@@ -121,6 +151,16 @@ export function LinksSection({
           </Button>
         </div>
       </CardHeader>
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-2 px-6 pb-2">
+          <DataTableFacetedFilter
+            title="Tags"
+            options={allTags}
+            value={selectedTags}
+            onValueChange={setSelectedTags}
+          />
+        </div>
+      )}
       <CardContent>
         {!hasAnyLinks ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -133,11 +173,12 @@ export function LinksSection({
           <div className="space-y-2">
             {githubUrl && <LinkRow url={githubUrl} label="GitHub" />}
             {gitlabUrl && <LinkRow url={gitlabUrl} label="GitLab" />}
-            {links.map((link) => (
+            {filteredLinks.map((link) => (
               <LinkRow
                 key={link.id}
                 url={link.url}
                 label={link.label}
+                tags={link.tags}
                 actions={
                   <>
                     <Button

@@ -3,16 +3,20 @@ import { z } from "zod";
 import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
+const tagsSchema = z.array(z.string().min(1).max(50)).max(20).default([]);
+
 const createProjectLinkSchema = z.object({
   projectId: z.string(),
   label: z.string().min(1),
   url: z.string().url(),
+  tags: tagsSchema,
 });
 
 const updateProjectLinkSchema = z.object({
   id: z.string(),
   label: z.string().min(1),
   url: z.string().url(),
+  tags: tagsSchema,
 });
 
 export const projectLinkRouter = createTRPCRouter({
@@ -40,6 +44,7 @@ export const projectLinkRouter = createTRPCRouter({
           projectId: input.projectId,
           label: input.label,
           url: input.url,
+          tags: input.tags,
         },
       });
       await invalidateProjectCache(input.projectId);
@@ -55,10 +60,22 @@ export const projectLinkRouter = createTRPCRouter({
         data: {
           label: data.label,
           url: data.url,
+          tags: data.tags,
         },
       });
       await invalidateProjectCache(result.projectId);
       return result;
+    }),
+
+  getDistinctTags: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ input }) => {
+      const links = await db.projectLink.findMany({
+        where: { projectId: input.projectId },
+        select: { tags: true },
+      });
+      const tagSet = new Set(links.flatMap((l) => l.tags));
+      return Array.from(tagSet).sort();
     }),
 
   delete: protectedProcedure
