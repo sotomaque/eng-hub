@@ -6,6 +6,8 @@ const mockResolveClerkPerson = mock(() => Promise.resolve("person-1"));
 
 mock.module("../../lib/hierarchy", () => ({
   resolveClerkPerson: mockResolveClerkPerson,
+  isInManagementChain: mock(() => Promise.resolve(false)),
+  canViewMeetings: mock(() => Promise.resolve(false)),
 }));
 
 mock.module("../../lib/roadmap-hierarchy", () => ({
