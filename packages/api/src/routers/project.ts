@@ -149,16 +149,34 @@ export const projectRouter = createTRPCRouter({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
+        status: z
+          .array(z.enum(["GREEN", "YELLOW", "RED", "NONE"]))
+          .optional(),
         sortBy: z.enum(["name", "updatedAt"]).optional().default("updatedAt"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
       }),
     )
     .query(async ({ input }) => {
-      const where = input.search
-        ? {
-            name: { contains: input.search, mode: "insensitive" as const },
-          }
-        : undefined;
+      const where: Record<string, unknown> = {};
+      if (input.search) {
+        where.name = { contains: input.search, mode: "insensitive" as const };
+      }
+      if (input.status?.length) {
+        const realStatuses = input.status.filter((s) => s !== "NONE");
+        const hasNone = input.status.includes("NONE");
+        const statusConditions: object[] = [];
+        if (realStatuses.length > 0) {
+          statusConditions.push({
+            healthAssessments: {
+              some: { overallStatus: { in: realStatuses } },
+            },
+          });
+        }
+        if (hasNone) {
+          statusConditions.push({ healthAssessments: { none: {} } });
+        }
+        where.OR = statusConditions;
+      }
 
       const orderByMap: Record<string, object> = {
         name: { name: input.sortOrder },

@@ -143,6 +143,8 @@ export const personRouter = createTRPCRouter({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
+        departments: z.array(z.string()).optional(),
+        projects: z.array(z.string()).optional(),
         multiProject: z.boolean().optional(),
         sortBy: z
           .enum(["name", "email", "department"])
@@ -190,6 +192,14 @@ export const personRouter = createTRPCRouter({
             },
           },
         ];
+      }
+      if (input.departments?.length) {
+        where.department = { name: { in: input.departments } };
+      }
+      if (input.projects?.length) {
+        where.projectMemberships = {
+          some: { project: { name: { in: input.projects } } },
+        };
       }
       if (multiProjectIds) {
         where.id = { in: multiProjectIds };

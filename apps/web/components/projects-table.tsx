@@ -64,6 +64,7 @@ interface ProjectsTableProps {
   page: number;
   pageSize: number;
   search?: string;
+  status?: string[];
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
@@ -89,6 +90,7 @@ export function ProjectsTable({
   page,
   pageSize,
   search,
+  status,
   sortBy,
   sortOrder,
 }: ProjectsTableProps) {
@@ -113,6 +115,7 @@ export function ProjectsTable({
       search?: string;
       sort?: string;
       order?: string;
+      status?: string[];
     }) => {
       const params = new URLSearchParams();
       params.set("page", overrides.page ?? "1");
@@ -123,9 +126,11 @@ export function ProjectsTable({
       const so = overrides.order ?? sortOrder;
       if (sb) params.set("sortBy", sb);
       if (so) params.set("sortOrder", so);
+      const st = overrides.status ?? status;
+      if (st?.length) params.set("status", st.join(","));
       return params.toString();
     },
-    [pageSize, searchInput, sortBy, sortOrder],
+    [pageSize, searchInput, sortBy, sortOrder, status],
   );
 
   const handleSearchChange = useCallback(
@@ -141,6 +146,25 @@ export function ProjectsTable({
     },
     [buildParams, router],
   );
+
+  const handleStatusChange = useCallback(
+    (values: string[]) => {
+      const qs = buildParams({ page: "1", status: values });
+      startSearchTransition(() => {
+        router.replace(`/projects?${qs}`, { scroll: false });
+      });
+    },
+    [buildParams, router],
+  );
+
+  const handleResetFilters = useCallback(() => {
+    const qs = buildParams({ page: "1", status: [] });
+    startSearchTransition(() => {
+      router.replace(`/projects?${qs}`, { scroll: false });
+    });
+  }, [buildParams, router]);
+
+  const filterCount = status?.length ?? 0;
 
   const deleteMutation = useMutation(
     trpc.project.delete.mutationOptions({
@@ -240,10 +264,6 @@ export function ProjectsTable({
             </div>
           );
         },
-        filterFn: (row, _id, value: string[]) => {
-          const status = row.original.healthStatus ?? "NONE";
-          return value.includes(status);
-        },
         enableSorting: false,
       },
       {
@@ -334,7 +354,7 @@ export function ProjectsTable({
     [handleEdit, handleDelete, deletingId],
   );
 
-  if (projects.length === 0 && !search) {
+  if (projects.length === 0 && !search && !status?.length) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -413,14 +433,15 @@ export function ProjectsTable({
               searchPlaceholder="Search projects…"
               searchValue={searchInput}
               onSearchChange={handleSearchChange}
+              filterCount={filterCount}
+              onResetFilters={handleResetFilters}
             >
-              {table.getColumn("status") && (
-                <DataTableFacetedFilter
-                  column={table.getColumn("status")}
-                  title="Status"
-                  options={HEALTH_FILTER_OPTIONS}
-                />
-              )}
+              <DataTableFacetedFilter
+                title="Status"
+                options={HEALTH_FILTER_OPTIONS}
+                value={status ?? []}
+                onValueChange={handleStatusChange}
+              />
             </DataTableToolbar>
           )}
         />

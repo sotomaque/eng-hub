@@ -51,16 +51,35 @@ type MemberWithRelations = {
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
+interface FilterOption {
+  label: string;
+  value: string;
+}
+
 interface TeamMembersTableProps {
   projectId: string;
   members: MemberWithRelations[];
   titleColorMap: TitleColorMap;
+  titleOptions?: FilterOption[];
+  departmentOptions?: FilterOption[];
+  filterTitle?: string[];
+  filterDepartment?: string[];
+  filterCount?: number;
+  onFilterChange?: (key: "title" | "department", values: string[]) => void;
+  onResetFilters?: () => void;
 }
 
 export function TeamMembersTable({
   projectId,
   members,
   titleColorMap,
+  titleOptions: titleOptionsProp,
+  departmentOptions: departmentOptionsProp,
+  filterTitle,
+  filterDepartment,
+  filterCount,
+  onFilterChange,
+  onResetFilters,
 }: TeamMembersTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -78,15 +97,18 @@ export function TeamMembersTable({
     ? (deleteMutation.variables?.id ?? null)
     : null;
 
+  // Use prop-provided options (from unfiltered data) or derive locally as fallback
   const titleOptions = useMemo(() => {
+    if (titleOptionsProp) return titleOptionsProp;
     const titles = [
       ...new Set(members.map((m) => m.person.title?.name).filter(Boolean)),
     ];
     titles.sort();
     return titles.map((t) => ({ label: t as string, value: t as string }));
-  }, [members]);
+  }, [titleOptionsProp, members]);
 
   const departmentOptions = useMemo(() => {
+    if (departmentOptionsProp) return departmentOptionsProp;
     const depts = [
       ...new Set(
         members
@@ -96,7 +118,7 @@ export function TeamMembersTable({
     ];
     depts.sort();
     return depts.map((d) => ({ label: d, value: d }));
-  }, [members]);
+  }, [departmentOptionsProp, members]);
 
   const columns: ColumnDef<MemberWithRelations>[] = useMemo(
     () => [
@@ -173,9 +195,6 @@ export function TeamMembersTable({
             </span>
           );
         },
-        filterFn: (row, id, value: string[]) => {
-          return value.includes(row.getValue(id) as string);
-        },
       },
       {
         id: "departmentName",
@@ -190,9 +209,6 @@ export function TeamMembersTable({
           ) : (
             <span className="text-muted-foreground">{"\u2014"}</span>
           );
-        },
-        filterFn: (row, id, value: string[]) => {
-          return value.includes(row.getValue(id) as string);
         },
       },
       {
@@ -301,22 +317,33 @@ export function TeamMembersTable({
           table={table}
           searchColumn="name"
           searchPlaceholder="Filter members…"
+          filterCount={filterCount}
+          onResetFilters={onResetFilters}
         >
-          {table.getColumn("titleName") && titleOptions.length > 0 && (
+          {titleOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={table.getColumn("titleName")}
               title="Title"
               options={titleOptions}
+              {...(onFilterChange
+                ? {
+                    value: filterTitle ?? [],
+                    onValueChange: (v) => onFilterChange("title", v),
+                  }
+                : { column: table.getColumn("titleName") })}
             />
           )}
-          {table.getColumn("departmentName") &&
-            departmentOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={table.getColumn("departmentName")}
-                title="Department"
-                options={departmentOptions}
-              />
-            )}
+          {departmentOptions.length > 0 && (
+            <DataTableFacetedFilter
+              title="Department"
+              options={departmentOptions}
+              {...(onFilterChange
+                ? {
+                    value: filterDepartment ?? [],
+                    onValueChange: (v) => onFilterChange("department", v),
+                  }
+                : { column: table.getColumn("departmentName") })}
+            />
+          )}
         </DataTableToolbar>
       )}
     />

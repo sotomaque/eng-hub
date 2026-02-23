@@ -22,7 +22,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { CornerDownRight, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useMemo, useTransition } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -89,14 +89,17 @@ interface FlatMilestone {
 interface MilestonesTableProps {
   projectId: string;
   milestones: MilestoneItem[];
+  filterStatus?: string[];
 }
 
 export function MilestonesTable({
   projectId,
   milestones,
+  filterStatus,
 }: MilestonesTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
+  const [, startTransition] = useTransition();
 
   const deleteMutation = useMutation(
     trpc.milestone.delete.mutationOptions({
@@ -111,6 +114,38 @@ export function MilestonesTable({
   const deletingId = deleteMutation.isPending
     ? (deleteMutation.variables?.id ?? null)
     : null;
+
+  const buildParams = useCallback(
+    (overrides: { msStatus?: string[] }) => {
+      const params = new URLSearchParams(window.location.search);
+      const ms = overrides.msStatus ?? filterStatus;
+      if (ms?.length) {
+        params.set("msStatus", ms.join(","));
+      } else {
+        params.delete("msStatus");
+      }
+      return params.toString();
+    },
+    [filterStatus],
+  );
+
+  const handleFilterChange = useCallback(
+    (values: string[]) => {
+      const qs = buildParams({ msStatus: values });
+      startTransition(() => {
+        router.replace(`/projects/${projectId}/roadmap${qs ? `?${qs}` : ""}`, {
+          scroll: false,
+        });
+      });
+    },
+    [buildParams, projectId, router],
+  );
+
+  const handleResetFilters = useCallback(() => {
+    handleFilterChange([]);
+  }, [handleFilterChange]);
+
+  const filterCount = filterStatus?.length ?? 0;
 
   const flatData = useMemo(() => {
     const rows: FlatMilestone[] = [];
@@ -136,8 +171,11 @@ export function MilestonesTable({
         });
       }
     }
+    if (filterStatus?.length) {
+      return rows.filter((r) => filterStatus.includes(r.status));
+    }
     return rows;
-  }, [milestones]);
+  }, [milestones, filterStatus]);
 
   const columns = useMemo<ColumnDef<FlatMilestone>[]>(
     () => [
@@ -254,9 +292,6 @@ export function MilestonesTable({
             </Badge>
           );
         },
-        filterFn: (row, id, value: string[]) => {
-          return value.includes(row.getValue(id));
-        },
       },
       {
         id: "actions",
@@ -325,14 +360,15 @@ export function MilestonesTable({
           table={table}
           searchColumn="title"
           searchPlaceholder="Filter milestones…"
+          filterCount={filterCount}
+          onResetFilters={handleResetFilters}
         >
-          {table.getColumn("status") && (
-            <DataTableFacetedFilter
-              column={table.getColumn("status")}
-              title="Status"
-              options={statusOptions}
-            />
-          )}
+          <DataTableFacetedFilter
+            title="Status"
+            options={statusOptions}
+            value={filterStatus ?? []}
+            onValueChange={handleFilterChange}
+          />
         </DataTableToolbar>
       )}
     />

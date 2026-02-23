@@ -72,7 +72,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    router.push(`/projects/${projectId}`, { scroll: false });
+    router.push(`/projects/${projectId}/links`, { scroll: false });
     reset();
   }
 

@@ -15,6 +15,10 @@ interface DataTableToolbarProps<TData> {
   searchValue?: string;
   /** Server-side search: called on every keystroke */
   onSearchChange?: (value: string) => void;
+  /** Number of active URL-param filters (for Reset button visibility) */
+  filterCount?: number;
+  /** Called when Reset is clicked to clear URL-param filters */
+  onResetFilters?: () => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -24,10 +28,13 @@ export function DataTableToolbar<TData>({
   children,
   searchValue,
   onSearchChange,
+  filterCount,
+  onResetFilters,
 }: DataTableToolbarProps<TData>) {
   const isServerSearch = onSearchChange !== undefined;
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
+    (filterCount ?? 0) > 0 ||
     (isServerSearch && !!searchValue);
 
   return (
@@ -56,6 +63,7 @@ export function DataTableToolbar<TData>({
           onClick={() => {
             table.resetColumnFilters();
             if (isServerSearch) onSearchChange("");
+            onResetFilters?.();
           }}
           className="h-8 px-2 lg:px-3"
         >

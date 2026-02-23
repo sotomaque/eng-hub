@@ -21,6 +21,7 @@ interface PageProps {
     sortBy?: string;
     sortOrder?: string;
     parentId?: string;
+    status?: string;
   }>;
 }
 
@@ -28,12 +29,14 @@ async function ProjectsContent({
   page,
   pageSize,
   search,
+  status,
   sortBy,
   sortOrder,
 }: {
   page: number;
   pageSize: number;
   search?: string;
+  status?: ("GREEN" | "YELLOW" | "RED" | "NONE")[];
   sortBy?: "name" | "updatedAt";
   sortOrder?: "asc" | "desc";
 }) {
@@ -42,6 +45,7 @@ async function ProjectsContent({
     page,
     pageSize,
     search: search || undefined,
+    status,
     sortBy,
     sortOrder,
   });
@@ -64,6 +68,7 @@ async function ProjectsContent({
       page={page}
       pageSize={pageSize}
       search={search}
+      status={status}
       sortBy={sortBy}
       sortOrder={sortOrder}
     />
@@ -89,6 +94,12 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     params.sortOrder === "asc" || params.sortOrder === "desc"
       ? params.sortOrder
       : undefined;
+  const validStatuses = ["GREEN", "YELLOW", "RED", "NONE"] as const;
+  const status = params.status
+    ?.split(",")
+    .filter((s): s is (typeof validStatuses)[number] =>
+      (validStatuses as readonly string[]).includes(s),
+    );
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,6 +111,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             page={page}
             pageSize={pageSize}
             search={params.search}
+            status={status}
             sortBy={sortBy}
             sortOrder={sortOrder}
           />

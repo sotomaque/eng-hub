@@ -22,7 +22,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { CornerDownRight, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useMemo, useTransition } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -92,14 +92,19 @@ interface FlatGoal {
 interface QuarterlyGoalsTableProps {
   projectId: string;
   goals: QuarterlyGoalItem[];
+  filterStatus?: string[];
+  filterQuarter?: string[];
 }
 
 export function QuarterlyGoalsTable({
   projectId,
   goals,
+  filterStatus,
+  filterQuarter,
 }: QuarterlyGoalsTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
+  const [, startTransition] = useTransition();
 
   const deleteMutation = useMutation(
     trpc.quarterlyGoal.delete.mutationOptions({
@@ -114,6 +119,50 @@ export function QuarterlyGoalsTable({
   const deletingId = deleteMutation.isPending
     ? (deleteMutation.variables?.id ?? null)
     : null;
+
+  const buildParams = useCallback(
+    (overrides: { qgStatus?: string[]; qgQuarter?: string[] }) => {
+      const params = new URLSearchParams(window.location.search);
+      const qs = overrides.qgStatus ?? filterStatus;
+      if (qs?.length) {
+        params.set("qgStatus", qs.join(","));
+      } else {
+        params.delete("qgStatus");
+      }
+      const qq = overrides.qgQuarter ?? filterQuarter;
+      if (qq?.length) {
+        params.set("qgQuarter", qq.join(","));
+      } else {
+        params.delete("qgQuarter");
+      }
+      return params.toString();
+    },
+    [filterStatus, filterQuarter],
+  );
+
+  const handleFilterChange = useCallback(
+    (key: "qgStatus" | "qgQuarter", values: string[]) => {
+      const qs = buildParams({ [key]: values });
+      startTransition(() => {
+        router.replace(`/projects/${projectId}/roadmap${qs ? `?${qs}` : ""}`, {
+          scroll: false,
+        });
+      });
+    },
+    [buildParams, projectId, router],
+  );
+
+  const handleResetFilters = useCallback(() => {
+    const qs = buildParams({ qgStatus: [], qgQuarter: [] });
+    startTransition(() => {
+      router.replace(`/projects/${projectId}/roadmap${qs ? `?${qs}` : ""}`, {
+        scroll: false,
+      });
+    });
+  }, [buildParams, projectId, router]);
+
+  const filterCount =
+    (filterStatus?.length ?? 0) + (filterQuarter?.length ?? 0);
 
   const flatData = useMemo(() => {
     const rows: FlatGoal[] = [];
@@ -141,8 +190,17 @@ export function QuarterlyGoalsTable({
         });
       }
     }
-    return rows;
-  }, [goals]);
+    let filtered = rows;
+    if (filterStatus?.length) {
+      filtered = filtered.filter((r) => filterStatus.includes(r.status));
+    }
+    if (filterQuarter?.length) {
+      filtered = filtered.filter(
+        (r) => r.quarter != null && filterQuarter.includes(r.quarter),
+      );
+    }
+    return filtered;
+  }, [goals, filterStatus, filterQuarter]);
 
   const quarterOptions = useMemo(() => {
     const quarters = [
@@ -246,9 +304,6 @@ export function QuarterlyGoalsTable({
             {(row.getValue("quarter") as string) || "\u2014"}
           </span>
         ),
-        filterFn: (row, id, value: string[]) => {
-          return value.includes(row.getValue(id));
-        },
       },
       {
         accessorKey: "targetDate",
@@ -284,9 +339,6 @@ export function QuarterlyGoalsTable({
               {STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status}
             </Badge>
           );
-        },
-        filterFn: (row, id, value: string[]) => {
-          return value.includes(row.getValue(id));
         },
       },
       {
@@ -353,21 +405,23 @@ export function QuarterlyGoalsTable({
           table={table}
           searchColumn="title"
           searchPlaceholder="Filter goals…"
+          filterCount={filterCount}
+          onResetFilters={handleResetFilters}
         >
-          {table.getColumn("quarter") && quarterOptions.length > 0 && (
+          {quarterOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={table.getColumn("quarter")}
               title="Quarter"
               options={quarterOptions}
+              value={filterQuarter ?? []}
+              onValueChange={(v) => handleFilterChange("qgQuarter", v)}
             />
           )}
-          {table.getColumn("status") && (
-            <DataTableFacetedFilter
-              column={table.getColumn("status")}
-              title="Status"
-              options={statusOptions}
-            />
-          )}
+          <DataTableFacetedFilter
+            title="Status"
+            options={statusOptions}
+            value={filterStatus ?? []}
+            onValueChange={(v) => handleFilterChange("qgStatus", v)}
+          />
         </DataTableToolbar>
       )}
     />

@@ -35,10 +35,20 @@ interface PageProps {
     manageTeams?: string;
     manageDepartments?: string;
     manageTitles?: string;
+    title?: string;
+    department?: string;
   }>;
 }
 
-async function TeamContent({ id }: { id: string }) {
+async function TeamContent({
+  id,
+  filterTitle,
+  filterDepartment,
+}: {
+  id: string;
+  filterTitle?: string[];
+  filterDepartment?: string[];
+}) {
   const project = await getCachedProject(id);
   if (!project) notFound();
 
@@ -47,6 +57,8 @@ async function TeamContent({ id }: { id: string }) {
       projectId={id}
       members={project.teamMembers}
       teams={project.teams}
+      filterTitle={filterTitle}
+      filterDepartment={filterDepartment}
     />
   );
 }
@@ -81,10 +93,17 @@ export default async function TeamPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const sp = await searchParams;
 
+  const filterTitle = sp.title?.split(",").filter(Boolean);
+  const filterDepartment = sp.department?.split(",").filter(Boolean);
+
   return (
     <>
       <Suspense fallback={null}>
-        <TeamContent id={id} />
+        <TeamContent
+          id={id}
+          filterTitle={filterTitle}
+          filterDepartment={filterDepartment}
+        />
       </Suspense>
 
       {sp.addMember === "true" && <TeamMemberSheet projectId={id} />}
