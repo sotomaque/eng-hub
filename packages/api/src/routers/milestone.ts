@@ -1,8 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
-import { after } from "next/server";
 import { z } from "zod";
-import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { detectMilestoneCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -89,7 +87,6 @@ export const milestoneRouter = createTRPCRouter({
           sortOrder: input.sortOrder ?? 0,
         },
       });
-      after(() => invalidateProjectCache(input.projectId));
       return result;
     }),
 
@@ -128,7 +125,6 @@ export const milestoneRouter = createTRPCRouter({
           sortOrder: data.sortOrder ?? 0,
         },
       });
-      after(() => invalidateProjectCache(result.projectId));
       return result;
     }),
 
@@ -138,7 +134,6 @@ export const milestoneRouter = createTRPCRouter({
       const result = await db.milestone.delete({
         where: { id: input.id },
       });
-      after(() => invalidateProjectCache(result.projectId));
       return result;
     }),
 
@@ -159,7 +154,6 @@ export const milestoneRouter = createTRPCRouter({
           }),
         ),
       );
-      after(() => invalidateProjectCache(input.projectId));
       return result;
     }),
 
@@ -171,10 +165,6 @@ export const milestoneRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const milestone = await db.milestone.findUniqueOrThrow({
-        where: { id: input.milestoneId },
-        select: { projectId: true },
-      });
       await db.$transaction(async (tx) => {
         await tx.milestoneAssignment.deleteMany({
           where: { milestoneId: input.milestoneId },
@@ -188,11 +178,5 @@ export const milestoneRouter = createTRPCRouter({
           });
         }
       });
-      after(() =>
-        Promise.all([
-          invalidateProjectCache(milestone.projectId),
-          invalidatePeopleCache(),
-        ]),
-      );
     }),
 });

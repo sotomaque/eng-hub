@@ -1,4 +1,4 @@
-import { flushAllCache, resetAndSeed } from "@workspace/api";
+import { resetAndSeed } from "@workspace/api";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request): Promise<Response> {
@@ -26,7 +26,6 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     await resetAndSeed();
-    await flushAllCache();
     return NextResponse.json({
       ok: true,
       message: "Database reset and seeded",

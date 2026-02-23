@@ -20,48 +20,6 @@ mock.module("../../lib/github-sync", () => ({
   syncGitHubStatsForProject: mockSyncGitHubStatsForProject,
 }));
 
-const mockInvalidateGithubStats = mock(() => Promise.resolve());
-
-mock.module("../../lib/cache", () => ({
-  cached: mock((_key: string, _ttl: number, fn: () => unknown) => fn()),
-  cacheKeys: { githubStats: () => "gs" },
-  ttl: { githubStats: 1 },
-  invalidateGithubStats: mockInvalidateGithubStats,
-  invalidateProjectCache: mock(() => Promise.resolve()),
-  invalidatePeopleCache: mock(() => Promise.resolve()),
-  invalidateMgmtChain: mock(() => Promise.resolve()),
-  invalidatePersonMeByIds: mock(() => Promise.resolve()),
-  invalidateReferenceData: mock(() => Promise.resolve()),
-  invalidateMeetingTemplates: mock(() => Promise.resolve()),
-  invalidateFavoritesCache: mock(() => Promise.resolve()),
-}));
-
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
-}));
-
-mock.module("next/server", () => ({
-  after: mock((fn: () => Promise<void>) => fn()),
-}));
-
 mock.module("@clerk/nextjs/server", () => ({
   auth: () => Promise.resolve({ userId: "test-user-id" }),
 }));
@@ -110,7 +68,6 @@ describe("githubStats.syncNow", () => {
       .mockReset()
       .mockReturnValue({ owner: "owner", repo: "repo" });
     mockSyncGitHubStatsForProject.mockReset().mockResolvedValue(undefined);
-    mockInvalidateGithubStats.mockReset();
   });
 
   test("throws BAD_REQUEST when project has no githubUrl", async () => {
@@ -143,7 +100,6 @@ describe("githubStats.syncNow", () => {
 
     expect(result).toEqual({ success: true });
     expect(mockSyncGitHubStatsForProject).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidateGithubStats).toHaveBeenCalledWith("proj-1");
   });
 
   test("throws INTERNAL_SERVER_ERROR when sync fails", async () => {

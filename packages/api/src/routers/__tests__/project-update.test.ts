@@ -14,51 +14,6 @@ mock.module("../../lib/roadmap-hierarchy", () => ({
   detectProjectCycle: mockDetectProjectCycle,
 }));
 
-const mockInvalidateProjectCache = mock(() => Promise.resolve());
-
-mock.module("../../lib/cache", () => ({
-  cached: mock((_key: string, _ttl: number, fn: () => unknown) => fn()),
-  cacheKeys: {
-    projectList: "pl",
-    project: () => "p",
-  },
-  ttl: { projectList: 1, project: 1 },
-  invalidateProjectCache: mockInvalidateProjectCache,
-  invalidatePeopleCache: mock(() => Promise.resolve()),
-  invalidateMgmtChain: mock(() => Promise.resolve()),
-  invalidatePersonMeByIds: mock(() => Promise.resolve()),
-  invalidateReferenceData: mock(() => Promise.resolve()),
-  invalidateGithubStats: mock(() => Promise.resolve()),
-  invalidateMeetingTemplates: mock(() => Promise.resolve()),
-  invalidateFavoritesCache: mock(() => Promise.resolve()),
-}));
-
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
-}));
-
-mock.module("next/server", () => ({
-  after: mock((fn: () => Promise<void>) => fn()),
-}));
-
 mock.module("@clerk/nextjs/server", () => ({
   auth: () => Promise.resolve({ userId: "test-user-id" }),
 }));
@@ -115,7 +70,6 @@ describe("project.update", () => {
       .mockReset()
       .mockResolvedValue({ parentId: null, fundedById: null });
     mockProjectUpdate.mockReset().mockResolvedValue({ id: "proj-1" });
-    mockInvalidateProjectCache.mockReset();
   });
 
   test("succeeds with basic update", async () => {
@@ -164,31 +118,5 @@ describe("project.update", () => {
   test("skips cycle detection when parentId is empty", async () => {
     await caller.update({ ...validInput, parentId: "" });
     expect(mockDetectProjectCycle).not.toHaveBeenCalled();
-  });
-
-  test("invalidates old and new parent caches", async () => {
-    mockProjectFindUnique.mockResolvedValue({
-      parentId: "old-parent",
-      fundedById: null,
-    });
-
-    await caller.update({ ...validInput, parentId: "new-parent" });
-
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("old-parent");
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("new-parent");
-  });
-
-  test("invalidates fundedBy caches on change", async () => {
-    mockProjectFindUnique.mockResolvedValue({
-      parentId: null,
-      fundedById: "old-funder",
-    });
-
-    await caller.update({ ...validInput, fundedById: "new-funder" });
-
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("old-funder");
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("new-funder");
   });
 });

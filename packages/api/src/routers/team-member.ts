@@ -1,13 +1,5 @@
 import { db } from "@workspace/db";
-import { after } from "next/server";
 import { z } from "zod";
-import {
-  invalidateMgmtChain,
-  invalidatePeopleCache,
-  invalidatePersonMeByIds,
-  invalidateProjectCache,
-  invalidateReferenceData,
-} from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -172,13 +164,6 @@ export const teamMemberRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.projectId);
         return { member, affectedManagerIds };
       });
-      after(async () => {
-        await Promise.all([
-          invalidateProjectCache(input.projectId),
-          invalidatePeopleCache(),
-          invalidatePersonMeByIds(...result.affectedManagerIds),
-        ]);
-      });
       return result.member;
     }),
 
@@ -259,22 +244,6 @@ export const teamMemberRouter = createTRPCRouter({
           deptOrTitleChanged,
         };
       });
-      after(async () => {
-        await Promise.all([
-          invalidateProjectCache(result.member.projectId),
-          invalidatePeopleCache(),
-          ...(result.managerChanged
-            ? [
-                invalidateMgmtChain(result.personId),
-                invalidatePersonMeByIds(
-                  result.oldManagerId,
-                  result.newManagerId,
-                ),
-              ]
-            : []),
-          ...(result.deptOrTitleChanged ? [invalidateReferenceData()] : []),
-        ]);
-      });
       return result.member;
     }),
 
@@ -287,12 +256,6 @@ export const teamMemberRouter = createTRPCRouter({
         });
         await syncLiveToActiveArrangement(tx, member.projectId);
         return member;
-      });
-      after(async () => {
-        await Promise.all([
-          invalidateProjectCache(result.projectId),
-          invalidatePeopleCache(),
-        ]);
       });
       return result;
     }),

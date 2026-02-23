@@ -1,8 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
-import { after } from "next/server";
 import { z } from "zod";
-import { invalidatePeopleCache, invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const arrangementRouter = createTRPCRouter({
@@ -245,7 +243,7 @@ export const arrangementRouter = createTRPCRouter({
   activate: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const projectId = await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx) => {
         const arrangement = await tx.teamArrangement.findUniqueOrThrow({
           where: { id: input.id },
           include: {
@@ -314,12 +312,6 @@ export const arrangementRouter = createTRPCRouter({
 
         return arrangement.projectId;
       });
-      after(() =>
-        Promise.all([
-          invalidateProjectCache(projectId),
-          invalidatePeopleCache(),
-        ]),
-      );
     }),
 
   // --- Team management within arrangement ---
@@ -359,9 +351,6 @@ export const arrangementRouter = createTRPCRouter({
           isActive: arrangement.isActive,
         };
       });
-      if (result.isActive) {
-        after(() => invalidateProjectCache(result.projectId));
-      }
       return result.arrTeam;
     }),
 
@@ -388,19 +377,15 @@ export const arrangementRouter = createTRPCRouter({
           projectId: arrTeam.arrangement.projectId,
         };
       });
-      if (result.touchedLive) {
-        after(() => invalidateProjectCache(result.projectId));
-      }
       return result.arrTeam;
     }),
 
   deleteTeam: protectedProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ input }) => {
-      const result = await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx) => {
         const arrTeam = await tx.arrangementTeam.findUniqueOrThrow({
           where: { id: input.teamId },
-          include: { arrangement: { select: { projectId: true } } },
         });
 
         if (arrTeam.liveTeamId) {
@@ -408,19 +393,7 @@ export const arrangementRouter = createTRPCRouter({
         }
 
         await tx.arrangementTeam.delete({ where: { id: input.teamId } });
-        return {
-          touchedLive: !!arrTeam.liveTeamId,
-          projectId: arrTeam.arrangement.projectId,
-        };
       });
-      if (result.touchedLive) {
-        after(() =>
-          Promise.all([
-            invalidateProjectCache(result.projectId),
-            invalidatePeopleCache(),
-          ]),
-        );
-      }
     }),
 
   reorderTeams: protectedProcedure
@@ -498,14 +471,6 @@ export const arrangementRouter = createTRPCRouter({
           projectId: arrTeam.arrangement.projectId,
         };
       });
-      if (result.touchedLive) {
-        after(() =>
-          Promise.all([
-            invalidateProjectCache(result.projectId),
-            invalidatePeopleCache(),
-          ]),
-        );
-      }
       return result.assignment;
     }),
 
@@ -517,7 +482,7 @@ export const arrangementRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const result = await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx) => {
         const arrTeam = await tx.arrangementTeam.findUniqueOrThrow({
           where: { id: input.arrangementTeamId },
           include: { arrangement: true },
@@ -530,9 +495,6 @@ export const arrangementRouter = createTRPCRouter({
           },
         });
 
-        const touchedLive =
-          arrTeam.arrangement.isActive && !!arrTeam.liveTeamId;
-
         // Sync to live team if arrangement is active
         if (arrTeam.arrangement.isActive && arrTeam.liveTeamId) {
           await tx.teamMembership.deleteMany({
@@ -542,17 +504,7 @@ export const arrangementRouter = createTRPCRouter({
             },
           });
         }
-
-        return { touchedLive, projectId: arrTeam.arrangement.projectId };
       });
-      if (result.touchedLive) {
-        after(() =>
-          Promise.all([
-            invalidateProjectCache(result.projectId),
-            invalidatePeopleCache(),
-          ]),
-        );
-      }
     }),
 
   moveMember: protectedProcedure
@@ -620,14 +572,6 @@ export const arrangementRouter = createTRPCRouter({
           projectId: toArrTeam.arrangement.projectId,
         };
       });
-      if (result.touchedLive) {
-        after(() =>
-          Promise.all([
-            invalidateProjectCache(result.projectId),
-            invalidatePeopleCache(),
-          ]),
-        );
-      }
       return result.assignment;
     }),
 });

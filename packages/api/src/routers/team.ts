@@ -1,6 +1,5 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { invalidateProjectCache } from "../lib/cache";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -43,7 +42,6 @@ export const teamRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, input.projectId);
         return team;
       });
-      await invalidateProjectCache(input.projectId);
       return result;
     }),
 
@@ -69,7 +67,6 @@ export const teamRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, team.projectId);
         return team;
       });
-      await invalidateProjectCache(result.projectId);
       return result;
     }),
 
@@ -84,7 +81,6 @@ export const teamRouter = createTRPCRouter({
         await syncLiveToActiveArrangement(tx, team.projectId);
         return team;
       });
-      await invalidateProjectCache(result.projectId);
       return result;
     }),
 });

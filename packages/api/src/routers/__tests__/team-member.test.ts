@@ -2,57 +2,10 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mocks ────────────────────────────────────────────────────
 
-const mockInvalidateProjectCache = mock(() => Promise.resolve());
-const mockInvalidatePeopleCache = mock(() => Promise.resolve());
-const mockInvalidateMgmtChain = mock(() => Promise.resolve());
-
-mock.module("../../lib/cache", () => ({
-  cached: mock((_key: string, _ttl: number, fn: () => unknown) => fn()),
-  cacheKeys: {},
-  ttl: {},
-  invalidateProjectCache: mockInvalidateProjectCache,
-  invalidatePeopleCache: mockInvalidatePeopleCache,
-  invalidateMgmtChain: mockInvalidateMgmtChain,
-  invalidatePersonMeByIds: mock(() => Promise.resolve()),
-  invalidateReferenceData: mock(() => Promise.resolve()),
-  invalidateGithubStats: mock(() => Promise.resolve()),
-  invalidateMeetingTemplates: mock(() => Promise.resolve()),
-  invalidateFavoritesCache: mock(() => Promise.resolve()),
-}));
-
 mock.module("../../lib/sync-arrangement", () => ({
   syncLiveToActiveArrangement: mock(() => Promise.resolve()),
 }));
 
-mock.module("../../lib/redis", () => ({
-  redis: {
-    get: mock(() => Promise.resolve(null)),
-    set: mock(() => Promise.resolve("OK")),
-    del: mock(() => Promise.resolve(1)),
-  },
-}));
-
-// Mock rate limiter to always allow
-mock.module("@upstash/ratelimit", () => ({
-  Ratelimit: class {
-    limit() {
-      return Promise.resolve({ success: true, reset: Date.now() + 60_000 });
-    }
-    static slidingWindow() {
-      return {};
-    }
-    static fixedWindow() {
-      return {};
-    }
-  },
-}));
-
-// Mock next/server – after() just runs the callback immediately in tests
-mock.module("next/server", () => ({
-  after: mock((fn: () => Promise<void>) => fn()),
-}));
-
-// Mock Clerk auth to return a userId
 mock.module("@clerk/nextjs/server", () => ({
   auth: () => Promise.resolve({ userId: "test-user-id" }),
 }));
@@ -128,9 +81,6 @@ const caller = createCaller({ userId: "test-user-id" });
 
 describe("teamMember.create", () => {
   beforeEach(() => {
-    mockInvalidateProjectCache.mockReset();
-    mockInvalidatePeopleCache.mockReset();
-    mockInvalidateMgmtChain.mockReset();
     mockPersonFindUnique.mockReset().mockResolvedValue(null);
     mockPersonCreate
       .mockReset()
@@ -142,19 +92,6 @@ describe("teamMember.create", () => {
     });
     mockTeamMembershipCreateMany.mockReset();
     mockManagerChangeCreate.mockReset();
-  });
-
-  test("invalidates both project cache and people cache", async () => {
-    await caller.create({
-      projectId: "proj-1",
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "jane@example.com",
-      departmentId: "dept-1",
-    });
-
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidatePeopleCache).toHaveBeenCalledTimes(1);
   });
 
   test("creates team memberships when teamIds provided", async () => {
@@ -200,9 +137,6 @@ describe("teamMember.create", () => {
 
 describe("teamMember.update", () => {
   beforeEach(() => {
-    mockInvalidateProjectCache.mockReset();
-    mockInvalidatePeopleCache.mockReset();
-    mockInvalidateMgmtChain.mockReset();
     mockTeamMemberFindUniqueOrThrow.mockReset().mockResolvedValue({
       id: "tm-1",
       personId: "person-1",
@@ -213,59 +147,6 @@ describe("teamMember.update", () => {
     mockTeamMembershipDeleteMany.mockReset();
     mockTeamMembershipCreateMany.mockReset();
     mockManagerChangeCreate.mockReset();
-  });
-
-  test("invalidates both project cache and people cache", async () => {
-    await caller.update({
-      id: "tm-1",
-      firstName: "Jane",
-      lastName: "Updated",
-      email: "jane@example.com",
-      departmentId: "dept-1",
-    });
-
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidatePeopleCache).toHaveBeenCalledTimes(1);
-  });
-
-  test("invalidates mgmt chain when manager changes", async () => {
-    mockTeamMemberFindUniqueOrThrow.mockResolvedValue({
-      id: "tm-1",
-      personId: "person-1",
-      projectId: "proj-1",
-      person: { managerId: "old-mgr" },
-    });
-
-    await caller.update({
-      id: "tm-1",
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "jane@example.com",
-      departmentId: "dept-1",
-      managerId: "new-mgr",
-    });
-
-    expect(mockInvalidateMgmtChain).toHaveBeenCalledWith("person-1");
-  });
-
-  test("does NOT invalidate mgmt chain when manager unchanged", async () => {
-    mockTeamMemberFindUniqueOrThrow.mockResolvedValue({
-      id: "tm-1",
-      personId: "person-1",
-      projectId: "proj-1",
-      person: { managerId: "same-mgr" },
-    });
-
-    await caller.update({
-      id: "tm-1",
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "jane@example.com",
-      departmentId: "dept-1",
-      managerId: "same-mgr",
-    });
-
-    expect(mockInvalidateMgmtChain).not.toHaveBeenCalled();
   });
 
   test("logs manager change record", async () => {
@@ -293,24 +174,5 @@ describe("teamMember.update", () => {
         changedBy: "test-user-id",
       },
     });
-  });
-});
-
-describe("teamMember.delete", () => {
-  beforeEach(() => {
-    mockInvalidateProjectCache.mockReset();
-    mockInvalidatePeopleCache.mockReset();
-    mockTeamMemberDelete.mockReset().mockResolvedValue({
-      id: "tm-1",
-      personId: "person-1",
-      projectId: "proj-1",
-    });
-  });
-
-  test("invalidates both project cache and people cache", async () => {
-    await caller.delete({ id: "tm-1" });
-
-    expect(mockInvalidateProjectCache).toHaveBeenCalledWith("proj-1");
-    expect(mockInvalidatePeopleCache).toHaveBeenCalledTimes(1);
   });
 });

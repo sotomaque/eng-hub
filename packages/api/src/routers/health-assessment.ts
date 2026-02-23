@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { invalidateProjectCache } from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const healthStatusEnum = z.enum(["RED", "YELLOW", "GREEN"]);
@@ -81,7 +80,6 @@ export const healthAssessmentRouter = createTRPCRouter({
         },
         select: { id: true, projectId: true },
       });
-      await invalidateProjectCache(result.projectId);
       return result;
     }),
 
@@ -118,7 +116,6 @@ export const healthAssessmentRouter = createTRPCRouter({
         },
         select: { id: true, projectId: true },
       });
-      await invalidateProjectCache(result.projectId);
       return result;
     }),
 
@@ -134,7 +131,6 @@ export const healthAssessmentRouter = createTRPCRouter({
       }
 
       await db.healthAssessment.delete({ where: { id: input.id } });
-      await invalidateProjectCache(existing.projectId);
       return { id: input.id };
     }),
 });

@@ -1,14 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
-import { after } from "next/server";
 import { z } from "zod";
-import {
-  cached,
-  cacheKeys,
-  invalidateFavoritesCache,
-  invalidateProjectCache,
-  ttl,
-} from "../lib/cache";
 import { resolveClerkPerson } from "../lib/hierarchy";
 import { detectProjectCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
@@ -132,14 +124,12 @@ function fetchProject(id: string) {
 
 export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    return cached(cacheKeys.projectList, ttl.projectList, () =>
-      db.project.findMany({
-        orderBy: { createdAt: "desc" },
-        include: {
-          healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
-        },
-      }),
-    );
+    return db.project.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
+      },
+    });
   }),
 
   /** Lightweight list returning only id + name — use for comboboxes/selects. */
@@ -227,9 +217,7 @@ export const projectRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      return cached(cacheKeys.project(input.id), ttl.project, () =>
-        fetchProject(input.id),
-      );
+      return fetchProject(input.id);
     }),
 
   create: protectedProcedure
@@ -248,14 +236,6 @@ export const projectRouter = createTRPCRouter({
           parentId,
           fundedById,
         },
-      });
-
-      after(() => {
-        const cacheInvalidations = [invalidateProjectCache(result.id)];
-        if (parentId) cacheInvalidations.push(invalidateProjectCache(parentId));
-        if (fundedById && fundedById !== parentId)
-          cacheInvalidations.push(invalidateProjectCache(fundedById));
-        return Promise.all(cacheInvalidations);
       });
 
       return result;
@@ -285,11 +265,6 @@ export const projectRouter = createTRPCRouter({
         }
       }
 
-      const old = await db.project.findUnique({
-        where: { id },
-        select: { parentId: true, fundedById: true },
-      });
-
       const result = await db.project.update({
         where: { id },
         data: {
@@ -303,56 +278,25 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      const idsToInvalidate = new Set([id]);
-      if (old?.parentId) idsToInvalidate.add(old.parentId);
-      if (old?.fundedById) idsToInvalidate.add(old.fundedById);
-      if (parentId) idsToInvalidate.add(parentId);
-      if (fundedById) idsToInvalidate.add(fundedById);
-      after(() =>
-        Promise.all(
-          [...idsToInvalidate].map((pid) => invalidateProjectCache(pid)),
-        ),
-      );
-
       return result;
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const old = await db.project.findUnique({
-        where: { id: input.id },
-        select: { parentId: true, fundedById: true },
-      });
-
-      const result = await db.project.delete({
+      return db.project.delete({
         where: { id: input.id },
       });
-
-      const idsToInvalidate = [input.id];
-      if (old?.parentId) idsToInvalidate.push(old.parentId);
-      if (old?.fundedById) idsToInvalidate.push(old.fundedById);
-      after(() =>
-        Promise.all(idsToInvalidate.map((pid) => invalidateProjectCache(pid))),
-      );
-
-      return result;
     }),
 
   myFavoriteIds: protectedProcedure.query(async ({ ctx }) => {
     const personId = await resolveClerkPerson(ctx.userId);
     if (!personId) return [];
-    return cached(
-      cacheKeys.favoriteProjectIds(personId),
-      ttl.favorites,
-      async () => {
-        const rows = await db.favoriteProject.findMany({
-          where: { personId },
-          select: { projectId: true },
-        });
-        return rows.map((r) => r.projectId);
-      },
-    );
+    const rows = await db.favoriteProject.findMany({
+      where: { personId },
+      select: { projectId: true },
+    });
+    return rows.map((r) => r.projectId);
   }),
 
   isFavorited: protectedProcedure
@@ -391,7 +335,6 @@ export const projectRouter = createTRPCRouter({
           data: { personId, projectId: input.projectId },
         });
       }
-      after(() => invalidateFavoritesCache(personId));
       return { favorited: !existing };
     }),
 });

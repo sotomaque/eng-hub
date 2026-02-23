@@ -1,28 +1,20 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import {
-  cached,
-  cacheKeys,
-  invalidateMeetingTemplates,
-  ttl,
-} from "../lib/cache";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const meetingTemplateRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
-    return cached(cacheKeys.meetingTemplates, ttl.referenceData, () =>
-      db.meetingTemplate.findMany({
-        orderBy: { updatedAt: "desc" },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          authorId: true,
-          updatedAt: true,
-        },
-      }),
-    );
+    return db.meetingTemplate.findMany({
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        authorId: true,
+        updatedAt: true,
+      },
+    });
   }),
 
   getById: protectedProcedure
@@ -55,7 +47,7 @@ export const meetingTemplateRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await db.meetingTemplate.create({
+      return db.meetingTemplate.create({
         data: {
           name: input.name,
           description: input.description,
@@ -64,8 +56,6 @@ export const meetingTemplateRouter = createTRPCRouter({
         },
         select: { id: true },
       });
-      await invalidateMeetingTemplates();
-      return result;
     }),
 
   update: protectedProcedure
@@ -86,7 +76,7 @@ export const meetingTemplateRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      const result = await db.meetingTemplate.update({
+      return db.meetingTemplate.update({
         where: { id: input.id },
         data: {
           name: input.name,
@@ -95,8 +85,6 @@ export const meetingTemplateRouter = createTRPCRouter({
         },
         select: { id: true },
       });
-      await invalidateMeetingTemplates();
-      return result;
     }),
 
   delete: protectedProcedure
@@ -111,7 +99,6 @@ export const meetingTemplateRouter = createTRPCRouter({
       }
 
       await db.meetingTemplate.delete({ where: { id: input.id } });
-      await invalidateMeetingTemplates();
       return { id: input.id };
     }),
 });

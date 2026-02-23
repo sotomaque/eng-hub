@@ -1,6 +1,5 @@
 import { db, type StatsPeriod } from "@workspace/db";
 
-import { invalidateGithubStats } from "./cache";
 import {
   aggregateStats,
   fetchCommitStats,
@@ -92,8 +91,6 @@ export async function syncGitHubStatsForProject(
       where: { projectId },
       data: { syncStatus: "idle", lastSyncAt: new Date(), syncError: null },
     });
-
-    await invalidateGithubStats(projectId);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     await db.gitHubSync.update({
