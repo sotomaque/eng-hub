@@ -6,6 +6,8 @@ import { TRPCError } from "@trpc/server";
 const mockCanViewMeetings = mock(() => Promise.resolve(false));
 mock.module("../../lib/hierarchy", () => ({
   canViewMeetings: mockCanViewMeetings,
+  resolveClerkPerson: mock(() => Promise.resolve("person-1" as string | null)),
+  isInManagementChain: mock(() => Promise.resolve(false)),
 }));
 
 mock.module("../../lib/redis", () => ({
