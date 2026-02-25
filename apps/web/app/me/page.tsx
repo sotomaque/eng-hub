@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PersonProfile } from "@/components/person-profile";
+import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { getMe } from "./_lib/queries";
 
 export const metadata: Metadata = { title: "My Dashboard" };
 
-export default async function MeProfilePage() {
+async function MeContent() {
   const person = await getMe();
 
   if (!person) {
@@ -39,5 +41,13 @@ export default async function MeProfilePage() {
         })),
       }}
     />
+  );
+}
+
+export default function MeProfilePage() {
+  return (
+    <Suspense fallback={<PersonProfileSkeleton />}>
+      <MeContent />
+    </Suspense>
   );
 }

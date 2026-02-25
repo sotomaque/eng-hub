@@ -49,8 +49,9 @@ export function AddToProjectDialog({
   const trpc = useTRPC();
   const projectsQuery = useQuery(trpc.project.getAll.queryOptions());
 
+  const existingProjectIdSet = new Set(existingProjectIds);
   const availableProjects = (projectsQuery.data ?? []).filter(
-    (p) => !existingProjectIds.includes(p.id),
+    (p) => !existingProjectIdSet.has(p.id),
   );
 
   const {
@@ -149,9 +150,10 @@ export function AddToProjectDialog({
                   control={control}
                   render={({ field }) => {
                     const selected = field.value ?? [];
+                    const selectedSet = new Set(selected);
                     const toggle = (teamId: string) => {
                       field.onChange(
-                        selected.includes(teamId)
+                        selectedSet.has(teamId)
                           ? selected.filter((id) => id !== teamId)
                           : [...selected, teamId],
                       );
@@ -159,7 +161,7 @@ export function AddToProjectDialog({
                     return (
                       <div className="flex flex-wrap gap-2">
                         {teams.map((team) => {
-                          const isSelected = selected.includes(team.id);
+                          const isSelected = selectedSet.has(team.id);
                           return (
                             <Button
                               key={team.id}

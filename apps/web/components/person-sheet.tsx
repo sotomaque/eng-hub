@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Team, TeamMembership } from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Combobox } from "@workspace/ui/components/combobox";
@@ -17,7 +16,7 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
@@ -42,7 +41,6 @@ type PersonWithMemberships = {
     id: string;
     projectId: string;
     project: { id: string; name: string };
-    teamMemberships: (TeamMembership & { team: Team })[];
   }[];
 };
 
@@ -91,9 +89,13 @@ export function PersonSheet({ person }: PersonSheetProps) {
   });
 
   const selectedDepartmentId = watch("departmentId");
-  const titles = selectedDepartmentId
-    ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
-    : allTitles;
+  const titles = useMemo(
+    () =>
+      selectedDepartmentId
+        ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
+        : allTitles,
+    [allTitles, selectedDepartmentId],
+  );
 
   function handleTitleChange(titleId: string) {
     setValue("titleId", titleId, { shouldDirty: true });

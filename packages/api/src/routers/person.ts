@@ -60,6 +60,30 @@ const personInclude = {
   },
 } as const;
 
+/** Minimal select for the edit sheet — omits milestones, goals, ownedProjects, directReports. */
+const personEditSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  callsign: true,
+  email: true,
+  imageUrl: true,
+  githubUsername: true,
+  gitlabUsername: true,
+  managerId: true,
+  departmentId: true,
+  titleId: true,
+  department: { select: { id: true, name: true } },
+  title: { select: { id: true, name: true } },
+  projectMemberships: {
+    select: {
+      id: true,
+      projectId: true,
+      project: { select: { id: true, name: true } },
+    },
+  },
+} as const;
+
 const personListInclude = {
   department: true,
   title: { include: { department: true } },
@@ -201,6 +225,14 @@ export const personRouter = createTRPCRouter({
     return db.person.findUnique({
       where: { id: input.id },
       include: personInclude,
+    });
+  }),
+
+  /** Lightweight fetch for the edit sheet — omits milestones, goals, reports, etc. */
+  getForEdit: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return db.person.findUnique({
+      where: { id: input.id },
+      select: personEditSelect,
     });
   }),
 

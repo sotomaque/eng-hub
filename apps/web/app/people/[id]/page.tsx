@@ -13,7 +13,10 @@ interface PageProps {
 }
 
 async function PersonContent({ id }: { id: string }) {
-  const person = await getCachedPerson(id);
+  // Run both fetches concurrently — getMe() is React.cache()-deduped so no extra DB call
+  const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
+
+  if (me?.id === id) redirect("/me");
   if (!person) notFound();
 
   return (
@@ -47,9 +50,6 @@ async function PersonContent({ id }: { id: string }) {
 
 export default async function PersonPage({ params }: PageProps) {
   const { id } = await params;
-
-  const me = await getMe();
-  if (me?.id === id) redirect("/me");
 
   return (
     <div className="min-h-screen bg-background">

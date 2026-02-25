@@ -195,8 +195,10 @@ export const projectRouter = createTRPCRouter({
           where.parentId = { not: null };
         }
       }
+      const needsPersonId = input.favorite || input.sortBy === "favorite";
+      const personId = needsPersonId ? await resolveClerkPerson(ctx.userId) : null;
+
       if (input.favorite) {
-        const personId = await resolveClerkPerson(ctx.userId);
         if (personId) {
           where.favoritedBy = { some: { personId } };
         } else {
@@ -205,7 +207,6 @@ export const projectRouter = createTRPCRouter({
       }
 
       if (input.sortBy === "favorite") {
-        const personId = await resolveClerkPerson(ctx.userId);
         if (!personId) return { items: [], totalCount: 0 };
 
         // Fetch all matching IDs with secondary sort by updatedAt
