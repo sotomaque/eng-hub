@@ -30,6 +30,15 @@ const updateHealthAssessmentSchema = createHealthAssessmentSchema
   .extend({ id: z.string() });
 
 export const healthAssessmentRouter = createTRPCRouter({
+  getLatest: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ input }) => {
+      return db.healthAssessment.findFirst({
+        where: { projectId: input.projectId },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {

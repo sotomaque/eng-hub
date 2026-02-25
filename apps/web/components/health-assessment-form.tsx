@@ -124,6 +124,7 @@ type ExistingAssessment = {
 interface HealthAssessmentFormProps {
   projectId: string;
   assessment?: ExistingAssessment;
+  prefill?: ExistingAssessment;
 }
 
 function getStatusKey(key: DimensionKey): `${DimensionKey}Status` {
@@ -144,13 +145,14 @@ function dimensionSummary(
 export function HealthAssessmentForm({
   projectId,
   assessment,
+  prefill,
 }: HealthAssessmentFormProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEdit = !!assessment;
 
   const [overallStatus, setOverallStatus] = useState<HealthStatus | null>(
-    assessment?.overallStatus ?? null,
+    assessment?.overallStatus ?? prefill?.overallStatus ?? null,
   );
   const [overallNotes, setOverallNotes] = useState<JSONContent | undefined>(
     (assessment?.overallNotes as JSONContent) ?? undefined,
@@ -168,19 +170,30 @@ export function HealthAssessmentForm({
       productVibe: { status: null, notes: undefined },
       designVibe: { status: null, notes: undefined },
     };
-    if (assessment) {
+    const source = assessment ?? prefill;
+    if (source) {
       for (const key of Object.keys(initial) as DimensionKey[]) {
         initial[key] = {
-          status: assessment[getStatusKey(key)] ?? null,
-          notes: (assessment[getNotesKey(key)] as JSONContent) ?? undefined,
+          status: source[getStatusKey(key)] ?? null,
+          // Only prefill notes for edit mode, not for new assessments
+          notes: assessment
+            ? ((source[getNotesKey(key)] as JSONContent) ?? undefined)
+            : undefined,
         };
       }
     }
     return initial;
   });
 
+  const hasPrefilled =
+    !isEdit &&
+    prefill &&
+    [...BUSINESS_DIMENSIONS, ...VIBE_CHECKS].some(
+      (d) => prefill[getStatusKey(d.key)],
+    );
+
   const [openSections, setOpenSections] = useState<string[]>(
-    isEdit ? ["business", "vibes"] : [],
+    isEdit || hasPrefilled ? ["business", "vibes"] : [],
   );
 
   const createMutation = useMutation(
