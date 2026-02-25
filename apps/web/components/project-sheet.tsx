@@ -21,6 +21,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
+import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   type CreateProjectInput,
@@ -37,6 +38,7 @@ interface ProjectSheetProps {
     imageUrl: string | null;
     parentId: string | null;
     fundedById: string | null;
+    owners?: { person: { id: string } }[];
   };
   defaultParentId?: string;
 }
@@ -83,10 +85,24 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
     project?.imageUrl ?? null,
   );
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const initialOwnerIds = project?.owners?.map((o) => o.person.id) ?? [];
+  const [ownerIds, setOwnerIds] = useState<string[]>(initialOwnerIds);
+
+  const setOwnersMutation = useMutation(
+    trpc.project.setOwners.mutationOptions({
+      onError: (error) => toast.error(error.message),
+    }),
+  );
 
   const createMutation = useMutation(
     trpc.project.create.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async (data) => {
+        if (ownerIds.length > 0) {
+          await setOwnersMutation.mutateAsync({
+            projectId: data.id,
+            personIds: ownerIds,
+          });
+        }
         toast.success("Project created");
         handleClose();
         router.refresh();
@@ -99,7 +115,13 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
 
   const updateMutation = useMutation(
     trpc.project.update.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        if (project) {
+          await setOwnersMutation.mutateAsync({
+            projectId: project.id,
+            personIds: ownerIds,
+          });
+        }
         toast.success("Project updated");
         handleClose();
         router.refresh();
@@ -267,6 +289,15 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                 )}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>Owners</Label>
+              <PersonMultiSelect
+                value={ownerIds}
+                onChange={setOwnerIds}
+                placeholder="Select project owners…"
+              />
+            </div>
           </div>
           <SheetFooter>
             <Button
@@ -282,7 +313,10 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
               disabled={
                 isSubmitting ||
                 isImageUploading ||
-                (!isDirty && imageUrl === (project?.imageUrl ?? null))
+                (!isDirty &&
+                  imageUrl === (project?.imageUrl ?? null) &&
+                  JSON.stringify(ownerIds.slice().sort()) ===
+                    JSON.stringify(initialOwnerIds.slice().sort()))
               }
             >
               {isSubmitting && <Loader2 className="animate-spin" />}

@@ -41,6 +41,12 @@ interface ProjectSidebarProps {
   projectImageUrl?: string | null;
   parentProject?: { id: string; name: string; imageUrl: string | null } | null;
   fundedByProject?: { id: string; name: string } | null;
+  owners?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    imageUrl: string | null;
+  }[];
   isFavorited?: boolean;
 }
 
@@ -61,6 +67,7 @@ export function ProjectSidebar({
   projectImageUrl,
   parentProject,
   fundedByProject,
+  owners,
   isFavorited,
 }: ProjectSidebarProps) {
   const pathname = usePathname();
@@ -135,6 +142,35 @@ export function ProjectSidebar({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {owners && owners.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>
+              {owners.length === 1 ? "Owner" : "Owners"}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {owners.map((owner) => (
+                  <SidebarMenuItem key={owner.id}>
+                    <SidebarMenuButton asChild>
+                      <Link href={`/people/${owner.id}`}>
+                        <Avatar className="size-5 shrink-0">
+                          <AvatarImage src={owner.imageUrl ?? undefined} />
+                          <AvatarFallback className="text-[8px]">
+                            {owner.firstName[0]}
+                            {owner.lastName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>
+                          {owner.firstName} {owner.lastName}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

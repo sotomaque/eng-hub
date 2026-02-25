@@ -49,6 +49,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         projectImageUrl={project.imageUrl}
         parentProject={project.parent ?? null}
         fundedByProject={project.fundedBy ?? null}
+        owners={project.owners.map((o) => o.person)}
         isFavorited={isFavorited}
       />
       <SidebarInset>

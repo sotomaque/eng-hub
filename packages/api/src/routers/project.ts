@@ -112,6 +112,18 @@ function fetchProject(id: string) {
         },
       },
       links: true,
+      owners: {
+        include: {
+          person: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              imageUrl: true,
+            },
+          },
+        },
+      },
       parent: { select: { id: true, name: true, imageUrl: true } },
       children: {
         select: { id: true, name: true, imageUrl: true },
@@ -336,5 +348,28 @@ export const projectRouter = createTRPCRouter({
         });
       }
       return { favorited: !existing };
+    }),
+
+  setOwners: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        personIds: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      await db.$transaction(async (tx) => {
+        await tx.projectOwner.deleteMany({
+          where: { projectId: input.projectId },
+        });
+        if (input.personIds.length > 0) {
+          await tx.projectOwner.createMany({
+            data: input.personIds.map((personId) => ({
+              projectId: input.projectId,
+              personId,
+            })),
+          });
+        }
+      });
     }),
 });

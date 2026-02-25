@@ -71,6 +71,12 @@ INSERT INTO team_memberships (id, team_id, team_member_id) VALUES
   ('tmem-diana-design', 'team-design', 'tm-diana-alpha')
 ON CONFLICT (id) DO NOTHING;
 
+-- Project owners
+INSERT INTO project_owners (id, person_id, project_id) VALUES
+  ('po-alice-alpha', 'person-alice', 'proj-alpha'),
+  ('po-evan-gamma', 'person-evan', 'proj-gamma')
+ON CONFLICT (id) DO NOTHING;
+
 -- Health assessments
 INSERT INTO health_assessments (id, project_id, author_id, overall_status, created_at, updated_at) VALUES
   ('ha-alpha-1', 'proj-alpha', 'person-alice', 'GREEN', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days'),

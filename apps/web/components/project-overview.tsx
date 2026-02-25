@@ -9,6 +9,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   ArrowRight,
+  Crown,
   DollarSign,
   Flag,
   FolderOpen,
@@ -38,6 +39,12 @@ interface ProjectOverviewProps {
   linkCount: number;
   subProjects: ChildProject[];
   fundedBy: { id: string; name: string } | null;
+  owners: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    imageUrl: string | null;
+  }[];
 }
 
 function countByStatus(items: { status: RoadmapStatus }[]) {
@@ -111,6 +118,7 @@ export function ProjectOverview({
   linkCount,
   subProjects,
   fundedBy,
+  owners,
 }: ProjectOverviewProps) {
   const basePath = `/projects/${projectId}`;
   const milestoneStats = countByStatus(milestones);
@@ -118,7 +126,7 @@ export function ProjectOverview({
 
   return (
     <div className="space-y-8">
-      {(description || fundedBy) && (
+      {(description || fundedBy || owners.length > 0) && (
         <div className="space-y-2">
           {fundedBy && (
             <Link
@@ -128,6 +136,32 @@ export function ProjectOverview({
               <DollarSign className="size-3.5" />
               Funded by {fundedBy.name}
             </Link>
+          )}
+          {owners.length > 0 && (
+            <div className="flex items-center gap-1.5 text-sm">
+              <Crown className="text-muted-foreground size-3.5 shrink-0" />
+              <span className="text-muted-foreground">
+                {owners.length === 1 ? "Owner" : "Owners"}:
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {owners.map((owner) => (
+                  <Link
+                    key={owner.id}
+                    href={`/people/${owner.id}`}
+                    className="inline-flex items-center gap-1.5 hover:underline"
+                  >
+                    <Avatar className="size-5">
+                      <AvatarImage src={owner.imageUrl ?? undefined} />
+                      <AvatarFallback className="text-[8px]">
+                        {owner.firstName[0]}
+                        {owner.lastName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    {owner.firstName} {owner.lastName}
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
           {description && (
             <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">

@@ -34,6 +34,7 @@ async function OverviewContent({ id }: { id: string }) {
       }
       subProjects={project.children}
       fundedBy={project.fundedBy ?? null}
+      owners={project.owners.map((o) => o.person)}
     />
   );
 }
