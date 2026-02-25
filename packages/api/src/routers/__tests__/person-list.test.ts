@@ -114,9 +114,7 @@ describe("person.list", () => {
   });
 
   test("multiProject filter combines with search filter", async () => {
-    mockTeamMemberGroupBy.mockResolvedValue([
-      { personId: "p-1", _count: { personId: 2 } },
-    ]);
+    mockTeamMemberGroupBy.mockResolvedValue([{ personId: "p-1", _count: { personId: 2 } }]);
 
     await caller.list({
       page: 1,
@@ -231,10 +229,7 @@ describe("person.list", () => {
     const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
       orderBy?: object[];
     };
-    expect(callArgs.orderBy).toEqual([
-      { lastName: "asc" },
-      { firstName: "asc" },
-    ]);
+    expect(callArgs.orderBy).toEqual([{ lastName: "asc" }, { firstName: "asc" }]);
   });
 
   test("sorts by department descending", async () => {
@@ -248,9 +243,6 @@ describe("person.list", () => {
     const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
       orderBy?: object[];
     };
-    expect(callArgs.orderBy).toEqual([
-      { department: { name: "desc" } },
-      { lastName: "asc" },
-    ]);
+    expect(callArgs.orderBy).toEqual([{ department: { name: "desc" } }, { lastName: "asc" }]);
   });
 });

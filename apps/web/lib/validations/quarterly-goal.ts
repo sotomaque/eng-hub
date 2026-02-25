@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-export const roadmapStatusEnum = z.enum([
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "AT_RISK",
-]);
+export const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
 
 export const createQuarterlyGoalSchema = z.object({
   projectId: z.string(),
@@ -23,9 +18,5 @@ export const updateQuarterlyGoalSchema = createQuarterlyGoalSchema
     id: z.string(),
   });
 
-export type CreateQuarterlyGoalInput = z.infer<
-  typeof createQuarterlyGoalSchema
->;
-export type UpdateQuarterlyGoalInput = z.infer<
-  typeof updateQuarterlyGoalSchema
->;
+export type CreateQuarterlyGoalInput = z.infer<typeof createQuarterlyGoalSchema>;
+export type UpdateQuarterlyGoalInput = z.infer<typeof updateQuarterlyGoalSchema>;

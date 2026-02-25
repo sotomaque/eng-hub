@@ -41,10 +41,7 @@ async function OrgChartContent({ projectId }: { projectId: string }) {
       members={orgMembers}
       recentChanges={recentChanges.map((c) => ({
         ...c,
-        createdAt:
-          typeof c.createdAt === "string"
-            ? c.createdAt
-            : c.createdAt.toISOString(),
+        createdAt: typeof c.createdAt === "string" ? c.createdAt : c.createdAt.toISOString(),
       }))}
     />
   );

@@ -1,8 +1,4 @@
-import {
-  appRouter,
-  createCallerFactory,
-  createTRPCContext,
-} from "@workspace/api";
+import { appRouter, createCallerFactory, createTRPCContext } from "@workspace/api";
 
 const createCaller = createCallerFactory(appRouter);
 

@@ -23,10 +23,7 @@ import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  type CreateProjectInput,
-  createProjectSchema,
-} from "@/lib/validations/project";
+import { type CreateProjectInput, createProjectSchema } from "@/lib/validations/project";
 
 interface ProjectSheetProps {
   project?: {
@@ -53,9 +50,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
 
   const projectsQuery = useQuery(trpc.project.listNames.queryOptions());
   const allProjects = projectsQuery.data ?? [];
-  const selectableProjects = allProjects.filter(
-    (p) => !project || p.id !== project.id,
-  );
+  const selectableProjects = allProjects.filter((p) => !project || p.id !== project.id);
 
   const initialParentId = project?.parentId ?? defaultParentId ?? "";
 
@@ -81,9 +76,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
 
   const currentFundedById = watch("fundedById");
 
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    project?.imageUrl ?? null,
-  );
+  const [imageUrl, setImageUrl] = useState<string | null>(project?.imageUrl ?? null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const initialOwnerIds = project?.owners?.map((o) => o.person.id) ?? [];
   const [ownerIds, setOwnerIds] = useState<string[]>(initialOwnerIds);
@@ -163,10 +156,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <ImageUploader
               label="Logo"
@@ -186,11 +176,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                 {...register("name")}
                 aria-invalid={!!errors.name}
               />
-              {errors.name && (
-                <p className="text-destructive text-sm">
-                  {errors.name.message}
-                </p>
-              )}
+              {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -212,9 +198,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                 aria-invalid={!!errors.githubUrl}
               />
               {errors.githubUrl && (
-                <p className="text-destructive text-sm">
-                  {errors.githubUrl.message}
-                </p>
+                <p className="text-destructive text-sm">{errors.githubUrl.message}</p>
               )}
             </div>
 
@@ -228,9 +212,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                 aria-invalid={!!errors.gitlabUrl}
               />
               {errors.gitlabUrl && (
-                <p className="text-destructive text-sm">
-                  {errors.gitlabUrl.message}
-                </p>
+                <p className="text-destructive text-sm">{errors.gitlabUrl.message}</p>
               )}
             </div>
 
@@ -280,9 +262,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                       })),
                     ]}
                     value={field.value || "__none__"}
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
+                    onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
                     placeholder="Select funding project…"
                     searchPlaceholder="Search projects…"
                   />
@@ -300,12 +280,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
             </div>
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button

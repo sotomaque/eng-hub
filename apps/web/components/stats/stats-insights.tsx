@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Eye, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ContributorStatsData } from "@/lib/tiers";
@@ -39,40 +30,37 @@ function pctChange(avg: number, recent: number): number {
 export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
   const [threshold, setThreshold] = useState(20);
 
-  const { trendingUp, needsAttention, teamAvg, teamRecent, reviewers } =
-    useMemo(() => {
-      const up: ContributorStatsData[] = [];
-      const down: ContributorStatsData[] = [];
-      const revs: ContributorStatsData[] = [];
-      let avgSum = 0;
-      let recentSum = 0;
+  const { trendingUp, needsAttention, teamAvg, teamRecent, reviewers } = useMemo(() => {
+    const up: ContributorStatsData[] = [];
+    const down: ContributorStatsData[] = [];
+    const revs: ContributorStatsData[] = [];
+    let avgSum = 0;
+    let recentSum = 0;
 
-      for (const s of stats) {
-        const pct = pctChange(s.avgWeeklyCommits, s.recentWeeklyCommits);
-        if (pct >= threshold) up.push(s);
-        if (pct <= -threshold || (s.commits > 0 && s.recentWeeklyCommits === 0))
-          down.push(s);
-        if (s.reviewsDone > 0) revs.push(s);
-        avgSum += s.avgWeeklyCommits;
-        recentSum += s.recentWeeklyCommits;
-      }
+    for (const s of stats) {
+      const pct = pctChange(s.avgWeeklyCommits, s.recentWeeklyCommits);
+      if (pct >= threshold) up.push(s);
+      if (pct <= -threshold || (s.commits > 0 && s.recentWeeklyCommits === 0)) down.push(s);
+      if (s.reviewsDone > 0) revs.push(s);
+      avgSum += s.avgWeeklyCommits;
+      recentSum += s.recentWeeklyCommits;
+    }
 
-      up.sort((a, b) => b.recentWeeklyCommits - a.recentWeeklyCommits);
-      down.sort((a, b) => a.recentWeeklyCommits - b.recentWeeklyCommits);
-      revs.sort((a, b) => b.recentWeeklyReviews - a.recentWeeklyReviews);
+    up.sort((a, b) => b.recentWeeklyCommits - a.recentWeeklyCommits);
+    down.sort((a, b) => a.recentWeeklyCommits - b.recentWeeklyCommits);
+    revs.sort((a, b) => b.recentWeeklyReviews - a.recentWeeklyReviews);
 
-      return {
-        trendingUp: up,
-        needsAttention: down,
-        teamAvg: avgSum,
-        teamRecent: recentSum,
-        reviewers: revs,
-      };
-    }, [stats, threshold]);
+    return {
+      trendingUp: up,
+      needsAttention: down,
+      teamAvg: avgSum,
+      teamRecent: recentSum,
+      reviewers: revs,
+    };
+  }, [stats, threshold]);
 
   const teamTrendPct = pctChange(teamAvg, teamRecent);
-  const teamTrend =
-    teamTrendPct >= 20 ? "up" : teamTrendPct <= -20 ? "down" : "stable";
+  const teamTrend = teamTrendPct >= 20 ? "up" : teamTrendPct <= -20 ? "down" : "stable";
 
   if (stats.length === 0) return null;
 
@@ -107,15 +95,11 @@ export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
-                Avg weekly commits
-              </span>
+              <span className="text-muted-foreground text-sm">Avg weekly commits</span>
               <span className="font-medium">{teamAvg.toFixed(1)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
-                Recent (8 wk avg)
-              </span>
+              <span className="text-muted-foreground text-sm">Recent (8 wk avg)</span>
               <span className="font-medium">{teamRecent.toFixed(1)}</span>
             </div>
             <div className="flex items-center justify-between">
@@ -130,9 +114,7 @@ export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="size-4 text-green-600 dark:text-green-400" />
-              <CardTitle className="text-base">
-                Trending Up ({trendingUp.length})
-              </CardTitle>
+              <CardTitle className="text-base">Trending Up ({trendingUp.length})</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -161,9 +143,7 @@ export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <TrendingDown className="size-4 text-red-600 dark:text-red-400" />
-              <CardTitle className="text-base">
-                Needs Attention ({needsAttention.length})
-              </CardTitle>
+              <CardTitle className="text-base">Needs Attention ({needsAttention.length})</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -197,9 +177,7 @@ export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
           </CardHeader>
           <CardContent>
             {reviewers.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No review data available.
-              </p>
+              <p className="text-muted-foreground text-sm">No review data available.</p>
             ) : (
               <div className="space-y-3">
                 {reviewers.map((s) => (
@@ -208,9 +186,7 @@ export function StatsInsights({ stats, memberMap }: StatsInsightsProps) {
                     stat={s}
                     memberMap={memberMap}
                     variant={
-                      pctChange(s.avgWeeklyReviews, s.recentWeeklyReviews) >= 0
-                        ? "up"
-                        : "down"
+                      pctChange(s.avgWeeklyReviews, s.recentWeeklyReviews) >= 0 ? "up" : "down"
                     }
                     metric="reviews"
                   />
@@ -264,10 +240,8 @@ function ContributorRow({
     ? member.callsign || `${member.firstName} ${member.lastName}`
     : stat.githubUsername;
 
-  const avg =
-    metric === "commits" ? stat.avgWeeklyCommits : stat.avgWeeklyReviews;
-  const recent =
-    metric === "commits" ? stat.recentWeeklyCommits : stat.recentWeeklyReviews;
+  const avg = metric === "commits" ? stat.avgWeeklyCommits : stat.avgWeeklyReviews;
+  const recent = metric === "commits" ? stat.recentWeeklyCommits : stat.recentWeeklyReviews;
   const change = pctChange(avg, recent);
 
   // Bar widths for visual comparison
@@ -315,9 +289,7 @@ function ContributorRow({
         <div className="h-1.5 flex-1 rounded-full bg-slate-200 dark:bg-slate-800">
           <div
             className={`h-full rounded-full ${
-              variant === "up"
-                ? "bg-green-500 dark:bg-green-600"
-                : "bg-red-500 dark:bg-red-600"
+              variant === "up" ? "bg-green-500 dark:bg-green-600" : "bg-red-500 dark:bg-red-600"
             }`}
             style={{ width: `${recentBarPct}%` }}
           />

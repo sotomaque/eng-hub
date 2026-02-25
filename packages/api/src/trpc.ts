@@ -4,8 +4,7 @@ import { ZodError } from "zod";
 
 export const createTRPCContext = async () => {
   const { userId, sessionClaims } = await auth();
-  const role =
-    (sessionClaims?.metadata as { role?: string } | undefined)?.role ?? null;
+  const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role ?? null;
 
   return {
     userId,
@@ -19,8 +18,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       ...shape,
       data: {
         ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };
   },

@@ -26,14 +26,12 @@ const highlights = [
   {
     icon: Users,
     title: "People",
-    description:
-      "Searchable directory with profiles, org charts, and manager change audit trails.",
+    description: "Searchable directory with profiles, org charts, and manager change audit trails.",
   },
   {
     icon: Target,
     title: "Goals",
-    description:
-      "Hierarchical milestones, quarterly OKRs, key results, and assignee tracking.",
+    description: "Hierarchical milestones, quarterly OKRs, key results, and assignee tracking.",
   },
 ];
 
@@ -75,8 +73,8 @@ export default function HomePage() {
             <span className="text-primary">organized.</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-xl text-lg leading-relaxed sm:text-xl">
-            One place for projects, people, goals, and 1:1s. Replace the
-            patchwork of tools with a single source of truth.
+            One place for projects, people, goals, and 1:1s. Replace the patchwork of tools with a
+            single source of truth.
           </p>
 
           <div className="mt-10 flex items-center justify-center gap-4">
@@ -109,9 +107,7 @@ export default function HomePage() {
               <div className="text-primary mb-5">
                 <item.icon className="size-7" strokeWidth={1.5} />
               </div>
-              <h3 className="text-lg font-semibold tracking-tight">
-                {item.title}
-              </h3>
+              <h3 className="text-lg font-semibold tracking-tight">{item.title}</h3>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                 {item.description}
               </p>
@@ -131,25 +127,20 @@ export default function HomePage() {
               Everything your org needs
             </h2>
             <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-base">
-              From health assessments to delivery analytics, Eng Hub covers the
-              full surface area of engineering management.
+              From health assessments to delivery analytics, Eng Hub covers the full surface area of
+              engineering management.
             </p>
           </div>
 
           <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2">
             {capabilities.map((cap) => (
-              <div
-                key={cap.label}
-                className="bg-card flex items-start gap-4 p-8"
-              >
+              <div key={cap.label} className="bg-card flex items-start gap-4 p-8">
                 <div className="bg-primary/10 text-primary shrink-0 rounded-xl p-2.5">
                   <cap.icon className="size-5" strokeWidth={1.5} />
                 </div>
                 <div>
                   <h3 className="font-semibold tracking-tight">{cap.label}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                    {cap.detail}
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{cap.detail}</p>
                 </div>
               </div>
             ))}
@@ -164,8 +155,8 @@ export default function HomePage() {
             Ready to consolidate your tooling?
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-md text-base">
-            Stop context-switching between Figma, spreadsheets, and GitHub.
-            Start managing everything in one place.
+            Stop context-switching between Figma, spreadsheets, and GitHub. Start managing
+            everything in one place.
           </p>
           <div className="mt-8">
             <Button asChild size="lg" className="h-12 rounded-full px-8">

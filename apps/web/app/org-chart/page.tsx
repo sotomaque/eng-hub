@@ -34,10 +34,7 @@ async function OrgChartContent() {
       members={orgMembers}
       recentChanges={recentChanges.map((c) => ({
         ...c,
-        createdAt:
-          typeof c.createdAt === "string"
-            ? c.createdAt
-            : c.createdAt.toISOString(),
+        createdAt: typeof c.createdAt === "string" ? c.createdAt : c.createdAt.toISOString(),
       }))}
       emptyMessage="No people yet. Add people from the People page to see the org chart."
     />

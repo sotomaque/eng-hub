@@ -17,11 +17,7 @@ export default function AdminPage() {
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Waitlist</h2>
-        <Suspense
-          fallback={
-            <p className="text-sm text-muted-foreground">Loading waitlist...</p>
-          }
-        >
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Loading waitlist...</p>}>
           <AdminWaitlistTable />
         </Suspense>
       </section>

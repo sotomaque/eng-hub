@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createMilestoneSchema,
-  updateMilestoneSchema,
-} from "@/lib/validations/milestone";
+import { createMilestoneSchema, updateMilestoneSchema } from "@/lib/validations/milestone";
 
 describe("createMilestoneSchema", () => {
   test("accepts valid milestone with date coercion from string", () => {

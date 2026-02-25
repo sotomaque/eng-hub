@@ -1,19 +1,9 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import {
-  assignTiers,
-  type ContributorStatsData,
-  type Tier,
-  tierConfig,
-} from "@/lib/tiers";
+import { assignTiers, type ContributorStatsData, type Tier, tierConfig } from "@/lib/tiers";
 
 type ViewMode = "tier" | "contributor";
 
@@ -139,8 +129,7 @@ export function StatsPieChart({ stats, memberMap }: StatsPieChartProps) {
                 view === "tier"
                   ? ({ name, percent }: { name?: string; percent?: number }) =>
                       `${name ?? ""} (${((percent ?? 0) * 100).toFixed(0)}%)`
-                  : ({ percent }: { percent?: number }) =>
-                      `${((percent ?? 0) * 100).toFixed(0)}%`
+                  : ({ percent }: { percent?: number }) => `${((percent ?? 0) * 100).toFixed(0)}%`
               }
             >
               {data.map((entry) => (
@@ -151,10 +140,7 @@ export function StatsPieChart({ stats, memberMap }: StatsPieChartProps) {
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
                 const d = payload[0]?.payload as (typeof data)[number];
-                const pct =
-                  totalCommits > 0
-                    ? ((d.value / totalCommits) * 100).toFixed(1)
-                    : "0";
+                const pct = totalCommits > 0 ? ((d.value / totalCommits) * 100).toFixed(1) : "0";
                 return (
                   <div className="bg-popover text-popover-foreground rounded-md border px-3 py-2 text-sm shadow-md">
                     <p className="font-medium">{d.name}</p>

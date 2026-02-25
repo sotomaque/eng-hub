@@ -13,11 +13,7 @@ interface FavoriteButtonProps {
   size?: "sm" | "default";
 }
 
-export function FavoriteButton({
-  projectId,
-  isFavorited,
-  size = "sm",
-}: FavoriteButtonProps) {
+export function FavoriteButton({ projectId, isFavorited, size = "sm" }: FavoriteButtonProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [optimistic, setOptimistic] = useState(isFavorited);
@@ -52,14 +48,10 @@ export function FavoriteButton({
     >
       <Star
         className={
-          optimistic
-            ? "size-4 fill-yellow-400 text-yellow-400"
-            : "size-4 text-muted-foreground"
+          optimistic ? "size-4 fill-yellow-400 text-yellow-400" : "size-4 text-muted-foreground"
         }
       />
-      <span className="sr-only">
-        {optimistic ? "Remove from favorites" : "Add to favorites"}
-      </span>
+      <span className="sr-only">{optimistic ? "Remove from favorites" : "Add to favorites"}</span>
     </Button>
   );
 }

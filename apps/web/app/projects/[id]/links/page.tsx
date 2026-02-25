@@ -33,13 +33,7 @@ async function LinksContent({ id }: { id: string }) {
   );
 }
 
-async function EditLinkContent({
-  projectId,
-  linkId,
-}: {
-  projectId: string;
-  linkId: string;
-}) {
+async function EditLinkContent({ projectId, linkId }: { projectId: string; linkId: string }) {
   const trpc = await createServerCaller();
   const link = await trpc.projectLink.getById({ id: linkId });
   if (!link) return null;

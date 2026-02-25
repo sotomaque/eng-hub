@@ -51,11 +51,9 @@ export const titleRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      return db.title.delete({ where: { id: input.id } });
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    return db.title.delete({ where: { id: input.id } });
+  }),
 
   reorder: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))

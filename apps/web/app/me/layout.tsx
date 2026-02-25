@@ -1,7 +1,4 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@workspace/ui/components/sidebar";
+import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar";
 import { redirect } from "next/navigation";
 import { MeSidebar } from "@/components/me-sidebar";
 import { MeSiteHeader } from "@/components/me-site-header";

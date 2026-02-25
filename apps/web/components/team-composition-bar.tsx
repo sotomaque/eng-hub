@@ -14,11 +14,7 @@ interface TeamCompositionBarProps {
   className?: string;
 }
 
-export function TeamCompositionBar({
-  members,
-  titleColorMap,
-  className,
-}: TeamCompositionBarProps) {
+export function TeamCompositionBar({ members, titleColorMap, className }: TeamCompositionBarProps) {
   if (members.length === 0) return null;
 
   // Group members by title name
@@ -39,12 +35,7 @@ export function TeamCompositionBar({
   const total = members.length;
 
   return (
-    <div
-      className={cn(
-        "flex h-1.5 w-full overflow-hidden rounded-full",
-        className,
-      )}
-    >
+    <div className={cn("flex h-1.5 w-full overflow-hidden rounded-full", className)}>
       {entries.map(([titleName, count]) => (
         <div
           key={titleName ?? "__none__"}

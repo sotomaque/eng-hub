@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createProjectSchema,
-  updateProjectSchema,
-} from "@/lib/validations/project";
+import { createProjectSchema, updateProjectSchema } from "@/lib/validations/project";
 
 describe("createProjectSchema", () => {
   test("accepts minimal valid input (name only)", () => {

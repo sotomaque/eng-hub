@@ -33,9 +33,7 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!team;
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    team?.imageUrl ?? null,
-  );
+  const [imageUrl, setImageUrl] = useState<string | null>(team?.imageUrl ?? null);
 
   const {
     register,
@@ -96,16 +94,11 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Team" : "Create Team"}</SheetTitle>
           <SheetDescription>
-            {isEditing
-              ? "Update the team details."
-              : "Create a new team to organize members."}
+            {isEditing ? "Update the team details." : "Create a new team to organize members."}
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <ImageUploader
               label="Team Logo"
@@ -124,11 +117,7 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
                 {...register("name")}
                 aria-invalid={!!errors.name}
               />
-              {errors.name && (
-                <p className="text-destructive text-sm">
-                  {errors.name.message}
-                </p>
-              )}
+              {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -141,20 +130,12 @@ export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
             </div>
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting ||
-                (!isDirty && imageUrl === (team?.imageUrl ?? null))
-              }
+              disabled={isSubmitting || (!isDirty && imageUrl === (team?.imageUrl ?? null))}
             >
               {isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? "Save Changes" : "Create Team"}

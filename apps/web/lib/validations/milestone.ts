@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-export const roadmapStatusEnum = z.enum([
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "AT_RISK",
-]);
+export const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
 
 export const createMilestoneSchema = z.object({
   projectId: z.string(),
@@ -16,11 +11,9 @@ export const createMilestoneSchema = z.object({
   parentId: z.string().nullable().optional(),
 });
 
-export const updateMilestoneSchema = createMilestoneSchema
-  .omit({ projectId: true })
-  .extend({
-    id: z.string(),
-  });
+export const updateMilestoneSchema = createMilestoneSchema.omit({ projectId: true }).extend({
+  id: z.string(),
+});
 
 export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>;
 export type UpdateMilestoneInput = z.infer<typeof updateMilestoneSchema>;

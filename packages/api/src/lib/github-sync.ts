@@ -1,20 +1,13 @@
 import { db, type StatsPeriod } from "@workspace/db";
 
-import {
-  aggregateStats,
-  fetchCommitStats,
-  fetchPRStats,
-  parseGitHubUrl,
-} from "./github";
+import { aggregateStats, fetchCommitStats, fetchPRStats, parseGitHubUrl } from "./github";
 
 /**
  * Run a full GitHub stats sync for a single project.
  * Extracted from the tRPC mutation so it can be called from both
  * the tRPC `syncNow` mutation and the QStash cron handler.
  */
-export async function syncGitHubStatsForProject(
-  projectId: string,
-): Promise<void> {
+export async function syncGitHubStatsForProject(projectId: string): Promise<void> {
   const project = await db.project.findUnique({
     where: { id: projectId },
     select: { githubUrl: true },
@@ -47,9 +40,7 @@ export async function syncGitHubStatsForProject(
     ]);
 
     const teamUsernames = new Set(
-      teamMembers
-        .map((tm) => tm.person.githubUsername)
-        .filter((u): u is string => !!u),
+      teamMembers.map((tm) => tm.person.githubUsername).filter((u): u is string => !!u),
     );
 
     const commitDataAvailable = commitData.length > 0;
@@ -151,9 +142,7 @@ export async function syncAllGitHubStats(): Promise<SyncResult[]> {
     select: { id: true },
   });
 
-  const settled = await Promise.allSettled(
-    projects.map((p) => syncGitHubStatsForProject(p.id)),
-  );
+  const settled = await Promise.allSettled(projects.map((p) => syncGitHubStatsForProject(p.id)));
 
   return settled.map((s, i) => ({
     projectId: projects[i]?.id,

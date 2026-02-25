@@ -44,8 +44,7 @@ export function DataTableToolbar<TData>({
         value={
           isServerSearch
             ? (searchValue ?? "")
-            : ((table.getColumn(searchColumn)?.getFilterValue() as string) ??
-              "")
+            : ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? "")
         }
         onChange={(event) => {
           if (isServerSearch) {

@@ -9,11 +9,9 @@ export const createProjectLinkSchema = z.object({
   tags: tagsSchema,
 });
 
-export const updateProjectLinkSchema = createProjectLinkSchema
-  .omit({ projectId: true })
-  .extend({
-    id: z.string(),
-  });
+export const updateProjectLinkSchema = createProjectLinkSchema.omit({ projectId: true }).extend({
+  id: z.string(),
+});
 
 export type CreateProjectLinkInput = z.infer<typeof createProjectLinkSchema>;
 export type UpdateProjectLinkInput = z.infer<typeof updateProjectLinkSchema>;

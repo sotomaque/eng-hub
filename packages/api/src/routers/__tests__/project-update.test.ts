@@ -77,9 +77,7 @@ const validInput = {
 describe("project.update", () => {
   beforeEach(() => {
     mockDetectProjectCycle.mockReset().mockResolvedValue(false);
-    mockProjectFindUnique
-      .mockReset()
-      .mockResolvedValue({ parentId: null, fundedById: null });
+    mockProjectFindUnique.mockReset().mockResolvedValue({ parentId: null, fundedById: null });
     mockProjectUpdate.mockReset().mockResolvedValue({ id: "proj-1" });
   });
 
@@ -89,18 +87,14 @@ describe("project.update", () => {
   });
 
   test("throws BAD_REQUEST on self-reference via parentId", async () => {
-    await expect(
-      caller.update({ ...validInput, parentId: "proj-1" }),
-    ).rejects.toMatchObject({
+    await expect(caller.update({ ...validInput, parentId: "proj-1" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("cannot reference itself"),
     });
   });
 
   test("throws BAD_REQUEST on self-reference via fundedById", async () => {
-    await expect(
-      caller.update({ ...validInput, fundedById: "proj-1" }),
-    ).rejects.toMatchObject({
+    await expect(caller.update({ ...validInput, fundedById: "proj-1" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("cannot reference itself"),
     });
@@ -109,9 +103,7 @@ describe("project.update", () => {
   test("throws BAD_REQUEST on parent cycle detection", async () => {
     mockDetectProjectCycle.mockResolvedValue(true);
 
-    await expect(
-      caller.update({ ...validInput, parentId: "parent-1" }),
-    ).rejects.toMatchObject({
+    await expect(caller.update({ ...validInput, parentId: "parent-1" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("circular"),
     });

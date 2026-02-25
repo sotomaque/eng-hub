@@ -1,11 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Command,
@@ -17,11 +13,7 @@ import {
 } from "@workspace/ui/components/command";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -93,10 +85,7 @@ export function AdminInviteForm() {
               <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent
-            className="w-[var(--radix-popover-trigger-width)] p-0"
-            align="start"
-          >
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
             <Command>
               <CommandInput placeholder="Search people..." />
               <CommandList>
@@ -141,16 +130,12 @@ export function AdminInviteForm() {
         </Popover>
         {selectedPerson && (
           <p className="text-xs text-muted-foreground">
-            Will auto-link {selectedPerson.firstName} {selectedPerson.lastName}{" "}
-            when they sign up.
+            Will auto-link {selectedPerson.firstName} {selectedPerson.lastName} when they sign up.
           </p>
         )}
       </div>
 
-      <Button
-        type="submit"
-        disabled={inviteMutation.isPending || !email.trim()}
-      >
+      <Button type="submit" disabled={inviteMutation.isPending || !email.trim()}>
         {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
       </Button>
     </form>

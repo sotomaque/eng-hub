@@ -1,11 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Command,
@@ -23,11 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import {
   Table,
   TableBody,
@@ -53,9 +45,7 @@ interface UnlinkedPerson {
 export function AdminWaitlistTable() {
   const trpc = useTRPC();
 
-  const waitlistQuery = useQuery(
-    trpc.admin.waitlistList.queryOptions({ status: "pending" }),
-  );
+  const waitlistQuery = useQuery(trpc.admin.waitlistList.queryOptions({ status: "pending" }));
   const unlinkedQuery = useQuery(trpc.admin.unlinkedPeople.queryOptions());
 
   const approveMutation = useMutation(
@@ -104,11 +94,7 @@ export function AdminWaitlistTable() {
   }
 
   if (entries.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No pending waitlist entries.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">No pending waitlist entries.</p>;
   }
 
   const selectedPerson = unlinked.find((p) => p.id === selectedPersonId);
@@ -129,9 +115,7 @@ export function AdminWaitlistTable() {
           <TableBody>
             {entries.map((entry) => (
               <TableRow key={entry.id}>
-                <TableCell className="font-medium">
-                  {entry.emailAddress}
-                </TableCell>
+                <TableCell className="font-medium">{entry.emailAddress}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(entry.createdAt).toLocaleDateString()}
                 </TableCell>
@@ -182,9 +166,9 @@ export function AdminWaitlistTable() {
           <DialogHeader>
             <DialogTitle>Approve waitlist entry</DialogTitle>
             <DialogDescription>
-              Approving <strong>{approveDialog?.email}</strong> will send them
-              an invitation email. Optionally link to an existing Person record
-              so their account is pre-configured on signup.
+              Approving <strong>{approveDialog?.email}</strong> will send them an invitation email.
+              Optionally link to an existing Person record so their account is pre-configured on
+              signup.
             </DialogDescription>
           </DialogHeader>
 
@@ -199,8 +183,7 @@ export function AdminWaitlistTable() {
             />
             {selectedPerson && (
               <p className="text-xs text-muted-foreground">
-                {selectedPerson.firstName} {selectedPerson.lastName} (
-                {selectedPerson.email})
+                {selectedPerson.firstName} {selectedPerson.lastName} ({selectedPerson.email})
               </p>
             )}
           </div>
@@ -215,10 +198,7 @@ export function AdminWaitlistTable() {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleApprove}
-              disabled={approveMutation.isPending}
-            >
+            <Button onClick={handleApprove} disabled={approveMutation.isPending}>
               {approveMutation.isPending ? "Approving..." : "Approve"}
             </Button>
           </DialogFooter>
@@ -249,23 +229,15 @@ function PersonCombobox({
         <Button
           variant="outline"
           aria-expanded={open}
-          className={cn(
-            "w-full justify-between font-normal",
-            !value && "text-muted-foreground",
-          )}
+          className={cn("w-full justify-between font-normal", !value && "text-muted-foreground")}
         >
           <span className="truncate">
-            {selected
-              ? `${selected.firstName} ${selected.lastName}`
-              : "Select a person..."}
+            {selected ? `${selected.firstName} ${selected.lastName}` : "Select a person..."}
           </span>
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
-        align="start"
-      >
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <Command>
           <CommandInput placeholder="Search people..." />
           <CommandList>
@@ -297,9 +269,7 @@ function PersonCombobox({
                     <span className="truncate">
                       {person.firstName} {person.lastName}
                     </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {person.email}
-                    </span>
+                    <span className="truncate text-xs text-muted-foreground">{person.email}</span>
                   </div>
                 </CommandItem>
               ))}

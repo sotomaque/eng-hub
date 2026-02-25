@@ -20,9 +20,7 @@ const mockTxFindUniqueOrThrow = mock(() =>
   }),
 );
 const mockTxArrangementUpdateMany = mock(() => Promise.resolve({ count: 0 }));
-const mockTxArrTeamFindMany = mock(() =>
-  Promise.resolve([] as { id: string }[]),
-);
+const mockTxArrTeamFindMany = mock(() => Promise.resolve([] as { id: string }[]));
 const mockTxArrTeamUpdateMany = mock(() => Promise.resolve({ count: 0 }));
 const mockTxArrangementUpdate = mock(() => Promise.resolve({}));
 const mockTxTeamDeleteMany = mock(() => Promise.resolve({ count: 0 }));

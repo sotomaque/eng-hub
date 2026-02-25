@@ -9,11 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@workspace/ui/components/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
 import { Check, Plus, X } from "lucide-react";
 import { useState } from "react";
@@ -38,15 +34,10 @@ export function TagInput({
 
   const trimmed = search.trim();
   const filtered = suggestions.filter(
-    (s) =>
-      !value.includes(s) && s.toLowerCase().includes(trimmed.toLowerCase()),
+    (s) => !value.includes(s) && s.toLowerCase().includes(trimmed.toLowerCase()),
   );
-  const exactMatch = suggestions.some(
-    (s) => s.toLowerCase() === trimmed.toLowerCase(),
-  );
-  const alreadySelected = value.some(
-    (v) => v.toLowerCase() === trimmed.toLowerCase(),
-  );
+  const exactMatch = suggestions.some((s) => s.toLowerCase() === trimmed.toLowerCase());
+  const alreadySelected = value.some((v) => v.toLowerCase() === trimmed.toLowerCase());
   const showCreate = trimmed.length > 0 && !exactMatch && !alreadySelected;
 
   function addTag(tag: string) {
@@ -66,10 +57,7 @@ export function TagInput({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {value.map((tag) => (
-            <Badge
-              key={tag}
-              className={cn("gap-1 border-0 px-2 py-0.5", getTagColor(tag))}
-            >
+            <Badge key={tag} className={cn("gap-1 border-0 px-2 py-0.5", getTagColor(tag))}>
               {tag}
               <button
                 type="button"
@@ -97,10 +85,7 @@ export function TagInput({
             {placeholder}
           </button>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] p-0"
-          align="start"
-        >
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search or create..."
@@ -124,11 +109,7 @@ export function TagInput({
                       }}
                     >
                       <Check className="size-4 shrink-0 opacity-0" />
-                      <Badge
-                        className={cn("border-0 px-2 py-0", getTagColor(tag))}
-                      >
-                        {tag}
-                      </Badge>
+                      <Badge className={cn("border-0 px-2 py-0", getTagColor(tag))}>{tag}</Badge>
                     </CommandItem>
                   ))}
                 </CommandGroup>

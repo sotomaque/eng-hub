@@ -1,7 +1,4 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@workspace/ui/components/sidebar";
+import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectSidebar } from "@/components/project-sidebar";
@@ -34,10 +31,7 @@ interface LayoutProps {
 
 export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { id } = await params;
-  const [project, trpc] = await Promise.all([
-    getCachedProject(id),
-    createServerCaller(),
-  ]);
+  const [project, trpc] = await Promise.all([getCachedProject(id), createServerCaller()]);
   if (!project) notFound();
   const isFavorited = await trpc.project.isFavorited({ projectId: id });
 

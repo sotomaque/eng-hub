@@ -27,42 +27,36 @@ export const projectLinkRouter = createTRPCRouter({
       });
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      return db.projectLink.findUnique({
-        where: { id: input.id },
-      });
-    }),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return db.projectLink.findUnique({
+      where: { id: input.id },
+    });
+  }),
 
-  create: protectedProcedure
-    .input(createProjectLinkSchema)
-    .mutation(async ({ input }) => {
-      const result = await db.projectLink.create({
-        data: {
-          projectId: input.projectId,
-          label: input.label,
-          url: input.url,
-          tags: input.tags,
-        },
-      });
-      return result;
-    }),
+  create: protectedProcedure.input(createProjectLinkSchema).mutation(async ({ input }) => {
+    const result = await db.projectLink.create({
+      data: {
+        projectId: input.projectId,
+        label: input.label,
+        url: input.url,
+        tags: input.tags,
+      },
+    });
+    return result;
+  }),
 
-  update: protectedProcedure
-    .input(updateProjectLinkSchema)
-    .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      const result = await db.projectLink.update({
-        where: { id },
-        data: {
-          label: data.label,
-          url: data.url,
-          tags: data.tags,
-        },
-      });
-      return result;
-    }),
+  update: protectedProcedure.input(updateProjectLinkSchema).mutation(async ({ input }) => {
+    const { id, ...data } = input;
+    const result = await db.projectLink.update({
+      where: { id },
+      data: {
+        label: data.label,
+        url: data.url,
+        tags: data.tags,
+      },
+    });
+    return result;
+  }),
 
   getDistinctTags: protectedProcedure
     .input(z.object({ projectId: z.string() }))
@@ -75,12 +69,10 @@ export const projectLinkRouter = createTRPCRouter({
       return Array.from(tagSet).sort();
     }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      const result = await db.projectLink.delete({
-        where: { id: input.id },
-      });
-      return result;
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    const result = await db.projectLink.delete({
+      where: { id: input.id },
+    });
+    return result;
+  }),
 });

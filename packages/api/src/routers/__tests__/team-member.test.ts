@@ -13,9 +13,7 @@ mock.module("@clerk/nextjs/server", () => ({
 // ── DB mock ──────────────────────────────────────────────────
 
 const mockPersonFindUnique = mock(() => Promise.resolve(null));
-const mockPersonCreate = mock(() =>
-  Promise.resolve({ id: "person-1", managerId: null }),
-);
+const mockPersonCreate = mock(() => Promise.resolve({ id: "person-1", managerId: null }));
 const mockPersonUpdate = mock(() => Promise.resolve({}));
 const mockTeamMemberCreate = mock(() =>
   Promise.resolve({ id: "tm-1", personId: "person-1", projectId: "proj-1" }),
@@ -55,9 +53,7 @@ const tx = {
   managerChange: { create: mockManagerChangeCreate },
 };
 
-const mockTransaction = mock(async (fn: (arg: unknown) => Promise<unknown>) =>
-  fn(tx),
-);
+const mockTransaction = mock(async (fn: (arg: unknown) => Promise<unknown>) => fn(tx));
 
 mock.module("@workspace/db", () => ({
   db: {
@@ -82,9 +78,7 @@ const caller = createCaller({ userId: "test-user-id" });
 describe("teamMember.create", () => {
   beforeEach(() => {
     mockPersonFindUnique.mockReset().mockResolvedValue(null);
-    mockPersonCreate
-      .mockReset()
-      .mockResolvedValue({ id: "person-1", managerId: null });
+    mockPersonCreate.mockReset().mockResolvedValue({ id: "person-1", managerId: null });
     mockTeamMemberCreate.mockReset().mockResolvedValue({
       id: "tm-1",
       personId: "person-1",

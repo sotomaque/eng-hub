@@ -3,12 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -19,14 +14,12 @@ import { StatsDataTable } from "./stats-data-table";
 import { StatsInsights } from "./stats-insights";
 import { StatsKPICards } from "./stats-kpi-cards";
 
-const StatsBarChart = dynamic(
-  () => import("./stats-bar-chart").then((m) => m.StatsBarChart),
-  { ssr: false },
-);
-const StatsPieChart = dynamic(
-  () => import("./stats-pie-chart").then((m) => m.StatsPieChart),
-  { ssr: false },
-);
+const StatsBarChart = dynamic(() => import("./stats-bar-chart").then((m) => m.StatsBarChart), {
+  ssr: false,
+});
+const StatsPieChart = dynamic(() => import("./stats-pie-chart").then((m) => m.StatsPieChart), {
+  ssr: false,
+});
 
 interface StatsSectionProps {
   projectId: string;
@@ -39,9 +32,7 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
   const trpc = useTRPC();
   const autoSyncTriggered = useRef(false);
 
-  const statsQuery = useQuery(
-    trpc.githubStats.getByProjectId.queryOptions({ projectId }),
-  );
+  const statsQuery = useQuery(trpc.githubStats.getByProjectId.queryOptions({ projectId }));
 
   const syncMutation = useMutation(
     trpc.githubStats.syncNow.mutationOptions({
@@ -64,21 +55,13 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
     if (statsQuery.isLoading) return;
 
     const isStale =
-      !syncLastSyncAt ||
-      Date.now() - new Date(syncLastSyncAt).getTime() > STALE_THRESHOLD_MS;
+      !syncLastSyncAt || Date.now() - new Date(syncLastSyncAt).getTime() > STALE_THRESHOLD_MS;
 
     if (isStale && syncStatus !== "syncing") {
       autoSyncTriggered.current = true;
       triggerSync({ projectId });
     }
-  }, [
-    hasGithubUrl,
-    statsQuery.isLoading,
-    syncLastSyncAt,
-    syncStatus,
-    projectId,
-    triggerSync,
-  ]);
+  }, [hasGithubUrl, statsQuery.isLoading, syncLastSyncAt, syncStatus, projectId, triggerSync]);
 
   if (statsQuery.isLoading) {
     return <StatsSkeletonUI />;
@@ -126,11 +109,7 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
             onClick={() => syncMutation.mutate({ projectId })}
             disabled={isSyncing}
           >
-            {isSyncing ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <RefreshCw className="size-4" />
-            )}
+            {isSyncing ? <Loader2 className="animate-spin" /> : <RefreshCw className="size-4" />}
             {isSyncing ? "Syncing…" : "Sync Now"}
           </Button>
         )}

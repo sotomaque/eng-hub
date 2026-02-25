@@ -15,12 +15,7 @@ import {
 } from "@workspace/ui/components/alert-dialog";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
 import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -61,10 +56,7 @@ function LinkRow({
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {tags.map((tag) => (
-              <Badge
-                key={tag}
-                className={cn("border-0 px-1.5 py-0 text-xs", getTagColor(tag))}
-              >
+              <Badge key={tag} className={cn("border-0 px-1.5 py-0 text-xs", getTagColor(tag))}>
                 {tag}
               </Badge>
             ))}
@@ -87,12 +79,7 @@ function LinkRow({
   );
 }
 
-export function LinksSection({
-  projectId,
-  links,
-  githubUrl,
-  gitlabUrl,
-}: LinksSectionProps) {
+export function LinksSection({ projectId, links, githubUrl, gitlabUrl }: LinksSectionProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -104,9 +91,7 @@ export function LinksSection({
 
   const filteredLinks =
     selectedTags.length > 0
-      ? links.filter((link) =>
-          selectedTags.some((tag) => link.tags?.includes(tag)),
-        )
+      ? links.filter((link) => selectedTags.some((tag) => link.tags?.includes(tag)))
       : links;
 
   const deleteMutation = useMutation(
@@ -181,11 +166,7 @@ export function LinksSection({
                 tags={link.tags}
                 actions={
                   <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(link.id)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(link.id)}>
                       <Pencil className="size-4" />
                       <span className="sr-only">Edit</span>
                     </Button>

@@ -22,10 +22,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  type CreatePersonInput,
-  createPersonSchema,
-} from "@/lib/validations/person";
+import { type CreatePersonInput, createPersonSchema } from "@/lib/validations/person";
 
 type PersonWithMemberships = {
   id: string;
@@ -58,18 +55,14 @@ export function PersonSheet({ person }: PersonSheetProps) {
   const searchParams = useSearchParams();
   const trpc = useTRPC();
   const isEditing = !!person;
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    person?.imageUrl ?? null,
-  );
+  const [imageUrl, setImageUrl] = useState<string | null>(person?.imageUrl ?? null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const emailManuallyEdited = useRef(isEditing);
 
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
   const departmentsQuery = useQuery(trpc.department.getAll.queryOptions());
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
-  const people = (peopleQuery.data ?? []).filter(
-    (p) => !person || p.id !== person.id,
-  );
+  const people = (peopleQuery.data ?? []).filter((p) => !person || p.id !== person.id);
   const departments = departmentsQuery.data ?? [];
   const allTitles = titlesQuery.data ?? [];
 
@@ -99,9 +92,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
 
   const selectedDepartmentId = watch("departmentId");
   const titles = selectedDepartmentId
-    ? allTitles.filter(
-        (t) => !t.departmentId || t.departmentId === selectedDepartmentId,
-      )
+    ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
     : allTitles;
 
   function handleTitleChange(titleId: string) {
@@ -118,10 +109,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     const currentTitleId = getValues("titleId");
     if (currentTitleId) {
       const currentTitle = allTitles.find((t) => t.id === currentTitleId);
-      if (
-        currentTitle?.departmentId &&
-        currentTitle.departmentId !== departmentId
-      ) {
+      if (currentTitle?.departmentId && currentTitle.departmentId !== departmentId) {
         setValue("titleId", "", { shouldDirty: true });
       }
     }
@@ -132,10 +120,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
     const fn = getValues("firstName");
     const ln = getValues("lastName");
     if (fn && ln) {
-      setValue(
-        "email",
-        `${fn.toLowerCase()}.${ln.toLowerCase()}@hypergiant.com`,
-      );
+      setValue("email", `${fn.toLowerCase()}.${ln.toLowerCase()}@hypergiant.com`);
     }
   }
 
@@ -186,16 +171,11 @@ export function PersonSheet({ person }: PersonSheetProps) {
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Person" : "Add Person"}</SheetTitle>
           <SheetDescription>
-            {isEditing
-              ? "Update this person's details."
-              : "Add a new person to the directory."}
+            {isEditing ? "Update this person's details." : "Add a new person to the directory."}
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <ImageUploader
               label="Photo"
@@ -203,9 +183,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
               onUploadComplete={(url) => setImageUrl(url)}
               onRemove={() => setImageUrl(null)}
               onUploadingChange={setIsImageUploading}
-              fallbackText={
-                person ? `${person.firstName[0]}${person.lastName[0]}` : ""
-              }
+              fallbackText={person ? `${person.firstName[0]}${person.lastName[0]}` : ""}
               shape="circle"
             />
 
@@ -219,9 +197,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                   aria-invalid={!!errors.firstName}
                 />
                 {errors.firstName && (
-                  <p className="text-destructive text-sm">
-                    {errors.firstName.message}
-                  </p>
+                  <p className="text-destructive text-sm">{errors.firstName.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -233,20 +209,14 @@ export function PersonSheet({ person }: PersonSheetProps) {
                   aria-invalid={!!errors.lastName}
                 />
                 {errors.lastName && (
-                  <p className="text-destructive text-sm">
-                    {errors.lastName.message}
-                  </p>
+                  <p className="text-destructive text-sm">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="callsign">Preferred Name</Label>
-              <Input
-                id="callsign"
-                placeholder="e.g. JJ, Bobby"
-                {...register("callsign")}
-              />
+              <Input id="callsign" placeholder="e.g. JJ, Bobby" {...register("callsign")} />
             </div>
 
             <div className="space-y-2">
@@ -262,11 +232,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                 })}
                 aria-invalid={!!errors.email}
               />
-              {errors.email && (
-                <p className="text-destructive text-sm">
-                  {errors.email.message}
-                </p>
-              )}
+              {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -284,9 +250,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       })),
                     ]}
                     value={field.value || "__none__"}
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
+                    onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
                     placeholder="Select manager…"
                     searchPlaceholder="Search people…"
                   />
@@ -311,9 +275,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       ]}
                       value={field.value || "__none__"}
                       onValueChange={(val) =>
-                        val === "__none__"
-                          ? field.onChange("")
-                          : handleTitleChange(val)
+                        val === "__none__" ? field.onChange("") : handleTitleChange(val)
                       }
                       placeholder="Select title…"
                       searchPlaceholder="Search titles…"
@@ -325,9 +287,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                   variant="link"
                   className="h-auto p-0 text-xs"
                   onClick={() => {
-                    const personParam = isEditing
-                      ? `edit=${person.id}`
-                      : "create=true";
+                    const personParam = isEditing ? `edit=${person.id}` : "create=true";
                     router.push(`/people?${personParam}&manageTitles=true`, {
                       scroll: false,
                     });
@@ -352,9 +312,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
                       ]}
                       value={field.value || "__none__"}
                       onValueChange={(val) =>
-                        val === "__none__"
-                          ? field.onChange("")
-                          : handleDepartmentChange(val)
+                        val === "__none__" ? field.onChange("") : handleDepartmentChange(val)
                       }
                       placeholder="Select department…"
                       searchPlaceholder="Search departments…"
@@ -366,15 +324,10 @@ export function PersonSheet({ person }: PersonSheetProps) {
                   variant="link"
                   className="h-auto p-0 text-xs"
                   onClick={() => {
-                    const personParam = isEditing
-                      ? `edit=${person.id}`
-                      : "create=true";
-                    router.push(
-                      `/people?${personParam}&manageDepartments=true`,
-                      {
-                        scroll: false,
-                      },
-                    );
+                    const personParam = isEditing ? `edit=${person.id}` : "create=true";
+                    router.push(`/people?${personParam}&manageDepartments=true`, {
+                      scroll: false,
+                    });
                   }}
                 >
                   Manage Departments
@@ -434,12 +387,7 @@ export function PersonSheet({ person }: PersonSheetProps) {
             )}
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button

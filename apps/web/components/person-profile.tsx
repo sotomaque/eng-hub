@@ -1,15 +1,6 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 import { ArrowLeft, Building2, Github } from "lucide-react";
 import Link from "next/link";
@@ -95,17 +86,11 @@ export function PersonProfile({ person }: PersonProfileProps) {
         </Avatar>
         <div className="space-y-1.5">
           <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
-          {person.callsign && (
-            <p className="text-muted-foreground text-lg">@{person.callsign}</p>
-          )}
+          {person.callsign && <p className="text-muted-foreground text-lg">@{person.callsign}</p>}
           <p className="text-muted-foreground text-sm">{person.email}</p>
           <div className="flex flex-wrap gap-2 pt-1">
-            {person.department && (
-              <Badge variant="secondary">{person.department.name}</Badge>
-            )}
-            {person.title && (
-              <Badge variant="outline">{person.title.name}</Badge>
-            )}
+            {person.department && <Badge variant="secondary">{person.department.name}</Badge>}
+            {person.title && <Badge variant="outline">{person.title.name}</Badge>}
           </div>
         </div>
       </div>
@@ -126,9 +111,7 @@ export function PersonProfile({ person }: PersonProfileProps) {
           </CardHeader>
           <CardContent>
             {person.projectMemberships.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Not assigned to any projects
-              </p>
+              <p className="text-muted-foreground text-sm">Not assigned to any projects</p>
             ) : (
               <ul className="space-y-3">
                 {person.projectMemberships.map((membership) => (
@@ -142,11 +125,7 @@ export function PersonProfile({ person }: PersonProfileProps) {
                     {membership.teamMemberships.length > 0 && (
                       <div className="mt-0.5 flex flex-wrap gap-1">
                         {membership.teamMemberships.map((tm) => (
-                          <Badge
-                            key={tm.team.name}
-                            variant="outline"
-                            className="text-xs"
-                          >
+                          <Badge key={tm.team.name} variant="outline" className="text-xs">
                             {tm.team.name}
                           </Badge>
                         ))}
@@ -189,9 +168,7 @@ export function PersonProfile({ person }: PersonProfileProps) {
                 </span>
               </Link>
             ) : (
-              <p className="text-muted-foreground text-sm">
-                No manager assigned
-              </p>
+              <p className="text-muted-foreground text-sm">No manager assigned</p>
             )}
           </CardContent>
         </Card>

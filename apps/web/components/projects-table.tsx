@@ -14,11 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Empty,
@@ -203,8 +199,7 @@ export function ProjectsTable({
     });
   }, [buildParams, router]);
 
-  const filterCount =
-    (status?.length ?? 0) + (type?.length ?? 0) + (favorite ? 1 : 0);
+  const filterCount = (status?.length ?? 0) + (type?.length ?? 0) + (favorite ? 1 : 0);
 
   const deleteMutation = useMutation(
     trpc.project.delete.mutationOptions({
@@ -246,31 +241,25 @@ export function ProjectsTable({
     () => [
       {
         id: "favorite",
-        header: () => <span className="sr-only">Favorite</span>,
-        cell: ({ row }) => (
-          <FavoriteButton
-            projectId={row.original.id}
-            isFavorited={row.original.isFavorited}
-          />
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="★" className="pl-2" />
         ),
-        enableSorting: false,
+        cell: ({ row }) => (
+          <FavoriteButton projectId={row.original.id} isFavorited={row.original.isFavorited} />
+        ),
         size: 40,
       },
       {
         id: "name",
         accessorFn: (row) => row.name,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Name" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
         cell: ({ row }) => {
           const project = row.original;
           return (
             <div className="flex items-center gap-2">
               <Avatar className="size-7 shrink-0 rounded-md">
                 <AvatarImage src={project.imageUrl ?? undefined} />
-                <AvatarFallback className="rounded-md text-xs">
-                  {project.name[0]}
-                </AvatarFallback>
+                <AvatarFallback className="rounded-md text-xs">{project.name[0]}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <Link
@@ -295,9 +284,7 @@ export function ProjectsTable({
       {
         id: "status",
         accessorFn: (row) => row.healthStatus ?? "NONE",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
           const value = row.getValue("status") as string;
           if (value === "NONE") {
@@ -311,12 +298,8 @@ export function ProjectsTable({
           const status = value as HealthStatus;
           return (
             <div className="flex items-center gap-1.5">
-              <span
-                className={`inline-block size-2.5 rounded-full ${HEALTH_STATUS_DOT[status]}`}
-              />
-              <span className="text-muted-foreground text-xs">
-                {HEALTH_STATUS_LABEL[status]}
-              </span>
+              <span className={`inline-block size-2.5 rounded-full ${HEALTH_STATUS_DOT[status]}`} />
+              <span className="text-muted-foreground text-xs">{HEALTH_STATUS_LABEL[status]}</span>
             </div>
           );
         },
@@ -326,11 +309,7 @@ export function ProjectsTable({
         id: "description",
         accessorFn: (row) => row.description ?? "",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Description"
-            className="hidden md:flex"
-          />
+          <DataTableColumnHeader column={column} title="Description" className="hidden md:flex" />
         ),
         cell: ({ row }) => (
           <span className="text-muted-foreground hidden max-w-[300px] truncate md:inline">
@@ -343,11 +322,7 @@ export function ProjectsTable({
         id: "updatedAt",
         accessorFn: (row) => row.updatedAt,
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Last Updated"
-            className="hidden sm:flex"
-          />
+          <DataTableColumnHeader column={column} title="Last Updated" className="hidden sm:flex" />
         ),
         cell: ({ row }) => {
           const date = row.getValue("updatedAt");
@@ -366,11 +341,7 @@ export function ProjectsTable({
           const project = row.original;
           return (
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleEdit(project.id)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(project.id)}>
                 <Pencil className="size-4" />
                 <span className="sr-only">Edit</span>
               </Button>
@@ -410,13 +381,7 @@ export function ProjectsTable({
     [handleEdit, handleDelete, deletingId],
   );
 
-  if (
-    projects.length === 0 &&
-    !search &&
-    !status?.length &&
-    !type?.length &&
-    !favorite
-  ) {
+  if (projects.length === 0 && !search && !status?.length && !type?.length && !favorite) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -458,13 +423,7 @@ export function ProjectsTable({
         </Button>
       </div>
 
-      <div
-        className={
-          isSearchPending
-            ? "opacity-60 transition-opacity"
-            : "transition-opacity"
-        }
-      >
+      <div className={isSearchPending ? "opacity-60 transition-opacity" : "transition-opacity"}>
         <DataTable
           columns={columns}
           data={projects}
@@ -505,11 +464,7 @@ export function ProjectsTable({
                 onClick={handleFavoriteToggle}
               >
                 <Star
-                  className={
-                    favorite
-                      ? "size-3.5 fill-yellow-400 text-yellow-400"
-                      : "size-3.5"
-                  }
+                  className={favorite ? "size-3.5 fill-yellow-400 text-yellow-400" : "size-3.5"}
                 />
                 Favorites
               </Button>

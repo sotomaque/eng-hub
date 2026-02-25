@@ -1,18 +1,13 @@
 import type { PrismaClient } from "@workspace/db";
 
-type TransactionClient = Parameters<
-  Parameters<PrismaClient["$transaction"]>[0]
->[0];
+type TransactionClient = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
 
 /**
  * Rebuilds the active arrangement's teams and assignments from the current
  * live Team / TeamMembership state. Called after every live-team mutation so
  * the active arrangement stays in sync.
  */
-export async function syncLiveToActiveArrangement(
-  tx: TransactionClient,
-  projectId: string,
-) {
+export async function syncLiveToActiveArrangement(tx: TransactionClient, projectId: string) {
   const active = await tx.teamArrangement.findFirst({
     where: { projectId, isActive: true },
   });

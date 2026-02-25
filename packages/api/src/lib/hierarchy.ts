@@ -5,9 +5,7 @@ const MAX_DEPTH = 50;
 /**
  * Resolve a Clerk userId to a Person ID.
  */
-export async function resolveClerkPerson(
-  clerkUserId: string,
-): Promise<string | null> {
+export async function resolveClerkPerson(clerkUserId: string): Promise<string | null> {
   const viewer = await db.person.findUnique({
     where: { clerkUserId },
     select: { id: true },
@@ -36,12 +34,10 @@ async function getManagementChain(personId: string): Promise<string[]> {
     visited.add(currentId);
     depth++;
 
-    const row: { managerId: string | null } | null = await db.person.findUnique(
-      {
-        where: { id: currentId },
-        select: { managerId: true },
-      },
-    );
+    const row: { managerId: string | null } | null = await db.person.findUnique({
+      where: { id: currentId },
+      select: { managerId: true },
+    });
     currentId = row?.managerId ?? null;
   }
 
@@ -51,10 +47,7 @@ async function getManagementChain(personId: string): Promise<string[]> {
 /**
  * Check if a Clerk userId is in the management chain above a given person.
  */
-export async function isInManagementChain(
-  clerkUserId: string,
-  personId: string,
-): Promise<boolean> {
+export async function isInManagementChain(clerkUserId: string, personId: string): Promise<boolean> {
   const viewerId = await resolveClerkPerson(clerkUserId);
   if (!viewerId) return false;
 
@@ -67,10 +60,7 @@ export async function isInManagementChain(
  * Access is granted if the user is in the management chain above the person,
  * OR if the person's direct manager has granted the user a visibility grant.
  */
-export async function canViewMeetings(
-  clerkUserId: string,
-  personId: string,
-): Promise<boolean> {
+export async function canViewMeetings(clerkUserId: string, personId: string): Promise<boolean> {
   const inChain = await isInManagementChain(clerkUserId, personId);
   if (inChain) return true;
 

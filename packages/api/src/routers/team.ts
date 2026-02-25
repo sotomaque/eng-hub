@@ -14,11 +14,9 @@ export const teamRouter = createTRPCRouter({
       });
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      return db.team.findUnique({ where: { id: input.id } });
-    }),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return db.team.findUnique({ where: { id: input.id } });
+  }),
 
   create: protectedProcedure
     .input(
@@ -70,17 +68,15 @@ export const teamRouter = createTRPCRouter({
       return result;
     }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      const result = await db.$transaction(async (tx) => {
-        const team = await tx.team.findUniqueOrThrow({
-          where: { id: input.id },
-        });
-        await tx.team.delete({ where: { id: input.id } });
-        await syncLiveToActiveArrangement(tx, team.projectId);
-        return team;
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    const result = await db.$transaction(async (tx) => {
+      const team = await tx.team.findUniqueOrThrow({
+        where: { id: input.id },
       });
-      return result;
-    }),
+      await tx.team.delete({ where: { id: input.id } });
+      await syncLiveToActiveArrangement(tx, team.projectId);
+      return team;
+    });
+    return result;
+  }),
 });

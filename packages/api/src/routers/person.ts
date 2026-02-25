@@ -82,22 +82,17 @@ const updatePersonSchema = createPersonSchema.extend({
   id: z.string(),
 });
 
-async function detectCycle(
-  personId: string,
-  newManagerId: string,
-): Promise<boolean> {
+async function detectCycle(personId: string, newManagerId: string): Promise<boolean> {
   let currentId: string | null = newManagerId;
   const visited = new Set<string>();
   while (currentId) {
     if (currentId === personId) return true;
     if (visited.has(currentId)) break;
     visited.add(currentId);
-    const row: { managerId: string | null } | null = await db.person.findUnique(
-      {
-        where: { id: currentId },
-        select: { managerId: true },
-      },
-    );
+    const row: { managerId: string | null } | null = await db.person.findUnique({
+      where: { id: currentId },
+      select: { managerId: true },
+    });
     currentId = row?.managerId ?? null;
   }
   return false;
@@ -120,10 +115,7 @@ export const personRouter = createTRPCRouter({
         departments: z.array(z.string()).optional(),
         projects: z.array(z.string()).optional(),
         multiProject: z.boolean().optional(),
-        sortBy: z
-          .enum(["name", "email", "department"])
-          .optional()
-          .default("name"),
+        sortBy: z.enum(["name", "email", "department"]).optional().default("name"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
       }),
     )
@@ -182,10 +174,7 @@ export const personRouter = createTRPCRouter({
       const orderByMap: Record<string, object[]> = {
         name: [{ lastName: input.sortOrder }, { firstName: input.sortOrder }],
         email: [{ email: input.sortOrder }],
-        department: [
-          { department: { name: input.sortOrder } },
-          { lastName: "asc" },
-        ],
+        department: [{ department: { name: input.sortOrder } }, { lastName: "asc" }],
       };
       const orderBy = orderByMap[input.sortBy] ?? orderByMap.name;
 
@@ -202,109 +191,100 @@ export const personRouter = createTRPCRouter({
       return { items, totalCount };
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      return db.person.findUnique({
-        where: { id: input.id },
-        include: personInclude,
-      });
-    }),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return db.person.findUnique({
+      where: { id: input.id },
+      include: personInclude,
+    });
+  }),
 
-  create: protectedProcedure
-    .input(createPersonSchema)
-    .mutation(async ({ ctx, input }) => {
-      const managerId = input.managerId || null;
-      const person = await db.person.create({
+  create: protectedProcedure.input(createPersonSchema).mutation(async ({ ctx, input }) => {
+    const managerId = input.managerId || null;
+    const person = await db.person.create({
+      data: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        callsign: input.callsign || null,
+        email: input.email,
+        githubUsername: input.githubUsername || null,
+        gitlabUsername: input.gitlabUsername || null,
+        imageUrl: input.imageUrl || null,
+        managerId,
+        departmentId: input.departmentId || null,
+        titleId: input.titleId || null,
+      },
+    });
+
+    if (managerId) {
+      await db.managerChange.create({
         data: {
-          firstName: input.firstName,
-          lastName: input.lastName,
-          callsign: input.callsign || null,
-          email: input.email,
-          githubUsername: input.githubUsername || null,
-          gitlabUsername: input.gitlabUsername || null,
-          imageUrl: input.imageUrl || null,
-          managerId,
-          departmentId: input.departmentId || null,
-          titleId: input.titleId || null,
+          personId: person.id,
+          oldManagerId: null,
+          newManagerId: managerId,
+          changedBy: ctx.userId,
         },
       });
+    }
 
-      if (managerId) {
-        await db.managerChange.create({
-          data: {
-            personId: person.id,
-            oldManagerId: null,
-            newManagerId: managerId,
-            changedBy: ctx.userId,
-          },
+    return person;
+  }),
+
+  update: protectedProcedure.input(updatePersonSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input;
+    const newManagerId = data.managerId || null;
+
+    // Get current state
+    const current = await db.person.findUniqueOrThrow({
+      where: { id },
+      select: { managerId: true },
+    });
+
+    // Cycle detection
+    if (newManagerId && newManagerId !== current.managerId) {
+      const hasCycle = await detectCycle(id, newManagerId);
+      if (hasCycle) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot set this manager — it would create a circular reporting chain.",
         });
       }
+    }
 
-      return person;
-    }),
+    const person = await db.person.update({
+      where: { id },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        callsign: data.callsign || null,
+        email: data.email,
+        githubUsername: data.githubUsername || null,
+        gitlabUsername: data.gitlabUsername || null,
+        imageUrl: data.imageUrl || null,
+        managerId: newManagerId,
+        departmentId: data.departmentId || null,
+        titleId: data.titleId || null,
+      },
+    });
 
-  update: protectedProcedure
-    .input(updatePersonSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      const newManagerId = data.managerId || null;
-
-      // Get current state
-      const current = await db.person.findUniqueOrThrow({
-        where: { id },
-        select: { managerId: true },
-      });
-
-      // Cycle detection
-      if (newManagerId && newManagerId !== current.managerId) {
-        const hasCycle = await detectCycle(id, newManagerId);
-        if (hasCycle) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message:
-              "Cannot set this manager — it would create a circular reporting chain.",
-          });
-        }
-      }
-
-      const person = await db.person.update({
-        where: { id },
+    // Log manager change if it changed
+    const managerChanged = newManagerId !== current.managerId;
+    if (managerChanged) {
+      await db.managerChange.create({
         data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          callsign: data.callsign || null,
-          email: data.email,
-          githubUsername: data.githubUsername || null,
-          gitlabUsername: data.gitlabUsername || null,
-          imageUrl: data.imageUrl || null,
-          managerId: newManagerId,
-          departmentId: data.departmentId || null,
-          titleId: data.titleId || null,
+          personId: id,
+          oldManagerId: current.managerId,
+          newManagerId,
+          changedBy: ctx.userId,
         },
       });
+    }
 
-      // Log manager change if it changed
-      const managerChanged = newManagerId !== current.managerId;
-      if (managerChanged) {
-        await db.managerChange.create({
-          data: {
-            personId: id,
-            oldManagerId: current.managerId,
-            newManagerId,
-            changedBy: ctx.userId,
-          },
-        });
-      }
+    return person;
+  }),
 
-      return person;
-    }),
-
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      return db.person.delete({ where: { id: input.id } });
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    return db.person.delete({ where: { id: input.id } });
+  }),
 
   joinProject: protectedProcedure
     .input(

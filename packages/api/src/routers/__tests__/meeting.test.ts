@@ -18,9 +18,7 @@ mock.module("@clerk/nextjs/server", () => ({
 const mockPersonFindUnique = mock(() => Promise.resolve(null as unknown));
 const mockMeetingFindMany = mock(() => Promise.resolve([] as unknown[]));
 const mockMeetingFindUnique = mock(() => Promise.resolve(null as unknown));
-const mockMeetingCreate = mock(() =>
-  Promise.resolve({ id: "meeting-1" } as unknown),
-);
+const mockMeetingCreate = mock(() => Promise.resolve({ id: "meeting-1" } as unknown));
 
 mock.module("@workspace/db", () => ({
   db: {
@@ -175,9 +173,7 @@ describe("meeting.getById", () => {
   });
 
   test("returns meeting when viewer is the author (no chain check)", async () => {
-    mockMeetingFindUnique.mockResolvedValue(
-      makeMeeting({ authorId: "clerk-user-1" }),
-    );
+    mockMeetingFindUnique.mockResolvedValue(makeMeeting({ authorId: "clerk-user-1" }));
 
     const result = await caller.getById({ id: "meeting-1" });
 
@@ -186,9 +182,7 @@ describe("meeting.getById", () => {
   });
 
   test("throws FORBIDDEN when viewer is not author AND not in chain", async () => {
-    mockMeetingFindUnique.mockResolvedValue(
-      makeMeeting({ authorId: "other-user" }),
-    );
+    mockMeetingFindUnique.mockResolvedValue(makeMeeting({ authorId: "other-user" }));
     mockCanViewMeetings.mockResolvedValue(false);
 
     await expect(caller.getById({ id: "meeting-1" })).rejects.toThrow(
@@ -199,18 +193,13 @@ describe("meeting.getById", () => {
   });
 
   test("returns meeting when viewer is not author but has chain access", async () => {
-    mockMeetingFindUnique.mockResolvedValue(
-      makeMeeting({ authorId: "other-user" }),
-    );
+    mockMeetingFindUnique.mockResolvedValue(makeMeeting({ authorId: "other-user" }));
     mockCanViewMeetings.mockResolvedValue(true);
 
     const result = await caller.getById({ id: "meeting-1" });
 
     expect(result.id).toBe("meeting-1");
-    expect(mockCanViewMeetings).toHaveBeenCalledWith(
-      "clerk-user-1",
-      "person-1",
-    );
+    expect(mockCanViewMeetings).toHaveBeenCalledWith("clerk-user-1", "person-1");
   });
 
   test("throws NOT_FOUND when meeting does not exist", async () => {

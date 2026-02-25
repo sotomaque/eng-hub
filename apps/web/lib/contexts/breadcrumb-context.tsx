@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
 
 interface BreadcrumbContextValue {
   title: string | null;
@@ -23,9 +17,7 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
   const setTitle = useCallback((t: string | null) => setTitleRaw(t), []);
 
   return (
-    <BreadcrumbContext.Provider value={{ title, setTitle }}>
-      {children}
-    </BreadcrumbContext.Provider>
+    <BreadcrumbContext.Provider value={{ title, setTitle }}>{children}</BreadcrumbContext.Provider>
   );
 }
 

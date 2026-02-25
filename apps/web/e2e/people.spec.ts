@@ -24,14 +24,10 @@ test.describe("People directory", () => {
 
   test("add person button is visible", async ({ page }) => {
     await page.goto("/people");
-    await expect(
-      page.getByRole("button", { name: /add person/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /add person/i })).toBeVisible();
   });
 
-  test("search filter is preserved when opening and closing edit sheet", async ({
-    page,
-  }) => {
+  test("search filter is preserved when opening and closing edit sheet", async ({ page }) => {
     await page.goto("/people");
     await page.getByPlaceholder(/search people/i).fill("Alice");
     await page.waitForURL(/search=Alice/);

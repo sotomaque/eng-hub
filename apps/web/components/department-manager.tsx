@@ -9,11 +9,7 @@ import {
 } from "@workspace/ui/components/accordion";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -21,14 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import {
-  ArrowDown,
-  ArrowUp,
-  Loader2,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
@@ -157,11 +146,7 @@ export function DepartmentManager() {
     return result;
   }
 
-  function handleMoveTitleInDept(
-    dept: Department,
-    titleIndex: number,
-    direction: "up" | "down",
-  ) {
+  function handleMoveTitleInDept(dept: Department, titleIndex: number, direction: "up" | "down") {
     const swapIdx = direction === "up" ? titleIndex - 1 : titleIndex + 1;
     const ids = dept.titles.map((t) => t.id);
     if (swapIdx < 0 || swapIdx >= ids.length) return;
@@ -238,12 +223,8 @@ export function DepartmentManager() {
                       index={titleIdx}
                       totalCount={dept.titles.length}
                       departments={departments}
-                      onMoveUp={() =>
-                        handleMoveTitleInDept(dept, titleIdx, "up")
-                      }
-                      onMoveDown={() =>
-                        handleMoveTitleInDept(dept, titleIdx, "down")
-                      }
+                      onMoveUp={() => handleMoveTitleInDept(dept, titleIdx, "up")}
+                      onMoveDown={() => handleMoveTitleInDept(dept, titleIdx, "down")}
                       onUpdate={(name, departmentId) =>
                         updateTitleMutation.mutate({
                           id: title.id,
@@ -251,9 +232,7 @@ export function DepartmentManager() {
                           departmentId,
                         })
                       }
-                      onDelete={() =>
-                        deleteTitleMutation.mutate({ id: title.id })
-                      }
+                      onDelete={() => deleteTitleMutation.mutate({ id: title.id })}
                     />
                   ))}
                   {dept.titles.length === 0 && (
@@ -296,8 +275,8 @@ export function DepartmentManager() {
         <div className="space-y-2">
           <h3 className="text-sm font-medium">Unassigned Titles</h3>
           <p className="text-muted-foreground text-xs">
-            These titles are not assigned to any department. Use the department
-            selector to assign them.
+            These titles are not assigned to any department. Use the department selector to assign
+            them.
           </p>
           <div className="space-y-1">
             {unassignedTitles.map((title) => (
@@ -403,12 +382,7 @@ function InlineEditButton({
         <Button size="sm" className="h-7" onClick={handleSave}>
           Save
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7"
-          onClick={() => setIsEditing(false)}
-        >
+        <Button size="sm" variant="outline" className="h-7" onClick={() => setIsEditing(false)}>
           Cancel
         </Button>
       </div>
@@ -565,12 +539,7 @@ function AddItemButton({
           className="h-8 flex-1"
           autoFocus
         />
-        <Button
-          size="sm"
-          className="h-8"
-          onClick={handleSubmit}
-          disabled={isPending}
-        >
+        <Button size="sm" className="h-8" onClick={handleSubmit} disabled={isPending}>
           {isPending && <Loader2 className="animate-spin" />}
           Add
         </Button>
@@ -590,12 +559,7 @@ function AddItemButton({
   }
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="mt-1"
-      onClick={() => setIsAdding(true)}
-    >
+    <Button variant="outline" size="sm" className="mt-1" onClick={() => setIsAdding(true)}>
       <Plus className="size-3.5" />
       {label}
     </Button>

@@ -50,27 +50,24 @@ export function ActivateArrangementDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Activate &quot;{arrangementName}&quot;?
-          </AlertDialogTitle>
+          <AlertDialogTitle>Activate &quot;{arrangementName}&quot;?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will replace the current live team structure with the teams and
-            assignments from this arrangement.
+            This will replace the current live team structure with the teams and assignments from
+            this arrangement.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <div className="space-y-1 rounded-md bg-muted p-3 text-sm">
           <p>
-            <strong>{teamCount}</strong> {teamCount === 1 ? "team" : "teams"}{" "}
-            will be created
+            <strong>{teamCount}</strong> {teamCount === 1 ? "team" : "teams"} will be created
           </p>
           <p>
-            <strong>{assignedCount}</strong>{" "}
-            {assignedCount === 1 ? "member" : "members"} will be assigned
+            <strong>{assignedCount}</strong> {assignedCount === 1 ? "member" : "members"} will be
+            assigned
           </p>
           <p className="text-muted-foreground text-xs">
-            Existing live teams will be replaced. Members not in this
-            arrangement will become unassigned.
+            Existing live teams will be replaced. Members not in this arrangement will become
+            unassigned.
           </p>
         </div>
 

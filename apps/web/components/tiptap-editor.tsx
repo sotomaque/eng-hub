@@ -46,13 +46,7 @@ interface ToolbarButtonProps {
   children: React.ReactNode;
 }
 
-function ToolbarButton({
-  onClick,
-  isActive,
-  disabled,
-  tooltip,
-  children,
-}: ToolbarButtonProps) {
+function ToolbarButton({ onClick, isActive, disabled, tooltip, children }: ToolbarButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -111,14 +105,12 @@ export function TiptapEditor({
         },
         blockquote: {
           HTMLAttributes: {
-            class:
-              "border-l-4 border-primary pl-4 italic text-muted-foreground",
+            class: "border-l-4 border-primary pl-4 italic text-muted-foreground",
           },
         },
         codeBlock: {
           HTMLAttributes: {
-            class:
-              "rounded-lg bg-muted border p-4 font-mono text-sm overflow-x-auto",
+            class: "rounded-lg bg-muted border p-4 font-mono text-sm overflow-x-auto",
           },
         },
         code: {
@@ -235,27 +227,21 @@ export function TiptapEditor({
             <Separator orientation="vertical" className="mx-1 h-6" />
 
             <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 1 }).run()
-              }
+              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
               isActive={editor.isActive("heading", { level: 1 })}
               tooltip="Heading 1"
             >
               <Heading1 className="size-4" />
             </ToolbarButton>
             <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run()
-              }
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
               isActive={editor.isActive("heading", { level: 2 })}
               tooltip="Heading 2"
             >
               <Heading2 className="size-4" />
             </ToolbarButton>
             <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run()
-              }
+              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
               isActive={editor.isActive("heading", { level: 3 })}
               tooltip="Heading 3"
             >
@@ -372,8 +358,7 @@ export function TiptapEditor({
               onClick={() => editor.chain().focus().toggleUnderline().run()}
               className={cn(
                 "p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
-                editor.isActive("underline") &&
-                  "bg-accent text-accent-foreground",
+                editor.isActive("underline") && "bg-accent text-accent-foreground",
               )}
             >
               <Underline className="size-4" />
@@ -403,8 +388,7 @@ export function TiptapEditor({
               onClick={() => editor.chain().focus().toggleHighlight().run()}
               className={cn(
                 "p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
-                editor.isActive("highlight") &&
-                  "bg-accent text-accent-foreground",
+                editor.isActive("highlight") && "bg-accent text-accent-foreground",
               )}
             >
               <Highlighter className="size-4" />

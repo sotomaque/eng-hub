@@ -115,27 +115,18 @@ export function KeyResultsEditor({
       targetValue: kr.targetValue,
       currentValue: num,
       unit: kr.unit ?? undefined,
-      status: kr.status as
-        | "NOT_STARTED"
-        | "IN_PROGRESS"
-        | "COMPLETED"
-        | "AT_RISK",
+      status: kr.status as "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "AT_RISK",
     });
   }
 
-  const deletingId = deleteMutation.isPending
-    ? (deleteMutation.variables?.id ?? null)
-    : null;
+  const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
 
   return (
     <div className="space-y-3">
       {keyResults.map((kr) => {
         const pct =
           kr.targetValue > 0
-            ? Math.min(
-                Math.round((kr.currentValue / kr.targetValue) * 100),
-                100,
-              )
+            ? Math.min(Math.round((kr.currentValue / kr.targetValue) * 100), 100)
             : 0;
         return (
           <div key={kr.id} className="space-y-1.5 rounded-md border p-2.5">
@@ -173,10 +164,7 @@ export function KeyResultsEditor({
                 onBlur={(e) => handleUpdateCurrentValue(kr, e.target.value)}
                 placeholder="Current"
               />
-              <Select
-                value={kr.status}
-                onValueChange={(v) => handleUpdateStatus(kr, v)}
-              >
+              <Select value={kr.status} onValueChange={(v) => handleUpdateStatus(kr, v)}>
                 <SelectTrigger className="h-7 flex-1 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -221,18 +209,11 @@ export function KeyResultsEditor({
               type="button"
               size="sm"
               onClick={handleAdd}
-              disabled={
-                createMutation.isPending || !newTitle.trim() || !newTarget
-              }
+              disabled={createMutation.isPending || !newTitle.trim() || !newTarget}
             >
               Add
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowAddForm(false)}
-            >
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowAddForm(false)}>
               Cancel
             </Button>
           </div>

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -91,22 +87,15 @@ export function ProjectSidebar({
                 <Link href={basePath}>
                   <Avatar className="size-8 shrink-0 rounded-md">
                     <AvatarImage src={projectImageUrl ?? undefined} />
-                    <AvatarFallback className="rounded-md text-sm">
-                      {projectName[0]}
-                    </AvatarFallback>
+                    <AvatarFallback className="rounded-md text-sm">{projectName[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none">
                     <span className="font-semibold">{projectName}</span>
-                    <span className="text-muted-foreground text-xs">
-                      Project
-                    </span>
+                    <span className="text-muted-foreground text-xs">Project</span>
                   </div>
                 </Link>
               </SidebarMenuButton>
-              <FavoriteButton
-                projectId={projectId}
-                isFavorited={isFavorited ?? false}
-              />
+              <FavoriteButton projectId={projectId} isFavorited={isFavorited ?? false} />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -148,9 +137,7 @@ export function ProjectSidebar({
         )}
         {owners && owners.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>
-              {owners.length === 1 ? "Owner" : "Owners"}
-            </SidebarGroupLabel>
+            <SidebarGroupLabel>{owners.length === 1 ? "Owner" : "Owners"}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {owners.map((owner) => (

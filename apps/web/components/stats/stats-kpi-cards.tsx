@@ -1,17 +1,7 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
-  GitCommitHorizontal,
-  GitMerge,
-  MessageSquare,
-  Users,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { GitCommitHorizontal, GitMerge, MessageSquare, Users } from "lucide-react";
 import type { ContributorStatsData } from "@/lib/tiers";
 
 interface StatsKPICardsProps {

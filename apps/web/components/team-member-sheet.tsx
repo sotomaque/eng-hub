@@ -23,10 +23,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  type CreateTeamMemberInput,
-  createTeamMemberSchema,
-} from "@/lib/validations/team-member";
+import { type CreateTeamMemberInput, createTeamMemberSchema } from "@/lib/validations/team-member";
 
 interface TeamMemberSheetProps {
   projectId: string;
@@ -53,17 +50,13 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!member;
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    member?.person.imageUrl ?? null,
-  );
+  const [imageUrl, setImageUrl] = useState<string | null>(member?.person.imageUrl ?? null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const emailManuallyEdited = useRef(isEditing);
   const [selectedPersonId, setSelectedPersonId] = useState("");
 
   const departmentsQuery = useQuery(trpc.department.getAll.queryOptions());
-  const teamsQuery = useQuery(
-    trpc.team.getByProjectId.queryOptions({ projectId }),
-  );
+  const teamsQuery = useQuery(trpc.team.getByProjectId.queryOptions({ projectId }));
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
 
@@ -99,9 +92,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
 
   const selectedDepartmentId = watch("departmentId");
   const filteredTitles = selectedDepartmentId
-    ? allTitles.filter(
-        (t) => !t.departmentId || t.departmentId === selectedDepartmentId,
-      )
+    ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
     : allTitles;
 
   function handleTitleChange(titleId: string) {
@@ -117,10 +108,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     const currentTitleId = getValues("titleId");
     if (currentTitleId) {
       const currentTitle = allTitles.find((t) => t.id === currentTitleId);
-      if (
-        currentTitle?.departmentId &&
-        currentTitle.departmentId !== departmentId
-      ) {
+      if (currentTitle?.departmentId && currentTitle.departmentId !== departmentId) {
         setValue("titleId", "", { shouldDirty: true });
       }
     }
@@ -131,10 +119,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     const fn = getValues("firstName");
     const ln = getValues("lastName");
     if (fn && ln) {
-      setValue(
-        "email",
-        `${fn.toLowerCase()}.${ln.toLowerCase()}@hypergiant.com`,
-      );
+      setValue("email", `${fn.toLowerCase()}.${ln.toLowerCase()}@hypergiant.com`);
     }
   }
 
@@ -216,10 +201,8 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
       shouldDirty: true,
     });
     setValue("managerId", person.managerId ?? "", { shouldDirty: true });
-    if (person.departmentId)
-      setValue("departmentId", person.departmentId, { shouldDirty: true });
-    if (person.titleId)
-      setValue("titleId", person.titleId, { shouldDirty: true });
+    if (person.departmentId) setValue("departmentId", person.departmentId, { shouldDirty: true });
+    if (person.titleId) setValue("titleId", person.titleId, { shouldDirty: true });
     emailManuallyEdited.current = true;
     setImageUrl(person.imageUrl);
   }
@@ -228,9 +211,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>
-            {isEditing ? "Edit Team Member" : "Add Team Member"}
-          </SheetTitle>
+          <SheetTitle>{isEditing ? "Edit Team Member" : "Add Team Member"}</SheetTitle>
           <SheetDescription>
             {isEditing
               ? "Update the team member details."
@@ -238,10 +219,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             {!isEditing && (
               <div className="space-y-2">
@@ -258,8 +236,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   emptyMessage="No people available."
                 />
                 <p className="text-muted-foreground text-xs">
-                  Select an existing person, or fill in the details below to
-                  create a new one.
+                  Select an existing person, or fill in the details below to create a new one.
                 </p>
               </div>
             )}
@@ -271,9 +248,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
               onRemove={() => setImageUrl(null)}
               onUploadingChange={setIsImageUploading}
               fallbackText={
-                member
-                  ? `${member.person.firstName[0]}${member.person.lastName[0]}`
-                  : ""
+                member ? `${member.person.firstName[0]}${member.person.lastName[0]}` : ""
               }
               shape="circle"
             />
@@ -289,9 +264,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   disabled={!!selectedPersonId}
                 />
                 {errors.firstName && (
-                  <p className="text-destructive text-sm">
-                    {errors.firstName.message}
-                  </p>
+                  <p className="text-destructive text-sm">{errors.firstName.message}</p>
                 )}
               </div>
 
@@ -305,9 +278,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                   disabled={!!selectedPersonId}
                 />
                 {errors.lastName && (
-                  <p className="text-destructive text-sm">
-                    {errors.lastName.message}
-                  </p>
+                  <p className="text-destructive text-sm">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
@@ -336,11 +307,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 aria-invalid={!!errors.email}
                 disabled={!!selectedPersonId}
               />
-              {errors.email && (
-                <p className="text-destructive text-sm">
-                  {errors.email.message}
-                </p>
-              )}
+              {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -359,9 +326,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     ]}
                     value={field.value || "__none__"}
                     onValueChange={(val) =>
-                      val === "__none__"
-                        ? field.onChange("")
-                        : handleTitleChange(val)
+                      val === "__none__" ? field.onChange("") : handleTitleChange(val)
                     }
                     placeholder="Select title…"
                     searchPlaceholder="Search titles…"
@@ -373,13 +338,10 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 variant="link"
                 className="h-auto p-0 text-xs"
                 onClick={() => {
-                  const memberParam = isEditing
-                    ? `editMember=${member.id}`
-                    : "addMember=true";
-                  router.push(
-                    `/projects/${projectId}/team?${memberParam}&manageTitles=true`,
-                    { scroll: false },
-                  );
+                  const memberParam = isEditing ? `editMember=${member.id}` : "addMember=true";
+                  router.push(`/projects/${projectId}/team?${memberParam}&manageTitles=true`, {
+                    scroll: false,
+                  });
                 }}
               >
                 Manage Titles
@@ -402,9 +364,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                     ]}
                     value={field.value || "__none__"}
                     onValueChange={(val) =>
-                      val === "__none__"
-                        ? field.onChange("")
-                        : handleDepartmentChange(val)
+                      val === "__none__" ? field.onChange("") : handleDepartmentChange(val)
                     }
                     placeholder="Select department…"
                     searchPlaceholder="Search departments…"
@@ -412,22 +372,17 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                 )}
               />
               {errors.departmentId && (
-                <p className="text-destructive text-sm">
-                  {errors.departmentId.message}
-                </p>
+                <p className="text-destructive text-sm">{errors.departmentId.message}</p>
               )}
               <Button
                 type="button"
                 variant="link"
                 className="h-auto p-0 text-xs"
                 onClick={() => {
-                  const memberParam = isEditing
-                    ? `editMember=${member.id}`
-                    : "addMember=true";
-                  router.push(
-                    `/projects/${projectId}/team?${memberParam}&manageDepartments=true`,
-                    { scroll: false },
-                  );
+                  const memberParam = isEditing ? `editMember=${member.id}` : "addMember=true";
+                  router.push(`/projects/${projectId}/team?${memberParam}&manageDepartments=true`, {
+                    scroll: false,
+                  });
                 }}
               >
                 Manage Departments
@@ -449,9 +404,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
                       })),
                     ]}
                     value={field.value || "__none__"}
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
+                    onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
                     placeholder="Select manager…"
                     searchPlaceholder="Search people…"
                   />
@@ -519,12 +472,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
             </div>
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button

@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import {
   Table,
   TableBody,
@@ -21,11 +12,7 @@ import {
 } from "@workspace/ui/components/table";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import {
-  assignTiers,
-  type ContributorStatsData,
-  tierConfig,
-} from "@/lib/tiers";
+import { assignTiers, type ContributorStatsData, tierConfig } from "@/lib/tiers";
 
 interface StatsDataTableProps {
   stats: ContributorStatsData[];
@@ -80,16 +67,12 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
 
               return (
                 <TableRow key={s.id}>
-                  <TableCell className="text-muted-foreground font-medium">
-                    {i + 1}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground font-medium">{i + 1}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="size-6">
                         <AvatarImage src={member?.imageUrl ?? undefined} />
-                        <AvatarFallback className="text-xs">
-                          {name[0]}
-                        </AvatarFallback>
+                        <AvatarFallback className="text-xs">{name[0]}</AvatarFallback>
                       </Avatar>
                       {member ? (
                         <Link
@@ -124,18 +107,10 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
                       recent={s.recentWeeklyCommits}
                     />
                   </TableCell>
-                  <TableCell className="text-right">
-                    {s.commits.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {s.prsOpened.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {s.prsMerged.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {s.reviewsDone.toLocaleString()}
-                  </TableCell>
+                  <TableCell className="text-right">{s.commits.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{s.prsOpened.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{s.prsMerged.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{s.reviewsDone.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <span className="text-green-600 dark:text-green-400">
                       +{s.additions.toLocaleString()}
@@ -155,15 +130,7 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
   );
 }
 
-function TrendIndicator({
-  trend,
-  avg,
-  recent,
-}: {
-  trend: string;
-  avg: number;
-  recent: number;
-}) {
+function TrendIndicator({ trend, avg, recent }: { trend: string; avg: number; recent: number }) {
   const pctChange = avg > 0 ? Math.round(((recent - avg) / avg) * 100) : 0;
 
   if (trend === "up") {

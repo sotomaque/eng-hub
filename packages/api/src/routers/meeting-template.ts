@@ -17,26 +17,24 @@ export const meetingTemplateRouter = createTRPCRouter({
     });
   }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const template = await db.meetingTemplate.findUnique({
-        where: { id: input.id },
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    const template = await db.meetingTemplate.findUnique({
+      where: { id: input.id },
+    });
+    if (!template) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Template not found.",
       });
-      if (!template) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Template not found.",
-        });
-      }
-      return {
-        id: template.id,
-        name: template.name,
-        description: template.description,
-        content: template.content as Record<string, unknown>,
-        authorId: template.authorId,
-      };
-    }),
+    }
+    return {
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      content: template.content as Record<string, unknown>,
+      authorId: template.authorId,
+    };
+  }),
 
   create: protectedProcedure
     .input(

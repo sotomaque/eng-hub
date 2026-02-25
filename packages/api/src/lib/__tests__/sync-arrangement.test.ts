@@ -138,9 +138,7 @@ describe("syncLiveToActiveArrangement", () => {
       { teamId: "team-b", teamMemberId: "m2" },
       { teamId: "team-b", teamMemberId: "m3" },
     ]);
-    mockCreate
-      .mockResolvedValueOnce({ id: "arr-a" })
-      .mockResolvedValueOnce({ id: "arr-b" });
+    mockCreate.mockResolvedValueOnce({ id: "arr-a" }).mockResolvedValueOnce({ id: "arr-b" });
 
     await syncLiveToActiveArrangement(makeTx(), "proj-1");
 

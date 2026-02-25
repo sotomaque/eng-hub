@@ -82,12 +82,7 @@ describe("createQuarterlyGoalSchema", () => {
   });
 
   test("accepts all valid statuses", () => {
-    for (const status of [
-      "NOT_STARTED",
-      "IN_PROGRESS",
-      "COMPLETED",
-      "AT_RISK",
-    ] as const) {
+    for (const status of ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"] as const) {
       const result = createQuarterlyGoalSchema.safeParse({
         ...validInput,
         status,

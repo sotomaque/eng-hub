@@ -6,11 +6,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -38,10 +34,7 @@ import { toast } from "sonner";
 import { KeyResultsEditor } from "@/components/key-results-editor";
 import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  type CreateMilestoneInput,
-  createMilestoneSchema,
-} from "@/lib/validations/milestone";
+import { type CreateMilestoneInput, createMilestoneSchema } from "@/lib/validations/milestone";
 
 interface AssignmentPerson {
   person: {
@@ -79,11 +72,7 @@ interface MilestoneSheetProps {
   defaultParentId?: string;
 }
 
-export function MilestoneSheet({
-  projectId,
-  milestone,
-  defaultParentId,
-}: MilestoneSheetProps) {
+export function MilestoneSheet({ projectId, milestone, defaultParentId }: MilestoneSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!milestone;
@@ -94,9 +83,7 @@ export function MilestoneSheet({
   const [keyResultsVersion, setKeyResultsVersion] = useState(0);
   const [createAnother, setCreateAnother] = useState(false);
 
-  const milestonesQuery = useQuery(
-    trpc.milestone.getByProjectId.queryOptions({ projectId }),
-  );
+  const milestonesQuery = useQuery(trpc.milestone.getByProjectId.queryOptions({ projectId }));
 
   const parentOptions = (milestonesQuery.data ?? [])
     .filter((m) => m.id !== milestone?.id)
@@ -115,11 +102,8 @@ export function MilestoneSheet({
       projectId,
       title: milestone?.title ?? "",
       description: milestone?.description ?? "",
-      targetDate: milestone?.targetDate
-        ? new Date(milestone.targetDate)
-        : undefined,
-      status:
-        (milestone?.status as CreateMilestoneInput["status"]) ?? "NOT_STARTED",
+      targetDate: milestone?.targetDate ? new Date(milestone.targetDate) : undefined,
+      status: (milestone?.status as CreateMilestoneInput["status"]) ?? "NOT_STARTED",
       parentId: milestone?.parentId ?? defaultParentId ?? null,
     },
   });
@@ -199,16 +183,13 @@ export function MilestoneSheet({
     setKeyResultsVersion((v) => v + 1);
   }, []);
 
-  const currentKeyResults =
-    keyResultsVersion >= 0 ? (milestone?.keyResults ?? []) : [];
+  const currentKeyResults = keyResultsVersion >= 0 ? (milestone?.keyResults ?? []) : [];
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>
-            {isEditing ? "Edit Milestone" : "Add Milestone"}
-          </SheetTitle>
+          <SheetTitle>{isEditing ? "Edit Milestone" : "Add Milestone"}</SheetTitle>
           <SheetDescription>
             {isEditing
               ? "Update the milestone details."
@@ -216,10 +197,7 @@ export function MilestoneSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -229,11 +207,7 @@ export function MilestoneSheet({
                 {...register("title")}
                 aria-invalid={!!errors.title}
               />
-              {errors.title && (
-                <p className="text-destructive text-sm">
-                  {errors.title.message}
-                </p>
-              )}
+              {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -263,17 +237,13 @@ export function MilestoneSheet({
                           )}
                         >
                           <CalendarIcon className="mr-2 size-4" />
-                          {field.value
-                            ? format(field.value, "PPP")
-                            : "Pick a date"}
+                          {field.value ? format(field.value, "PPP") : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={
-                            field.value ? new Date(field.value) : undefined
-                          }
+                          selected={field.value ? new Date(field.value) : undefined}
                           onSelect={(date) => field.onChange(date ?? null)}
                         />
                       </PopoverContent>
@@ -324,18 +294,14 @@ export function MilestoneSheet({
                   control={control}
                   render={({ field }) => (
                     <Select
-                      onValueChange={(val) =>
-                        field.onChange(val === "__none__" ? null : val)
-                      }
+                      onValueChange={(val) => field.onChange(val === "__none__" ? null : val)}
                       value={field.value ?? "__none__"}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select parent…" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">
-                          None (top-level)
-                        </SelectItem>
+                        <SelectItem value="__none__">None (top-level)</SelectItem>
                         {parentOptions.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
@@ -352,10 +318,7 @@ export function MilestoneSheet({
 
             <div className="space-y-2">
               <Label>Assignees</Label>
-              <PersonMultiSelect
-                value={assigneeIds}
-                onChange={setAssigneeIds}
-              />
+              <PersonMultiSelect value={assigneeIds} onChange={setAssigneeIds} />
             </div>
 
             {isEditing && milestone && (
@@ -384,20 +347,14 @@ export function MilestoneSheet({
                 Create another
               </label>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={
                 isSubmitting ||
-                (!isDirty &&
-                  assigneeIds.length === (milestone?.assignments.length ?? 0))
+                (!isDirty && assigneeIds.length === (milestone?.assignments.length ?? 0))
               }
             >
               {isSubmitting && (

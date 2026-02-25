@@ -14,12 +14,7 @@ import {
 } from "@workspace/ui/components/alert-dialog";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -97,9 +92,8 @@ export function ArrangementsList({
             <Users className="text-muted-foreground mb-3 size-10" />
             <h3 className="mb-1 font-semibold">No team configurations yet</h3>
             <p className="text-muted-foreground mb-4 max-w-sm text-sm">
-              Create a team configuration to visually organize members into
-              sub-teams. You can create multiple proposals and activate the one
-              you want.
+              Create a team configuration to visually organize members into sub-teams. You can
+              create multiple proposals and activate the one you want.
             </p>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="size-4" />
@@ -120,20 +114,12 @@ export function ArrangementsList({
               <Card
                 key={arrangement.id}
                 className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() =>
-                  router.push(
-                    `/projects/${projectId}/arrangements/${arrangement.id}`,
-                  )
-                }
+                onClick={() => router.push(`/projects/${projectId}/arrangements/${arrangement.id}`)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-base">
-                      {arrangement.name}
-                    </CardTitle>
-                    {arrangement.isActive && (
-                      <Badge variant="default">Live</Badge>
-                    )}
+                    <CardTitle className="text-base">{arrangement.name}</CardTitle>
+                    {arrangement.isActive && <Badge variant="default">Live</Badge>}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -151,9 +137,7 @@ export function ArrangementsList({
                       size="icon"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(
-                          `/projects/${projectId}/arrangements/${arrangement.id}`,
-                        );
+                        router.push(`/projects/${projectId}/arrangements/${arrangement.id}`);
                       }}
                     >
                       <Pencil className="size-4" />
@@ -161,32 +145,23 @@ export function ArrangementsList({
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                           <Trash2 className="size-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Delete configuration?
-                          </AlertDialogTitle>
+                          <AlertDialogTitle>Delete configuration?</AlertDialogTitle>
                           <AlertDialogDescription>
                             This will permanently delete &quot;
-                            {arrangement.name}&quot; and all its team
-                            assignments.
+                            {arrangement.name}&quot; and all its team assignments.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() =>
-                              deleteMutation.mutate({ id: arrangement.id })
-                            }
+                            onClick={() => deleteMutation.mutate({ id: arrangement.id })}
                             className="bg-destructive text-white hover:bg-destructive/90"
                           >
                             Delete

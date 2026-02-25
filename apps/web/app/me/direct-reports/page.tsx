@@ -1,18 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Loader2, NotebookPen, Users } from "lucide-react";
 import Link from "next/link";
 import { useTRPC } from "@/lib/trpc/client";
@@ -61,17 +52,12 @@ export default function DirectReportsPage() {
                   </Avatar>
                   <div>
                     <CardTitle className="text-base">
-                      <Link
-                        href={`/people/${report.id}`}
-                        className="hover:underline"
-                      >
+                      <Link href={`/people/${report.id}`} className="hover:underline">
                         {report.firstName} {report.lastName}
                       </Link>
                     </CardTitle>
                     {report.email && (
-                      <p className="text-muted-foreground text-xs">
-                        {report.email}
-                      </p>
+                      <p className="text-muted-foreground text-xs">{report.email}</p>
                     )}
                   </div>
                 </div>

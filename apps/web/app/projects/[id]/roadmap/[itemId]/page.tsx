@@ -39,9 +39,7 @@ async function resolveItem(itemId: string) {
   return null;
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { itemId } = await params;
   const resolved = await resolveItem(itemId);
   return { title: resolved?.item.title ?? "Not Found" };
@@ -74,13 +72,7 @@ async function EditMilestoneContent({
   );
 }
 
-async function EditGoalContent({
-  projectId,
-  goalId,
-}: {
-  projectId: string;
-  goalId: string;
-}) {
+async function EditGoalContent({ projectId, goalId }: { projectId: string; goalId: string }) {
   const trpc = await createServerCaller();
   const goal = await trpc.quarterlyGoal.getById({ id: goalId });
   if (!goal) return null;
@@ -102,10 +94,7 @@ async function EditGoalContent({
   );
 }
 
-export default async function RoadmapItemPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function RoadmapItemPage({ params, searchParams }: PageProps) {
   const { id, itemId } = await params;
   const sp = await searchParams;
 
@@ -146,9 +135,7 @@ export default async function RoadmapItemPage({
       assignments: c.assignments,
       keyResults: c.keyResults,
       quarter:
-        type === "quarterlyGoal"
-          ? (c as typeof c & { quarter: string | null }).quarter
-          : null,
+        type === "quarterlyGoal" ? (c as typeof c & { quarter: string | null }).quarter : null,
     })),
   };
 
@@ -156,18 +143,14 @@ export default async function RoadmapItemPage({
     <>
       <RoadmapItemDetail projectId={id} type={type} item={serializedItem} />
 
-      {sp.addMilestone === "true" && (
-        <MilestoneSheet projectId={id} defaultParentId={itemId} />
-      )}
+      {sp.addMilestone === "true" && <MilestoneSheet projectId={id} defaultParentId={itemId} />}
       {sp.editMilestone && (
         <Suspense fallback={null}>
           <EditMilestoneContent projectId={id} milestoneId={sp.editMilestone} />
         </Suspense>
       )}
 
-      {sp.addGoal === "true" && (
-        <QuarterlyGoalSheet projectId={id} defaultParentId={itemId} />
-      )}
+      {sp.addGoal === "true" && <QuarterlyGoalSheet projectId={id} defaultParentId={itemId} />}
       {sp.editGoal && (
         <Suspense fallback={null}>
           <EditGoalContent projectId={id} goalId={sp.editGoal} />

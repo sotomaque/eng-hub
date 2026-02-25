@@ -12,9 +12,7 @@ test.describe("Project team", () => {
 
   test("team page shows add member button", async ({ page }) => {
     await page.goto("/projects/proj-alpha/team");
-    await expect(
-      page.getByRole("button", { name: /add member/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /add member/i })).toBeVisible();
   });
 
   test("team page shows team groupings", async ({ page }) => {

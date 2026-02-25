@@ -1,12 +1,7 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 import { Flag, Plus, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -28,9 +23,7 @@ interface RoadmapSectionProps {
   qgAssignee?: string[];
 }
 
-function countWithChildren<T extends { children: { length: number } }>(
-  items: T[],
-): number {
+function countWithChildren<T extends { children: { length: number } }>(items: T[]): number {
   let count = items.length;
   for (const item of items) {
     count += item.children.length;
@@ -69,12 +62,9 @@ export function RoadmapSection({
             </div>
             <Button
               onClick={() =>
-                router.push(
-                  `/projects/${projectId}/roadmap?addMilestone=true`,
-                  {
-                    scroll: false,
-                  },
-                )
+                router.push(`/projects/${projectId}/roadmap?addMilestone=true`, {
+                  scroll: false,
+                })
               }
               size="sm"
               variant="outline"
@@ -87,9 +77,7 @@ export function RoadmapSection({
           {milestones.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <Flag className="text-muted-foreground mb-2 size-6" />
-              <p className="text-muted-foreground text-sm">
-                No milestones yet.
-              </p>
+              <p className="text-muted-foreground text-sm">No milestones yet.</p>
             </div>
           ) : (
             <MilestonesTable
@@ -130,9 +118,7 @@ export function RoadmapSection({
           {quarterlyGoals.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <Target className="text-muted-foreground mb-2 size-6" />
-              <p className="text-muted-foreground text-sm">
-                No quarterly goals yet.
-              </p>
+              <p className="text-muted-foreground text-sm">No quarterly goals yet.</p>
             </div>
           ) : (
             <QuarterlyGoalsTable

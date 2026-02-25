@@ -14,20 +14,16 @@ export async function detectMilestoneCycle(
     if (visited.has(currentId)) break;
     visited.add(currentId);
     depth++;
-    const row: { parentId: string | null } | null =
-      await db.milestone.findUnique({
-        where: { id: currentId },
-        select: { parentId: true },
-      });
+    const row: { parentId: string | null } | null = await db.milestone.findUnique({
+      where: { id: currentId },
+      select: { parentId: true },
+    });
     currentId = row?.parentId ?? null;
   }
   return false;
 }
 
-export async function detectGoalCycle(
-  goalId: string,
-  newParentId: string,
-): Promise<boolean> {
+export async function detectGoalCycle(goalId: string, newParentId: string): Promise<boolean> {
   let currentId: string | null = newParentId;
   const visited = new Set<string>();
   let depth = 0;
@@ -36,20 +32,16 @@ export async function detectGoalCycle(
     if (visited.has(currentId)) break;
     visited.add(currentId);
     depth++;
-    const row: { parentId: string | null } | null =
-      await db.quarterlyGoal.findUnique({
-        where: { id: currentId },
-        select: { parentId: true },
-      });
+    const row: { parentId: string | null } | null = await db.quarterlyGoal.findUnique({
+      where: { id: currentId },
+      select: { parentId: true },
+    });
     currentId = row?.parentId ?? null;
   }
   return false;
 }
 
-export async function detectProjectCycle(
-  projectId: string,
-  newParentId: string,
-): Promise<boolean> {
+export async function detectProjectCycle(projectId: string, newParentId: string): Promise<boolean> {
   let currentId: string | null = newParentId;
   const visited = new Set<string>();
   let depth = 0;
@@ -58,12 +50,10 @@ export async function detectProjectCycle(
     if (visited.has(currentId)) break;
     visited.add(currentId);
     depth++;
-    const row: { parentId: string | null } | null = await db.project.findUnique(
-      {
-        where: { id: currentId },
-        select: { parentId: true },
-      },
-    );
+    const row: { parentId: string | null } | null = await db.project.findUnique({
+      where: { id: currentId },
+      select: { parentId: true },
+    });
     currentId = row?.parentId ?? null;
   }
   return false;

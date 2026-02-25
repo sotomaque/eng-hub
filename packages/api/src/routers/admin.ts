@@ -10,9 +10,7 @@ export const adminRouter = createTRPCRouter({
     .input(
       z
         .object({
-          status: z
-            .enum(["pending", "invited", "completed", "rejected"])
-            .optional(),
+          status: z.enum(["pending", "invited", "completed", "rejected"]).optional(),
           limit: z.number().int().min(1).max(100).optional(),
           offset: z.number().int().min(0).optional(),
         })

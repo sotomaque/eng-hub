@@ -11,14 +11,9 @@ interface SortableTableRowProps {
 }
 
 export function SortableTableRow({ id, children }: SortableTableRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
 
   return (
     <TableRow

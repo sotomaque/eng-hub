@@ -109,10 +109,7 @@ export function AddToProjectDialog({
           <SheetDescription>Add {personName} to a project.</SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label>Project</Label>
@@ -135,9 +132,7 @@ export function AddToProjectDialog({
                 )}
               />
               {errors.projectId && (
-                <p className="text-destructive text-sm">
-                  {errors.projectId.message}
-                </p>
+                <p className="text-destructive text-sm">{errors.projectId.message}</p>
               )}
               {availableProjects.length === 0 && (
                 <p className="text-muted-foreground text-sm">
@@ -187,19 +182,12 @@ export function AddToProjectDialog({
             )}
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting || !isDirty || availableProjects.length === 0
-              }
+              disabled={isSubmitting || !isDirty || availableProjects.length === 0}
             >
               {isSubmitting && <Loader2 className="animate-spin" />}
               Add to Project

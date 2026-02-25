@@ -1,25 +1,8 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  assignTiers,
-  type ContributorStatsData,
-  tierConfig,
-} from "@/lib/tiers";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { assignTiers, type ContributorStatsData, tierConfig } from "@/lib/tiers";
 
 interface StatsBarChartProps {
   stats: ContributorStatsData[];
@@ -66,19 +49,10 @@ export function StatsBarChart({ stats, memberMap }: StatsBarChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={chartHeight}>
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ left: 20, right: 20 }}
-          >
+          <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={140}
-              tick={{ fontSize: 12 }}
-            />
+            <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;

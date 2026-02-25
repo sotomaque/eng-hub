@@ -1,11 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Command,
@@ -15,11 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@workspace/ui/components/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -42,10 +34,7 @@ export function PersonMultiSelect({
 
   const people = peopleQuery.data ?? [];
 
-  const selectedPeople = useMemo(
-    () => people.filter((p) => value.includes(p.id)),
-    [people, value],
-  );
+  const selectedPeople = useMemo(() => people.filter((p) => value.includes(p.id)), [people, value]);
 
   const selectedSet = useMemo(() => new Set(value), [value]);
 
@@ -81,10 +70,7 @@ export function PersonMultiSelect({
             <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] p-0"
-          align="start"
-        >
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
           <Command>
             <CommandInput placeholder="Search people…" />
             <CommandList>
@@ -99,9 +85,7 @@ export function PersonMultiSelect({
                     <Check
                       className={cn(
                         "mr-2 size-4 shrink-0",
-                        selectedSet.has(person.id)
-                          ? "opacity-100"
-                          : "opacity-0",
+                        selectedSet.has(person.id) ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <Avatar className="mr-2 size-6 shrink-0">

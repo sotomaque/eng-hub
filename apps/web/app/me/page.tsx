@@ -1,15 +1,6 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -36,9 +27,7 @@ export default async function MeProfilePage() {
         </Avatar>
         <div>
           <h1 className="text-2xl font-bold">{fullName}</h1>
-          {person.callsign && (
-            <p className="text-muted-foreground">@{person.callsign}</p>
-          )}
+          {person.callsign && <p className="text-muted-foreground">@{person.callsign}</p>}
         </div>
       </div>
 
@@ -69,10 +58,7 @@ export default async function MeProfilePage() {
             {person.manager && (
               <div>
                 <p className="text-muted-foreground text-sm">Manager</p>
-                <Link
-                  href={`/people/${person.manager.id}`}
-                  className="hover:underline"
-                >
+                <Link href={`/people/${person.manager.id}`} className="hover:underline">
                   {person.manager.firstName} {person.manager.lastName}
                 </Link>
               </div>
@@ -101,10 +87,7 @@ export default async function MeProfilePage() {
                         {report.lastName[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <Link
-                      href={`/people/${report.id}`}
-                      className="text-sm hover:underline"
-                    >
+                    <Link href={`/people/${report.id}`} className="text-sm hover:underline">
                       {report.firstName} {report.lastName}
                     </Link>
                   </li>

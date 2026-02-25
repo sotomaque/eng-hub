@@ -10,9 +10,7 @@ test.describe("Project links", () => {
   test("links page shows Links title", async ({ page }) => {
     await page.goto("/projects/proj-alpha/links");
     // CardTitle renders as a div, not a heading
-    await expect(
-      page.locator("[data-slot='card-title']").first(),
-    ).toBeVisible();
+    await expect(page.locator("[data-slot='card-title']").first()).toBeVisible();
   });
 
   test("add link button is visible", async ({ page }) => {

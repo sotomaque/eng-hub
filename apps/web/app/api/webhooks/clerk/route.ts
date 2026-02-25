@@ -15,10 +15,7 @@ interface UserCreatedEvent {
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    return NextResponse.json(
-      { error: "Webhook secret not configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
   // Verify the webhook signature
@@ -28,10 +25,7 @@ export async function POST(req: Request) {
   const svixSignature = headerPayload.get("svix-signature");
 
   if (!svixId || !svixTimestamp || !svixSignature) {
-    return NextResponse.json(
-      { error: "Missing svix headers" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing svix headers" }, { status: 400 });
   }
 
   const body = await req.text();

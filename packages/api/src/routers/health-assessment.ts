@@ -48,20 +48,18 @@ export const healthAssessmentRouter = createTRPCRouter({
       });
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const assessment = await db.healthAssessment.findUnique({
-        where: { id: input.id },
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    const assessment = await db.healthAssessment.findUnique({
+      where: { id: input.id },
+    });
+    if (!assessment) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Health assessment not found.",
       });
-      if (!assessment) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Health assessment not found.",
-        });
-      }
-      return assessment;
-    }),
+    }
+    return assessment;
+  }),
 
   create: protectedProcedure
     .input(createHealthAssessmentSchema)

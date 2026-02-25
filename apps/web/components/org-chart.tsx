@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { ChevronDown, ChevronRight, Network, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -70,10 +61,7 @@ function buildTree(members: OrgMember[]): {
   }
 
   const roots: TreeNode[] = [];
-  const externalManagers = new Map<
-    string,
-    { manager: ManagerInfo; children: TreeNode[] }
-  >();
+  const externalManagers = new Map<string, { manager: ManagerInfo; children: TreeNode[] }>();
 
   for (const m of members) {
     const node = nodeMap.get(m.personId);
@@ -107,10 +95,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   const m = node.member;
   const displayName = `${m.firstName}${m.callsign ? ` ${m.callsign}` : ""} ${m.lastName}`;
   const sortedChildren = useMemo(
-    () =>
-      [...node.children].sort((a, b) =>
-        a.member.lastName.localeCompare(b.member.lastName),
-      ),
+    () => [...node.children].sort((a, b) => a.member.lastName.localeCompare(b.member.lastName)),
     [node.children],
   );
 
@@ -147,9 +132,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
             <span className="truncate text-sm font-medium">{displayName}</span>
             <div className="flex items-center gap-1.5">
               {m.departmentName && (
-                <span className="truncate text-xs text-muted-foreground">
-                  {m.departmentName}
-                </span>
+                <span className="truncate text-xs text-muted-foreground">{m.departmentName}</span>
               )}
               {m.titleName && (
                 <Badge variant="outline" className="text-[10px] px-1 py-0">
@@ -160,10 +143,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
           </div>
         </Link>
         {hasChildren && (
-          <Badge
-            variant="secondary"
-            className="ml-auto text-[10px] px-1.5 py-0"
-          >
+          <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0">
             {node.children.length}
           </Badge>
         )}
@@ -179,20 +159,11 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   );
 }
 
-function ExternalManagerGroup({
-  manager,
-  reports,
-}: {
-  manager: ManagerInfo;
-  reports: TreeNode[];
-}) {
+function ExternalManagerGroup({ manager, reports }: { manager: ManagerInfo; reports: TreeNode[] }) {
   const [expanded, setExpanded] = useState(true);
   const displayName = `${manager.firstName}${manager.callsign ? ` ${manager.callsign}` : ""} ${manager.lastName}`;
   const sortedReports = useMemo(
-    () =>
-      [...reports].sort((a, b) =>
-        a.member.lastName.localeCompare(b.member.lastName),
-      ),
+    () => [...reports].sort((a, b) => a.member.lastName.localeCompare(b.member.lastName)),
     [reports],
   );
 
@@ -226,9 +197,7 @@ function ExternalManagerGroup({
             <span className="truncate text-sm font-medium text-muted-foreground">
               {displayName}
             </span>
-            <span className="text-xs text-muted-foreground/70">
-              External manager
-            </span>
+            <span className="text-xs text-muted-foreground/70">External manager</span>
           </div>
         </Link>
         <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0">
@@ -264,16 +233,10 @@ export function OrgChart({
   recentChanges,
   emptyMessage = "No team members yet. Add members from the People page to see the org chart.",
 }: OrgChartProps) {
-  const { roots, externalManagers } = useMemo(
-    () => buildTree(members),
-    [members],
-  );
+  const { roots, externalManagers } = useMemo(() => buildTree(members), [members]);
 
   const sortedRoots = useMemo(
-    () =>
-      [...roots].sort((a, b) =>
-        a.member.lastName.localeCompare(b.member.lastName),
-      ),
+    () => [...roots].sort((a, b) => a.member.lastName.localeCompare(b.member.lastName)),
     [roots],
   );
 
@@ -305,11 +268,7 @@ export function OrgChart({
 
             {Array.from(externalManagers.entries()).map(
               ([managerId, { manager, children: reports }]) => (
-                <ExternalManagerGroup
-                  key={managerId}
-                  manager={manager}
-                  reports={reports}
-                />
+                <ExternalManagerGroup key={managerId} manager={manager} reports={reports} />
               ),
             )}
           </div>
@@ -324,10 +283,7 @@ export function OrgChart({
           <CardContent>
             <div className="space-y-3">
               {recentChanges.map((change) => (
-                <div
-                  key={change.id}
-                  className="flex items-start justify-between gap-4 text-sm"
-                >
+                <div key={change.id} className="flex items-start justify-between gap-4 text-sm">
                   <p>
                     <span className="font-medium">
                       {change.person.firstName} {change.person.lastName}
@@ -336,29 +292,25 @@ export function OrgChart({
                       <>
                         moved from{" "}
                         <span className="text-muted-foreground">
-                          {change.oldManager.firstName}{" "}
-                          {change.oldManager.lastName}
+                          {change.oldManager.firstName} {change.oldManager.lastName}
                         </span>{" "}
                         to{" "}
                         <span className="font-medium">
-                          {change.newManager.firstName}{" "}
-                          {change.newManager.lastName}
+                          {change.newManager.firstName} {change.newManager.lastName}
                         </span>
                       </>
                     ) : change.newManager ? (
                       <>
                         assigned to{" "}
                         <span className="font-medium">
-                          {change.newManager.firstName}{" "}
-                          {change.newManager.lastName}
+                          {change.newManager.firstName} {change.newManager.lastName}
                         </span>
                       </>
                     ) : change.oldManager ? (
                       <>
                         removed from{" "}
                         <span className="text-muted-foreground">
-                          {change.oldManager.firstName}{" "}
-                          {change.oldManager.lastName}
+                          {change.oldManager.firstName} {change.oldManager.lastName}
                         </span>
                       </>
                     ) : (

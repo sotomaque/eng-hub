@@ -104,10 +104,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="label">Label</Label>
@@ -117,11 +114,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
                 {...register("label")}
                 aria-invalid={!!errors.label}
               />
-              {errors.label && (
-                <p className="text-destructive text-sm">
-                  {errors.label.message}
-                </p>
-              )}
+              {errors.label && <p className="text-destructive text-sm">{errors.label.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -133,9 +126,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
                 {...register("url")}
                 aria-invalid={!!errors.url}
               />
-              {errors.url && (
-                <p className="text-destructive text-sm">{errors.url.message}</p>
-              )}
+              {errors.url && <p className="text-destructive text-sm">{errors.url.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -155,12 +146,7 @@ export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
             </div>
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || !isDirty}>

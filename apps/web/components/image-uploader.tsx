@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { ImageIcon, Loader2, Upload, X } from "lucide-react";
@@ -104,11 +100,7 @@ export function ImageUploader({
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
           >
-            {isUploading ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Upload className="size-4" />
-            )}
+            {isUploading ? <Loader2 className="animate-spin" /> : <Upload className="size-4" />}
             {isUploading ? "Uploading…" : "Upload"}
           </Button>
           {currentImageUrl && (

@@ -3,9 +3,7 @@ import { expect, test } from "./helpers";
 test.describe("Smoke tests", () => {
   test("homepage loads and shows hero content", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("heading", { name: /organized/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /organized/i })).toBeVisible();
     await expect(page.getByRole("link", { name: "Get Started" })).toBeVisible();
   });
 

@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  aggregateStats,
-  type ContributorCommitData,
-  type PRData,
-  parseGitHubUrl,
-} from "../github";
+import { aggregateStats, type ContributorCommitData, type PRData, parseGitHubUrl } from "../github";
 
 // ── parseGitHubUrl ──────────────────────────────────────────
 
@@ -241,11 +236,7 @@ describe("aggregateStats", () => {
         ],
       },
     ];
-    const result = aggregateStats(
-      [],
-      prs,
-      new Set(["alice", "bob", "charlie"]),
-    );
+    const result = aggregateStats([], prs, new Set(["alice", "bob", "charlie"]));
 
     const bob = result.allTime.find((c) => c.githubUsername === "bob");
     const charlie = result.allTime.find((c) => c.githubUsername === "charlie");
@@ -261,17 +252,13 @@ describe("aggregateStats", () => {
         merged: true,
         mergedAt: "2025-03-01T00:00:00Z",
         createdAt: "2025-02-28T00:00:00Z",
-        reviews: [
-          { login: "external-user", createdAt: "2025-02-28T01:00:00Z" },
-        ],
+        reviews: [{ login: "external-user", createdAt: "2025-02-28T01:00:00Z" }],
       },
     ];
     const result = aggregateStats([], prs, new Set(["alice"]));
 
     // external-user is not in teamUsernames, should not appear
-    const external = result.allTime.find(
-      (c) => c.githubUsername === "external-user",
-    );
+    const external = result.allTime.find((c) => c.githubUsername === "external-user");
     expect(external).toBeUndefined();
   });
 

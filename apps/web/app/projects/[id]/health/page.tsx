@@ -31,10 +31,7 @@ async function HealthContent({ id }: { id: string }) {
         engineeringVibeStatus: a.engineeringVibeStatus,
         productVibeStatus: a.productVibeStatus,
         designVibeStatus: a.designVibeStatus,
-        createdAt:
-          typeof a.createdAt === "string"
-            ? a.createdAt
-            : a.createdAt.toISOString(),
+        createdAt: typeof a.createdAt === "string" ? a.createdAt : a.createdAt.toISOString(),
       }))}
     />
   );

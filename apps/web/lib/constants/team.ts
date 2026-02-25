@@ -24,9 +24,7 @@ export type TitleColorMap = Map<string, string>;
  * Build a stable title → hex color mapping.
  * Sorts unique titles by sortOrder and assigns from palette by index.
  */
-export function buildTitleColorMap(
-  titles: { name: string; sortOrder: number }[],
-): TitleColorMap {
+export function buildTitleColorMap(titles: { name: string; sortOrder: number }[]): TitleColorMap {
   const unique = [...new Map(titles.map((t) => [t.name, t])).values()].sort(
     (a, b) => a.sortOrder - b.sortOrder,
   );
@@ -34,8 +32,7 @@ export function buildTitleColorMap(
   for (const [i, title] of unique.entries()) {
     map.set(
       title.name,
-      TITLE_COLOR_PALETTE[i % TITLE_COLOR_PALETTE.length] ??
-        TITLE_NO_TITLE_COLOR,
+      TITLE_COLOR_PALETTE[i % TITLE_COLOR_PALETTE.length] ?? TITLE_NO_TITLE_COLOR,
     );
   }
   return map;

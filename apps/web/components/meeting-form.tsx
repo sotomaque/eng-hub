@@ -5,11 +5,7 @@ import type { JSONContent } from "@tiptap/core";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
 import { Label } from "@workspace/ui/components/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -62,18 +58,10 @@ export function MeetingForm({
 }: MeetingFormProps) {
   const router = useRouter();
   const trpc = useTRPC();
-  const [personId, setPersonId] = useState(
-    meeting?.personId ?? defaultPersonId ?? "",
-  );
-  const [date, setDate] = useState<Date>(
-    meeting ? new Date(meeting.date) : new Date(),
-  );
-  const [templateId, setTemplateId] = useState(
-    meeting?.templateId ?? defaultTemplateId ?? "",
-  );
-  const [content, setContent] = useState<JSONContent>(
-    (meeting?.content as JSONContent) ?? {},
-  );
+  const [personId, setPersonId] = useState(meeting?.personId ?? defaultPersonId ?? "");
+  const [date, setDate] = useState<Date>(meeting ? new Date(meeting.date) : new Date());
+  const [templateId, setTemplateId] = useState(meeting?.templateId ?? defaultTemplateId ?? "");
+  const [content, setContent] = useState<JSONContent>((meeting?.content as JSONContent) ?? {});
   const [templateApplied, setTemplateApplied] = useState(false);
 
   const templatesQuery = useQuery(trpc.meetingTemplate.getAll.queryOptions());
@@ -165,19 +153,11 @@ export function MeetingForm({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/me/one-on-ones")}
-          >
+          <Button type="button" variant="ghost" onClick={() => router.push("/me/one-on-ones")}>
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending
-              ? "Saving…"
-              : meeting
-                ? "Save Changes"
-                : "Create Meeting"}
+            {isPending ? "Saving…" : meeting ? "Save Changes" : "Create Meeting"}
           </Button>
         </div>
       </div>
@@ -188,11 +168,7 @@ export function MeetingForm({
           <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
             Direct Report
           </Label>
-          <Select
-            value={personId}
-            onValueChange={setPersonId}
-            disabled={!!meeting}
-          >
+          <Select value={personId} onValueChange={setPersonId} disabled={!!meeting}>
             <SelectTrigger className="h-9 bg-background">
               <SelectValue placeholder="Select person" />
             </SelectTrigger>

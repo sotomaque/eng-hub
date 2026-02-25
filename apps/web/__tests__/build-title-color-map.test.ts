@@ -22,20 +22,15 @@ describe("buildTitleColorMap", () => {
   });
 
   test("wraps around palette for more titles than colors", () => {
-    const titles = Array.from(
-      { length: TITLE_COLOR_PALETTE.length + 2 },
-      (_, i) => ({
-        name: `Title-${i}`,
-        sortOrder: i,
-      }),
-    );
+    const titles = Array.from({ length: TITLE_COLOR_PALETTE.length + 2 }, (_, i) => ({
+      name: `Title-${i}`,
+      sortOrder: i,
+    }));
 
     const map = buildTitleColorMap(titles);
 
     // Title at palette length should wrap to first color
-    expect(map.get(`Title-${TITLE_COLOR_PALETTE.length}`)).toBe(
-      TITLE_COLOR_PALETTE[0],
-    );
+    expect(map.get(`Title-${TITLE_COLOR_PALETTE.length}`)).toBe(TITLE_COLOR_PALETTE[0]);
     // Fallback color should never appear when palette has entries
     const values = [...map.values()];
     expect(values.every((v) => v !== TITLE_NO_TITLE_COLOR)).toBe(true);

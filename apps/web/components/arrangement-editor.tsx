@@ -55,10 +55,7 @@ interface ArrangementEditorProps {
 
 type ViewMode = "visual" | "table";
 
-export function ArrangementEditor({
-  projectId,
-  arrangement,
-}: ArrangementEditorProps) {
+export function ArrangementEditor({ projectId, arrangement }: ArrangementEditorProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [viewMode, setViewMode] = useState<ViewMode>("visual");
@@ -69,9 +66,7 @@ export function ArrangementEditor({
   const titleColorMap = useMemo(() => {
     const allMembers = [
       ...arrangement.unassignedMembers,
-      ...arrangement.teams.flatMap((t) =>
-        t.assignments.map((a) => a.teamMember),
-      ),
+      ...arrangement.teams.flatMap((t) => t.assignments.map((a) => a.teamMember)),
     ];
     const titles = allMembers
       .map((m) => m.person.title)
@@ -83,10 +78,7 @@ export function ArrangementEditor({
     arrangement.unassignedMembers.length +
     arrangement.teams.reduce((sum, t) => sum + t.assignments.length, 0);
 
-  const assignedCount = arrangement.teams.reduce(
-    (sum, t) => sum + t.assignments.length,
-    0,
-  );
+  const assignedCount = arrangement.teams.reduce((sum, t) => sum + t.assignments.length, 0);
 
   const addTeamMutation = useMutation(
     trpc.arrangement.addTeam.mutationOptions({
@@ -155,8 +147,7 @@ export function ArrangementEditor({
               )}
             </div>
             <p className="text-muted-foreground text-sm">
-              {assignedCount} of {totalMembers} members assigned across{" "}
-              {arrangement.teams.length}{" "}
+              {assignedCount} of {totalMembers} members assigned across {arrangement.teams.length}{" "}
               {arrangement.teams.length === 1 ? "team" : "teams"}
             </p>
           </div>
@@ -184,11 +175,7 @@ export function ArrangementEditor({
           </div>
 
           {!arrangement.isActive && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setActivateOpen(true)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setActivateOpen(true)}>
               <Zap className="size-4" />
               Activate
             </Button>
@@ -211,11 +198,7 @@ export function ArrangementEditor({
               className="max-w-xs"
               autoFocus
             />
-            <Button
-              size="sm"
-              onClick={handleAddTeam}
-              disabled={addTeamMutation.isPending}
-            >
+            <Button size="sm" onClick={handleAddTeam} disabled={addTeamMutation.isPending}>
               {addTeamMutation.isPending ? (
                 <Loader2 className="animate-spin" />
               ) : (
@@ -235,11 +218,7 @@ export function ArrangementEditor({
             </Button>
           </>
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAddingTeam(true)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setIsAddingTeam(true)}>
             <Plus className="size-4" />
             Add Team
           </Button>

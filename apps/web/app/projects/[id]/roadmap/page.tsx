@@ -117,13 +117,7 @@ async function EditMilestoneContent({
   );
 }
 
-async function EditGoalContent({
-  projectId,
-  goalId,
-}: {
-  projectId: string;
-  goalId: string;
-}) {
+async function EditGoalContent({ projectId, goalId }: { projectId: string; goalId: string }) {
   const trpc = await createServerCaller();
   const goal = await trpc.quarterlyGoal.getById({ id: goalId });
   if (!goal) return null;
