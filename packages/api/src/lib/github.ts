@@ -85,15 +85,22 @@ export async function fetchCommitStats(
 
   let response = await fetch(url, { headers });
 
-  // GitHub returns 202 when stats are being computed — retry after delay
-  if (response.status === 202) {
-    await sleep(3000);
+  // GitHub returns 202 when stats are being computed — exponential backoff
+  // Retries: 2s, 4s, 8s, 16s, 32s (~62s total max wait)
+  const MAX_RETRIES = 5;
+  const INITIAL_DELAY = 2000;
+  for (
+    let attempt = 0;
+    attempt < MAX_RETRIES && response.status === 202;
+    attempt++
+  ) {
+    await sleep(INITIAL_DELAY * 2 ** attempt);
     response = await fetch(url, { headers });
   }
 
   if (!response.ok) {
     if (response.status === 202) {
-      // Still computing — return empty, will populate on next sync
+      // Still computing after retries — return empty, caller handles gracefully
       return [];
     }
     throw new Error(
