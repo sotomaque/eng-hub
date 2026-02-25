@@ -73,8 +73,8 @@ export default function HomePage() {
             <span className="text-primary">organized.</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-xl text-lg leading-relaxed sm:text-xl">
-            One place for projects, people, goals, and 1:1s. Replace the patchwork of tools with a
-            single source of truth.
+            One place for projects, people, goals, and 1:1s. Less time in Figma boards,
+            spreadsheets, and manual GitHub checks.
           </p>
 
           <div className="mt-10 flex items-center justify-center gap-4">
@@ -123,12 +123,10 @@ export default function HomePage() {
             <p className="text-primary text-sm font-medium tracking-wide uppercase">
               Built for engineering leaders
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything your org needs
-            </h2>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">What's included</h2>
             <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-base">
-              From health assessments to delivery analytics, Eng Hub covers the full surface area of
-              engineering management.
+              Health tracking, 1:1 notes, team planning, and delivery stats. The tools engineering
+              managers actually use.
             </p>
           </div>
 
@@ -151,12 +149,9 @@ export default function HomePage() {
       {/* CTA */}
       <section className="border-t">
         <div className="mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Ready to consolidate your tooling?
-          </h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">All in one place</h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-md text-base">
-            Stop context-switching between Figma, spreadsheets, and GitHub. Start managing
-            everything in one place.
+            Projects, people, goals, and 1:1s without the spreadsheet.
           </p>
           <div className="mt-8">
             <Button asChild size="lg" className="h-12 rounded-full px-8">

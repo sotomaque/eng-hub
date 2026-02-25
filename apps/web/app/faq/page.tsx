@@ -93,7 +93,7 @@ const features = [
     icon: Users,
     title: "People Directory & Profiles",
     description:
-      "A central directory for the engineering organization with searchable profiles, manager hierarchies, and an audit trail of every reporting change.",
+      "The directory for your engineering org. Searchable profiles, manager hierarchies, and a full audit trail for every reporting change.",
     items: [
       "Searchable, paginated people table with filters by project, department, and title",
       "Person profiles showing projects, teams, manager, direct reports, and roadmap assignments",
@@ -118,8 +118,8 @@ export default function FAQPage() {
             What can Eng Hub do?
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-xl text-lg leading-relaxed">
-            A unified engineering management platform that replaces Figma boards, spreadsheets,
-            personal docs, and manual repo spelunking with a single source of truth.
+            Everything below replaces a Figma board, a spreadsheet, a personal doc, and a lot of
+            manual GitHub checking.
           </p>
         </div>
       </section>
