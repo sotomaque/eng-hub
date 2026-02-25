@@ -89,6 +89,14 @@ export async function resetAndSeed(): Promise<void> {
     ON CONFLICT (id) DO NOTHING
   `);
 
+  // ── Project owners ────────────────────────────────────────────
+  await db.$executeRawUnsafe(`
+    INSERT INTO project_owners (id, person_id, project_id) VALUES
+      ('po-alice-alpha', 'person-alice', 'proj-alpha'),
+      ('po-evan-gamma', 'person-evan', 'proj-gamma')
+    ON CONFLICT (id) DO NOTHING
+  `);
+
   // ── Health assessments ─────────────────────────────────────────
   await db.$executeRawUnsafe(`
     INSERT INTO health_assessments (id, project_id, author_id, overall_status, created_at, updated_at) VALUES

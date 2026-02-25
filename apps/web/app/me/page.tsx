@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getMe } from "./_lib/queries";
 
@@ -68,9 +69,12 @@ export default async function MeProfilePage() {
             {person.manager && (
               <div>
                 <p className="text-muted-foreground text-sm">Manager</p>
-                <p>
+                <Link
+                  href={`/people/${person.manager.id}`}
+                  className="hover:underline"
+                >
                   {person.manager.firstName} {person.manager.lastName}
-                </p>
+                </Link>
               </div>
             )}
           </CardContent>
@@ -97,9 +101,12 @@ export default async function MeProfilePage() {
                         {report.lastName[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">
+                    <Link
+                      href={`/people/${report.id}`}
+                      className="text-sm hover:underline"
+                    >
                       {report.firstName} {report.lastName}
-                    </span>
+                    </Link>
                   </li>
                 ))}
               </ul>

@@ -61,7 +61,12 @@ export default function DirectReportsPage() {
                   </Avatar>
                   <div>
                     <CardTitle className="text-base">
-                      {report.firstName} {report.lastName}
+                      <Link
+                        href={`/people/${report.id}`}
+                        className="hover:underline"
+                      >
+                        {report.firstName} {report.lastName}
+                      </Link>
                     </CardTitle>
                     {report.email && (
                       <p className="text-muted-foreground text-xs">

@@ -44,7 +44,18 @@ mock.module("@workspace/db", () => ({
       create: mock(() => Promise.resolve({ id: "fav-1" })),
       delete: mock(() => Promise.resolve({})),
     },
-    $transaction: mock((fn: (tx: unknown) => unknown) => fn({})),
+    projectOwner: {
+      deleteMany: mock(() => Promise.resolve({ count: 0 })),
+      createMany: mock(() => Promise.resolve({ count: 0 })),
+    },
+    $transaction: mock((fn: (tx: unknown) => unknown) =>
+      fn({
+        projectOwner: {
+          deleteMany: mock(() => Promise.resolve({ count: 0 })),
+          createMany: mock(() => Promise.resolve({ count: 0 })),
+        },
+      }),
+    ),
   },
 }));
 
@@ -118,5 +129,22 @@ describe("project.update", () => {
   test("skips cycle detection when parentId is empty", async () => {
     await caller.update({ ...validInput, parentId: "" });
     expect(mockDetectProjectCycle).not.toHaveBeenCalled();
+  });
+});
+
+describe("project.setOwners", () => {
+  test("sets owners via transaction", async () => {
+    await caller.setOwners({
+      projectId: "proj-1",
+      personIds: ["person-a", "person-b"],
+    });
+    // No error means the transaction ran successfully
+  });
+
+  test("accepts empty personIds array to clear owners", async () => {
+    await caller.setOwners({
+      projectId: "proj-1",
+      personIds: [],
+    });
   });
 });

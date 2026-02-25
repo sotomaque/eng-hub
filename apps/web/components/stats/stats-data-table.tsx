@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import {
   assignTiers,
   type ContributorStatsData,
@@ -90,7 +91,16 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
                           {name[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{name}</span>
+                      {member ? (
+                        <Link
+                          href={`/people/${member.personId}`}
+                          className="font-medium hover:underline"
+                        >
+                          {name}
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{name}</span>
+                      )}
                       {member && (
                         <span className="text-muted-foreground text-xs">
                           {s.githubUsername.includes("@")
