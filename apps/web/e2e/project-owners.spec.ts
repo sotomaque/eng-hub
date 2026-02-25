@@ -11,14 +11,11 @@ test.describe("Project Owners - Display", () => {
 
   test("Alpha sidebar shows owner section", async ({ page }) => {
     await page.goto("/projects/proj-alpha");
-    const sidebar = page.locator("nav");
 
-    await expect(sidebar.getByText("Owner", { exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
+    // The sidebar group label "Owner" is visible
     await expect(
-      sidebar.getByRole("link", { name: "Alice Smith" }),
-    ).toBeVisible();
+      page.getByRole("link", { name: "AS Alice Smith", exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("Gamma project shows owner (Evan Chen)", async ({ page }) => {
@@ -35,10 +32,8 @@ test.describe("Project Owners - Display", () => {
     await expect(
       page.getByRole("link", { name: "Overview", exact: true }),
     ).toBeVisible({ timeout: 15_000 });
-    // Owner group should not be visible (Beta has no owners in seed data)
-    await expect(
-      page.locator("nav").getByText("Owner", { exact: true }),
-    ).toBeHidden();
+    // Owner group label should not be present (Beta has no owners in seed data)
+    await expect(page.getByText("Owner", { exact: true })).toBeHidden();
   });
 });
 

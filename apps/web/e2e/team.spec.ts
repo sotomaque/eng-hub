@@ -3,10 +3,11 @@ import { expect, test } from "./helpers";
 test.describe("Project team", () => {
   test("team page shows seeded members", async ({ page }) => {
     await page.goto("/projects/proj-alpha/team");
-    await expect(page.getByText("Alice Smith")).toBeVisible();
-    await expect(page.getByText("Bob Jones")).toBeVisible();
-    await expect(page.getByText("Carol Lee")).toBeVisible();
-    await expect(page.getByText("Diana Park")).toBeVisible();
+    const main = page.locator("main");
+    await expect(main.getByText("Alice Smith")).toBeVisible();
+    await expect(main.getByText("Bob Jones")).toBeVisible();
+    await expect(main.getByText("Carol Lee")).toBeVisible();
+    await expect(main.getByText("Diana Park")).toBeVisible();
   });
 
   test("team page shows add member button", async ({ page }) => {
