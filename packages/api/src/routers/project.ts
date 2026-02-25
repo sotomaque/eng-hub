@@ -115,7 +115,12 @@ function fetchProject(id: string) {
       owners: {
         include: {
           person: {
-            select: { id: true, firstName: true, lastName: true, imageUrl: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              imageUrl: true,
+            },
           },
         },
       },
