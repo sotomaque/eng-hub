@@ -1,0 +1,16 @@
+pre-commit:
+  commands:
+    lint-staged:
+      glob: "*.{ts,tsx,js,jsx,json,css}"
+      run: bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  commands:
+    typecheck:
+      run: bun run --filter=web lint:types
+    test:
+      run: bun run --filter=web test
+    knip:
+      run: bun run knip

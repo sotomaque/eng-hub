@@ -16,7 +16,7 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -55,6 +55,7 @@ interface PersonSheetProps {
 
 export function PersonSheet({ person }: PersonSheetProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const trpc = useTRPC();
   const isEditing = !!person;
   const [imageUrl, setImageUrl] = useState<string | null>(
@@ -163,7 +164,10 @@ export function PersonSheet({ person }: PersonSheetProps) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    router.push("/people", { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("edit");
+    params.delete("create");
+    router.push(`/people?${params.toString()}`, { scroll: false });
     reset();
   }
 

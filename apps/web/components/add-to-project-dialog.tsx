@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Check, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -45,6 +45,7 @@ export function AddToProjectDialog({
   existingProjectIds,
 }: AddToProjectDialogProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const trpc = useTRPC();
   const projectsQuery = useQuery(trpc.project.getAll.queryOptions());
 
@@ -85,7 +86,9 @@ export function AddToProjectDialog({
   const isSubmitting = joinMutation.isPending;
 
   function handleClose() {
-    router.push("/people", { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("addToProject");
+    router.push(`/people?${params.toString()}`, { scroll: false });
   }
 
   function onSubmit(data: AddToProjectInput) {

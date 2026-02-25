@@ -74,4 +74,20 @@ test.describe("Projects", () => {
       page.getByRole("link", { name: "Alpha" }).first(),
     ).toBeVisible();
   });
+
+  test("search filter is preserved when opening and closing edit sheet", async ({
+    page,
+  }) => {
+    await page.goto("/projects");
+    await page.getByPlaceholder("Search projects").fill("Alpha");
+    await page.waitForURL(/search=Alpha/);
+
+    await page.getByRole("button", { name: "Edit" }).first().click();
+    await expect(page).toHaveURL(/search=Alpha/);
+    await expect(page).toHaveURL(/edit=/);
+
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page).toHaveURL(/search=Alpha/);
+    await expect(page).not.toHaveURL(/edit=/);
+  });
 });

@@ -185,6 +185,24 @@ export function PeopleTable({
     });
   }, [buildParams, router]);
 
+  const handleEdit = useCallback(
+    (id: string) => {
+      const params = new URLSearchParams(buildParams({ page: String(page) }));
+      params.set("edit", id);
+      router.push(`/people?${params.toString()}`, { scroll: false });
+    },
+    [router, buildParams, page],
+  );
+
+  const handleAddToProject = useCallback(
+    (id: string) => {
+      const params = new URLSearchParams(buildParams({ page: String(page) }));
+      params.set("addToProject", id);
+      router.push(`/people?${params.toString()}`, { scroll: false });
+    },
+    [router, buildParams, page],
+  );
+
   const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0);
 
   const projectOptions = useMemo(
@@ -314,9 +332,7 @@ export function PeopleTable({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() =>
-                  router.push(`/people?edit=${person.id}`, { scroll: false })
-                }
+                onClick={() => handleEdit(person.id)}
               >
                 <Pencil className="size-4" />
                 <span className="sr-only">Edit</span>
@@ -324,11 +340,7 @@ export function PeopleTable({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() =>
-                  router.push(`/people?addToProject=${person.id}`, {
-                    scroll: false,
-                  })
-                }
+                onClick={() => handleAddToProject(person.id)}
               >
                 <FolderPlus className="size-4" />
                 <span className="sr-only">Add to project</span>
@@ -366,7 +378,7 @@ export function PeopleTable({
         enableSorting: false,
       },
     ],
-    [myPersonId, deleteMutation, deletingId, router],
+    [myPersonId, deleteMutation, deletingId, handleEdit, handleAddToProject],
   );
 
   return (
@@ -380,7 +392,13 @@ export function PeopleTable({
           </p>
         </div>
         <Button
-          onClick={() => router.push("/people?create=true", { scroll: false })}
+          onClick={() => {
+            const params = new URLSearchParams(
+              buildParams({ page: String(page) }),
+            );
+            params.set("create", "true");
+            router.push(`/people?${params.toString()}`, { scroll: false });
+          }}
         >
           <Plus className="size-4" />
           Add Person

@@ -220,14 +220,18 @@ export function ProjectsTable({
   );
 
   const handleCreate = useCallback(() => {
-    router.push("/projects?create=true", { scroll: false });
-  }, [router]);
+    const params = new URLSearchParams(buildParams({ page: String(page) }));
+    params.set("create", "true");
+    router.push(`/projects?${params.toString()}`, { scroll: false });
+  }, [router, buildParams, page]);
 
   const handleEdit = useCallback(
     (id: string) => {
-      router.push(`/projects?edit=${id}`, { scroll: false });
+      const params = new URLSearchParams(buildParams({ page: String(page) }));
+      params.set("edit", id);
+      router.push(`/projects?${params.toString()}`, { scroll: false });
     },
-    [router],
+    [router, buildParams, page],
   );
 
   const handleDelete = useCallback(
