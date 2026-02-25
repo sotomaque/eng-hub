@@ -162,7 +162,15 @@ export function PeopleTable({
   );
 
   const handleResetFilters = useCallback(() => {
-    const qs = buildParams({ page: "1", departments: [], projects: [] });
+    clearTimeout(debounceRef.current);
+    setSearchInput("");
+    const qs = buildParams({
+      page: "1",
+      search: "",
+      departments: [],
+      projects: [],
+      multiProject: false,
+    });
     startSearchTransition(() => {
       router.replace(`/people?${qs}`, { scroll: false });
     });
@@ -186,7 +194,7 @@ export function PeopleTable({
     [router, buildParams, page],
   );
 
-  const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0);
+  const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0) + (multiProject ? 1 : 0);
 
   const projectOptions = useMemo(
     () => projectNames.map((n) => ({ label: n, value: n })),

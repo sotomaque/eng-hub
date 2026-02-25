@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { getMe } from "@/app/me/_lib/queries";
 import { AppHeader } from "@/components/app-header";
 import { PersonComments } from "@/components/person-comments";
 import { PersonMeetings } from "@/components/person-meetings";
@@ -46,6 +47,9 @@ async function PersonContent({ id }: { id: string }) {
 
 export default async function PersonPage({ params }: PageProps) {
   const { id } = await params;
+
+  const me = await getMe();
+  if (me?.id === id) redirect("/me");
 
   return (
     <div className="min-h-screen bg-background">

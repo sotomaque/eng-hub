@@ -52,6 +52,12 @@ const personInclude = {
       },
     },
   },
+  ownedProjects: {
+    include: {
+      project: { select: { id: true, name: true } },
+    },
+    orderBy: { project: { name: "asc" } },
+  },
 } as const;
 
 const personListInclude = {

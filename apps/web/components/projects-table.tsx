@@ -188,8 +188,11 @@ export function ProjectsTable({
   }, [buildParams, router, favorite]);
 
   const handleResetFilters = useCallback(() => {
+    clearTimeout(debounceRef.current);
+    setSearchInput("");
     const qs = buildParams({
       page: "1",
+      search: "",
       status: [],
       type: [],
       favorite: false,
@@ -241,6 +244,7 @@ export function ProjectsTable({
     () => [
       {
         id: "favorite",
+        accessorFn: (row) => row.isFavorited,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="★" className="pl-2" />
         ),

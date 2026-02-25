@@ -59,25 +59,32 @@ interface PersonData {
       project: { id: string; name: string };
     };
   }>;
+  ownedProjects: Array<{
+    id: string;
+    project: { id: string; name: string };
+  }>;
 }
 
 interface PersonProfileProps {
   person: PersonData;
+  hideBackLink?: boolean;
 }
 
-export function PersonProfile({ person }: PersonProfileProps) {
+export function PersonProfile({ person, hideBackLink }: PersonProfileProps) {
   const fullName = `${person.firstName} ${person.lastName}`;
   const initials = `${person.firstName[0]}${person.lastName[0]}`;
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/people"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
-      >
-        <ArrowLeft className="size-4" />
-        Back to People
-      </Link>
+      {!hideBackLink && (
+        <Link
+          href="/people"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
+        >
+          <ArrowLeft className="size-4" />
+          Back to People
+        </Link>
+      )}
 
       <div className="flex items-start gap-5">
         <Avatar className="size-20">
@@ -142,6 +149,37 @@ export function PersonProfile({ person }: PersonProfileProps) {
           milestoneAssignments={person.milestoneAssignments}
           quarterlyGoalAssignments={person.quarterlyGoalAssignments}
         />
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Owned Projects
+              {person.ownedProjects.length > 0 && (
+                <span className="text-muted-foreground rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
+                  {person.ownedProjects.length}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {person.ownedProjects.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Not an owner of any projects</p>
+            ) : (
+              <ul className="space-y-2">
+                {person.ownedProjects.map((op) => (
+                  <li key={op.id}>
+                    <Link
+                      href={`/projects/${op.project.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {op.project.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
