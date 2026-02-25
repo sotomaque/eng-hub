@@ -33,11 +33,11 @@ const addToProjectSchema = z.object({
 
 type AddToProjectInput = z.infer<typeof addToProjectSchema>;
 
-interface AddToProjectDialogProps {
+type AddToProjectDialogProps = {
   personId: string;
   personName: string;
   existingProjectIds: string[];
-}
+};
 
 export function AddToProjectDialog({
   personId,

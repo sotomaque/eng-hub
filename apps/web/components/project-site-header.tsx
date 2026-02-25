@@ -14,10 +14,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useBreadcrumbTitle } from "@/lib/contexts/breadcrumb-context";
 
-interface ProjectSiteHeaderProps {
+type ProjectSiteHeaderProps = {
   projectName: string;
   projectId: string;
-}
+};
 
 const SEGMENT_LABELS: Record<string, string> = {
   health: "Health",

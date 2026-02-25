@@ -61,7 +61,7 @@ type ProjectItem = {
   isFavorited: boolean;
 };
 
-interface ProjectsTableProps {
+type ProjectsTableProps = {
   projects: ProjectItem[];
   totalCount: number;
   page: number;
@@ -72,7 +72,7 @@ interface ProjectsTableProps {
   favorite?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-}
+};
 
 function formatRelativeDate(date: Date): string {
   const now = new Date();

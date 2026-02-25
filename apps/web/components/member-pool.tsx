@@ -6,7 +6,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { useMemo, useState } from "react";
 import { DraggableMemberChip } from "@/components/draggable-member-chip";
 
-interface MemberData {
+type MemberData = {
   id: string;
   person: {
     firstName: string;
@@ -16,11 +16,11 @@ interface MemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface MemberPoolProps {
+type MemberPoolProps = {
   members: MemberData[];
-}
+};
 
 export function MemberPool({ members }: MemberPoolProps) {
   const { isOver, setNodeRef } = useDroppable({

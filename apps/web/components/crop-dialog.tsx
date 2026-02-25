@@ -17,12 +17,12 @@ import Cropper from "react-easy-crop";
 import { toast } from "sonner";
 import { getCroppedImage } from "@/lib/crop-image";
 
-interface CropDialogProps {
+type CropDialogProps = {
   imageSrc: string;
   cropShape: "round" | "rect";
   onConfirm: (croppedBlob: Blob) => void;
   onCancel: () => void;
-}
+};
 
 export function CropDialog({ imageSrc, cropShape, onConfirm, onCancel }: CropDialogProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });

@@ -49,7 +49,7 @@ type PersonWithMemberships = {
   projectMemberships: MembershipWithRelations[];
 };
 
-interface PeopleTableProps {
+type PeopleTableProps = {
   people: PersonWithMemberships[];
   projectNames: string[];
   departmentNames: string[];
@@ -62,7 +62,7 @@ interface PeopleTableProps {
   multiProject?: boolean;
   departments?: string[];
   projects?: string[];
-}
+};
 
 export function PeopleTable({
   people,

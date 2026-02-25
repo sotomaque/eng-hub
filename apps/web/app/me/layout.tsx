@@ -6,9 +6,9 @@ import { getMe } from "./_lib/queries";
 
 export const dynamic = "force-dynamic";
 
-interface LayoutProps {
+type LayoutProps = {
   children: React.ReactNode;
-}
+};
 
 export default async function MeLayout({ children }: LayoutProps) {
   const person = await getMe();

@@ -4,9 +4,9 @@ import { AppHeader } from "@/components/app-header";
 
 export const dynamic = "force-dynamic";
 
-interface LayoutProps {
+type LayoutProps = {
   children: React.ReactNode;
-}
+};
 
 export default async function AdminLayout({ children }: LayoutProps) {
   const { sessionClaims } = await auth();

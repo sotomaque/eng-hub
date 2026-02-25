@@ -10,9 +10,9 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 async function OrgChartContent({ projectId }: { projectId: string }) {
   const trpc = await createServerCaller();

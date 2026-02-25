@@ -11,11 +11,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface PersonCommentsProps {
+type PersonCommentsProps = {
   personId: string;
-}
+};
 
-interface Comment {
+type Comment = {
   id: string;
   content: string;
   authorId: string;
@@ -27,7 +27,7 @@ interface Comment {
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
 function formatRelativeTime(date: string): string {
   const now = Date.now();

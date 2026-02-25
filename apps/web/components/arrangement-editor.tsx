@@ -27,31 +27,31 @@ type MemberWithRole = TeamMember & {
   };
 };
 
-interface AssignmentData {
+type AssignmentData = {
   id: string;
   teamMember: MemberWithRole;
-}
+};
 
-interface TeamData {
+type TeamData = {
   id: string;
   name: string;
   sortOrder: number;
   assignments: AssignmentData[];
-}
+};
 
-interface ArrangementData {
+type ArrangementData = {
   id: string;
   name: string;
   isActive: boolean;
   projectId: string;
   teams: TeamData[];
   unassignedMembers: MemberWithRole[];
-}
+};
 
-interface ArrangementEditorProps {
+type ArrangementEditorProps = {
   projectId: string;
   arrangement: ArrangementData;
-}
+};
 
 type ViewMode = "visual" | "table";
 

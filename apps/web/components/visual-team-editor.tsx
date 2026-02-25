@@ -19,7 +19,7 @@ import { MemberPool } from "@/components/member-pool";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface MemberData {
+type MemberData = {
   id: string;
   person: {
     firstName: string;
@@ -29,25 +29,25 @@ interface MemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface AssignmentData {
+type AssignmentData = {
   teamMember: MemberData;
-}
+};
 
-interface TeamData {
+type TeamData = {
   id: string;
   name: string;
   assignments: AssignmentData[];
-}
+};
 
-interface VisualTeamEditorProps {
+type VisualTeamEditorProps = {
   teams: TeamData[];
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
   onDeleteTeam: (teamId: string) => void;
   titleColorMap: TitleColorMap;
-}
+};
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
 

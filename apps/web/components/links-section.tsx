@@ -27,12 +27,12 @@ import { getLinkMeta } from "@/lib/constants/link-icons";
 import { getTagColor } from "@/lib/tag-colors";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface LinksSectionProps {
+type LinksSectionProps = {
   projectId: string;
   links: ProjectLink[];
   githubUrl: string | null;
   gitlabUrl: string | null;
-}
+};
 
 function LinkRow({
   url,

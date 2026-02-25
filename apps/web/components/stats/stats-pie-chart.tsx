@@ -7,7 +7,7 @@ import { assignTiers, type ContributorStatsData, type Tier, tierConfig } from "@
 
 type ViewMode = "tier" | "contributor";
 
-interface StatsPieChartProps {
+type StatsPieChartProps = {
   stats: ContributorStatsData[];
   memberMap: Record<
     string,
@@ -19,7 +19,7 @@ interface StatsPieChartProps {
       imageUrl: string | null;
     }
   >;
-}
+};
 
 // Distinct colors for individual contributors
 const CONTRIBUTOR_COLORS = [

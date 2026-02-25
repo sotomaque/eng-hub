@@ -16,9 +16,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface DepartmentSheetProps {
+type DepartmentSheetProps = {
   returnPath: string;
-}
+};
 
 export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
   const router = useRouter();

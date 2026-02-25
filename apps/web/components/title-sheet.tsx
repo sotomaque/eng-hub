@@ -23,9 +23,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface TitleSheetProps {
+type TitleSheetProps = {
   returnPath: string;
-}
+};
 
 export function TitleSheet({ returnPath }: TitleSheetProps) {
   const router = useRouter();

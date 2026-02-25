@@ -20,13 +20,13 @@ import { useTRPC } from "@/lib/trpc/client";
 
 type CloneSource = "empty" | "active" | "live";
 
-interface CreateArrangementDialogProps {
+type CreateArrangementDialogProps = {
   projectId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activeArrangement: { id: string; name: string } | null;
   hasLiveTeams: boolean;
-}
+};
 
 export function CreateArrangementDialog({
   projectId,

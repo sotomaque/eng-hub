@@ -24,7 +24,7 @@ const TiptapEditor = dynamic(
   { ssr: false },
 );
 
-interface Meeting {
+type Meeting = {
   id: string;
   date: string;
   content: Record<string, unknown>;
@@ -32,11 +32,11 @@ interface Meeting {
   personId: string;
   createdAt: string;
   template: { id: string; name: string } | null;
-}
+};
 
-interface PersonMeetingsProps {
+type PersonMeetingsProps = {
   personId: string;
-}
+};
 
 export function PersonMeetings({ personId }: PersonMeetingsProps) {
   const trpc = useTRPC();

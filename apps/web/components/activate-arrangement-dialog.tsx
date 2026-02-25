@@ -15,14 +15,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface ActivateArrangementDialogProps {
+type ActivateArrangementDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   arrangementId: string;
   arrangementName: string;
   teamCount: number;
   assignedCount: number;
-}
+};
 
 export function ActivateArrangementDialog({
   open,

@@ -4,15 +4,15 @@ import { cn } from "@workspace/ui/lib/utils";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
 
-interface MemberWithTitle {
+type MemberWithTitle = {
   title: { name: string } | null;
-}
+};
 
-interface TeamCompositionBarProps {
+type TeamCompositionBarProps = {
   members: MemberWithTitle[];
   titleColorMap: TitleColorMap;
   className?: string;
-}
+};
 
 export function TeamCompositionBar({ members, titleColorMap, className }: TeamCompositionBarProps) {
   if (members.length === 0) return null;

@@ -36,16 +36,16 @@ import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreateMilestoneInput, createMilestoneSchema } from "@/lib/validations/milestone";
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultData {
+type KeyResultData = {
   id: string;
   title: string;
   targetValue: number;
@@ -53,9 +53,9 @@ interface KeyResultData {
   unit: string | null;
   status: string;
   sortOrder: number;
-}
+};
 
-interface MilestoneData {
+type MilestoneData = {
   id: string;
   title: string;
   description: string | null;
@@ -64,13 +64,13 @@ interface MilestoneData {
   parentId: string | null;
   assignments: AssignmentPerson[];
   keyResults: KeyResultData[];
-}
+};
 
-interface MilestoneSheetProps {
+type MilestoneSheetProps = {
   projectId: string;
   milestone?: MilestoneData;
   defaultParentId?: string;
-}
+};
 
 export function MilestoneSheet({ projectId, milestone, defaultParentId }: MilestoneSheetProps) {
   const router = useRouter();

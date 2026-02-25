@@ -4,34 +4,34 @@ import { Flag, Target } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
 
-interface RoadmapAssignment {
+type RoadmapAssignment = {
   id: string;
   title: string;
   status: string;
   targetDate: string | null;
   projectId: string;
   project: { id: string; name: string };
-}
+};
 
-interface MilestoneAssignment {
+type MilestoneAssignment = {
   milestone: RoadmapAssignment;
-}
+};
 
-interface GoalAssignment {
+type GoalAssignment = {
   quarterlyGoal: RoadmapAssignment & { quarter: string | null };
-}
+};
 
-interface PersonRoadmapCardProps {
+type PersonRoadmapCardProps = {
   milestoneAssignments: MilestoneAssignment[];
   quarterlyGoalAssignments: GoalAssignment[];
-}
+};
 
-interface GroupedItems {
+type GroupedItems = {
   projectName: string;
   projectId: string;
   milestones: RoadmapAssignment[];
   goals: (RoadmapAssignment & { quarter: string | null })[];
-}
+};
 
 export function PersonRoadmapCard({
   milestoneAssignments,

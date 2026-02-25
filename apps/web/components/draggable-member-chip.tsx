@@ -4,7 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { cn } from "@workspace/ui/lib/utils";
 
-interface DraggableMemberChipProps {
+type DraggableMemberChipProps = {
   id: string;
   firstName: string;
   lastName: string;
@@ -13,7 +13,7 @@ interface DraggableMemberChipProps {
   department: { name: string; color: string | null } | null;
   sourceTeamId: string | null;
   imageUrl?: string | null;
-}
+};
 
 export function DraggableMemberChip({
   id,

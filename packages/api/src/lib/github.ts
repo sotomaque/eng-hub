@@ -1,6 +1,6 @@
 import type { Trend } from "@workspace/db";
 
-export interface ContributorCommitData {
+export type ContributorCommitData = {
   username: string;
   totalCommits: number;
   additions: number;
@@ -11,23 +11,23 @@ export interface ContributorCommitData {
     deletions: number;
     commits: number;
   }[];
-}
+};
 
-export interface ReviewData {
+export type ReviewData = {
   login: string;
   createdAt: string;
-}
+};
 
-export interface PRData {
+export type PRData = {
   author: string;
   state: "OPEN" | "CLOSED" | "MERGED";
   merged: boolean;
   mergedAt: string | null;
   createdAt: string;
   reviews: ReviewData[];
-}
+};
 
-export interface ContributorAggregated {
+export type ContributorAggregated = {
   githubUsername: string;
   commits: number;
   prsOpened: number;
@@ -41,7 +41,7 @@ export interface ContributorAggregated {
   avgWeeklyReviews: number;
   recentWeeklyReviews: number;
   reviewTrend: Trend;
-}
+};
 
 export function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
   try {

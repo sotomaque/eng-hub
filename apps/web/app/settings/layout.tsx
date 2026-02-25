@@ -2,9 +2,9 @@ import { AppHeader } from "@/components/app-header";
 
 export const dynamic = "force-dynamic";
 
-interface LayoutProps {
+type LayoutProps = {
   children: React.ReactNode;
-}
+};
 
 export default function SettingsLayout({ children }: LayoutProps) {
   return (

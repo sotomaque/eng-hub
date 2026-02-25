@@ -24,7 +24,7 @@ type ChildProject = {
   imageUrl: string | null;
 };
 
-interface ProjectOverviewProps {
+type ProjectOverviewProps = {
   projectId: string;
   description: string | null;
   latestStatus: { overallStatus: HealthStatus } | null;
@@ -41,7 +41,7 @@ interface ProjectOverviewProps {
     lastName: string;
     imageUrl: string | null;
   }[];
-}
+};
 
 function countByStatus(items: { status: RoadmapStatus }[]) {
   const counts = { completed: 0, inProgress: 0, atRisk: 0, notStarted: 0 };

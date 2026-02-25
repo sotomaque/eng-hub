@@ -8,9 +8,14 @@ import { PersonProfile } from "@/components/person-profile";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { getCachedPerson } from "./_lib/queries";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
+function serializeDate(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  return typeof date === "string" ? date : date.toISOString();
 }
+
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
 
 async function PersonContent({ id }: { id: string }) {
   // Run both fetches concurrently — getMe() is React.cache()-deduped so no extra DB call
@@ -24,23 +29,12 @@ async function PersonContent({ id }: { id: string }) {
       person={{
         ...person,
         milestoneAssignments: person.milestoneAssignments.map((a) => ({
-          milestone: {
-            ...a.milestone,
-            targetDate: a.milestone.targetDate
-              ? typeof a.milestone.targetDate === "string"
-                ? a.milestone.targetDate
-                : a.milestone.targetDate.toISOString()
-              : null,
-          },
+          milestone: { ...a.milestone, targetDate: serializeDate(a.milestone.targetDate) },
         })),
         quarterlyGoalAssignments: person.quarterlyGoalAssignments.map((a) => ({
           quarterlyGoal: {
             ...a.quarterlyGoal,
-            targetDate: a.quarterlyGoal.targetDate
-              ? typeof a.quarterlyGoal.targetDate === "string"
-                ? a.quarterlyGoal.targetDate
-                : a.quarterlyGoal.targetDate.toISOString()
-              : null,
+            targetDate: serializeDate(a.quarterlyGoal.targetDate),
           },
         })),
       }}

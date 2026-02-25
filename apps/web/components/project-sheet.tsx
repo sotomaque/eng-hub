@@ -25,7 +25,7 @@ import { PersonMultiSelect } from "@/components/person-multi-select";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreateProjectInput, createProjectSchema } from "@/lib/validations/project";
 
-interface ProjectSheetProps {
+type ProjectSheetProps = {
   project?: {
     id: string;
     name: string;
@@ -38,7 +38,7 @@ interface ProjectSheetProps {
     owners?: { person: { id: string } }[];
   };
   defaultParentId?: string;
-}
+};
 
 export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
   const router = useRouter();

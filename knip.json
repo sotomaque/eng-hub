@@ -4,15 +4,8 @@
   "workspaces": {
     ".": {},
     "apps/web": {
-      "ignoreDependencies": [
-        "@t3-oss/env-nextjs",
-        "@tailwindcss/postcss"
-      ],
-      "entry": [
-        "app/**/*.{ts,tsx}",
-        "lib/**/*.{ts,tsx}",
-        "__tests__/**/*.{ts,tsx}"
-      ],
+      "ignoreDependencies": ["@t3-oss/env-nextjs", "@tailwindcss/postcss"],
+      "entry": ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "__tests__/**/*.{ts,tsx}"],
       "project": [
         "app/**/*.{ts,tsx}",
         "lib/**/*.{ts,tsx}",
@@ -25,12 +18,7 @@
       }
     },
     "packages/ui": {
-      "ignoreDependencies": [
-        "date-fns",
-        "next",
-        "postcss",
-        "postcss-load-config"
-      ]
+      "ignoreDependencies": ["date-fns", "next", "postcss", "postcss-load-config"]
     },
     "packages/typescript-config": {
       "ignoreDependencies": ["next"]

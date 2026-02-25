@@ -11,13 +11,13 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
     addLink?: string;
     editLink?: string;
   }>;
-}
+};
 
 async function LinksContent({ id }: { id: string }) {
   const project = await getCachedProject(id);

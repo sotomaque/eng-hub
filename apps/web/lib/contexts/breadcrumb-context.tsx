@@ -2,10 +2,10 @@
 
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
 
-interface BreadcrumbContextValue {
+type BreadcrumbContextValue = {
   title: string | null;
   setTitle: (title: string | null) => void;
-}
+};
 
 const BreadcrumbContext = createContext<BreadcrumbContextValue>({
   title: null,

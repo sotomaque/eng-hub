@@ -34,13 +34,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface UnlinkedPerson {
+type UnlinkedPerson = {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
   imageUrl: string | null;
-}
+};
 
 export function AdminWaitlistTable() {
   const trpc = useTRPC();

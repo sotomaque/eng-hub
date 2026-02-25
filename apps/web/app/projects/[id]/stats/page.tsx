@@ -10,9 +10,9 @@ import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 async function StatsContent({ id }: { id: string }) {
   const project = await getCachedProject(id);

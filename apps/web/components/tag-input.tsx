@@ -16,12 +16,12 @@ import { useState } from "react";
 
 import { getTagColor } from "@/lib/tag-colors";
 
-interface TagInputProps {
+type TagInputProps = {
   value: string[];
   onChange: (tags: string[]) => void;
   suggestions: string[];
   placeholder?: string;
-}
+};
 
 export function TagInput({
   value,

@@ -14,7 +14,7 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { assignTiers, type ContributorStatsData, tierConfig } from "@/lib/tiers";
 
-interface StatsDataTableProps {
+type StatsDataTableProps = {
   stats: ContributorStatsData[];
   memberMap: Record<
     string,
@@ -26,7 +26,7 @@ interface StatsDataTableProps {
       imageUrl: string | null;
     }
   >;
-}
+};
 
 export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
   const tierMap = assignTiers(stats);

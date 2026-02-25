@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { CreateArrangementDialog } from "@/components/create-arrangement-dialog";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface ArrangementData {
+type ArrangementData = {
   id: string;
   name: string;
   isActive: boolean;
@@ -33,15 +33,15 @@ interface ArrangementData {
     name: string;
     _count: { assignments: number };
   }[];
-}
+};
 
-interface ArrangementsListProps {
+type ArrangementsListProps = {
   projectId: string;
   projectName: string;
   arrangements: ArrangementData[];
   totalMembers: number;
   hasLiveTeams: boolean;
-}
+};
 
 export function ArrangementsList({
   projectId,

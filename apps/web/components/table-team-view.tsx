@@ -18,7 +18,7 @@ import { TeamCompositionBar } from "@/components/team-composition-bar";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface MemberData {
+type MemberData = {
   id: string;
   personId: string;
   person: {
@@ -28,25 +28,25 @@ interface MemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface AssignmentData {
+type AssignmentData = {
   teamMember: MemberData;
-}
+};
 
-interface TeamData {
+type TeamData = {
   id: string;
   name: string;
   assignments: AssignmentData[];
-}
+};
 
-interface TableTeamViewProps {
+type TableTeamViewProps = {
   teams: TeamData[];
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
   onDeleteTeam: (teamId: string) => void;
   titleColorMap: TitleColorMap;
-}
+};
 
 export function TableTeamView({
   teams,

@@ -6,7 +6,7 @@ import { ArrowLeft, Building2, Github } from "lucide-react";
 import Link from "next/link";
 import { PersonRoadmapCard } from "@/components/person-roadmap-card";
 
-interface PersonData {
+type PersonData = {
   id: string;
   firstName: string;
   lastName: string;
@@ -63,12 +63,12 @@ interface PersonData {
     id: string;
     project: { id: string; name: string };
   }>;
-}
+};
 
-interface PersonProfileProps {
+type PersonProfileProps = {
   person: PersonData;
   hideBackLink?: boolean;
-}
+};
 
 export function PersonProfile({ person, hideBackLink }: PersonProfileProps) {
   const fullName = `${person.firstName} ${person.lastName}`;

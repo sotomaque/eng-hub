@@ -25,7 +25,7 @@ function manageReturnPath(
   return base;
 }
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
     addMember?: string;
@@ -38,7 +38,7 @@ interface PageProps {
     title?: string;
     department?: string;
   }>;
-}
+};
 
 async function TeamContent({
   id,

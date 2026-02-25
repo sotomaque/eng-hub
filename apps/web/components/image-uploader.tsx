@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { CropDialog } from "@/components/crop-dialog";
 import { useUploadThing } from "@/lib/uploadthing-components";
 
-interface ImageUploaderProps {
+type ImageUploaderProps = {
   label?: string;
   currentImageUrl?: string | null;
   onUploadComplete: (url: string) => void;
@@ -17,7 +17,7 @@ interface ImageUploaderProps {
   onUploadingChange?: (uploading: boolean) => void;
   fallbackText?: string;
   shape?: "circle" | "square";
-}
+};
 
 export function ImageUploader({
   label = "Image",

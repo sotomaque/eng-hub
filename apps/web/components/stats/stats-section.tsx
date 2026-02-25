@@ -21,10 +21,10 @@ const StatsPieChart = dynamic(() => import("./stats-pie-chart").then((m) => m.St
   ssr: false,
 });
 
-interface StatsSectionProps {
+type StatsSectionProps = {
   projectId: string;
   hasGithubUrl: boolean;
-}
+};
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 

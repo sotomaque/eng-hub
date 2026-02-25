@@ -25,11 +25,11 @@ const STATUS_OPTIONS: {
   },
 ];
 
-interface HealthStatusPickerProps {
+type HealthStatusPickerProps = {
   value: HealthStatus | null | undefined;
   onChange: (status: HealthStatus) => void;
   disabled?: boolean;
-}
+};
 
 export function HealthStatusPicker({ value, onChange, disabled }: HealthStatusPickerProps) {
   return (

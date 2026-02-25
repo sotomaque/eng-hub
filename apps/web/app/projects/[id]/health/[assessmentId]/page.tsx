@@ -5,9 +5,9 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string; assessmentId: string }>;
-}
+};
 
 async function AssessmentContent({
   projectId,

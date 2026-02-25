@@ -25,7 +25,7 @@ import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreateTeamMemberInput, createTeamMemberSchema } from "@/lib/validations/team-member";
 
-interface TeamMemberSheetProps {
+type TeamMemberSheetProps = {
   projectId: string;
   member?: {
     id: string;
@@ -44,7 +44,7 @@ interface TeamMemberSheetProps {
     };
     teamMemberships: (TeamMembership & { team: Team })[];
   };
-}
+};
 
 export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const router = useRouter();

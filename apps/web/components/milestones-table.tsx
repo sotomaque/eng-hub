@@ -51,21 +51,21 @@ const depthFilterOptions = [
   { label: "Sub-item", value: "sub" },
 ];
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultItem {
+type KeyResultItem = {
   id: string;
   status: string;
-}
+};
 
-interface MilestoneChild {
+type MilestoneChild = {
   id: string;
   title: string;
   description: string | null;
@@ -74,9 +74,9 @@ interface MilestoneChild {
   sortOrder: number;
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
-}
+};
 
-export interface MilestoneItem {
+export type MilestoneItem = {
   id: string;
   title: string;
   description: string | null;
@@ -87,9 +87,9 @@ export interface MilestoneItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
   children: MilestoneChild[];
-}
+};
 
-interface FlatMilestone {
+type FlatMilestone = {
   id: string;
   title: string;
   targetDate: string | null;
@@ -98,15 +98,15 @@ interface FlatMilestone {
   keyResults: KeyResultItem[];
   depth: number;
   parentId: string | null;
-}
+};
 
-interface MilestonesTableProps {
+type MilestonesTableProps = {
   projectId: string;
   milestones: MilestoneItem[];
   filterStatus?: string[];
   filterType?: string[];
   filterAssignee?: string[];
-}
+};
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
 

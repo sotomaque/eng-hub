@@ -14,12 +14,12 @@ import { cn } from "@workspace/ui/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 
-interface ComboboxOption {
+type ComboboxOption = {
   value: string;
   label: string;
-}
+};
 
-interface ComboboxProps {
+type ComboboxProps = {
   options: ComboboxOption[];
   value: string;
   onValueChange: (value: string) => void;
@@ -27,7 +27,7 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   emptyMessage?: string;
   className?: string;
-}
+};
 
 function Combobox({
   options,

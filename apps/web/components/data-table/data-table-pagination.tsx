@@ -9,9 +9,9 @@ import {
 } from "@workspace/ui/components/select";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
-interface DataTablePaginationProps<TData> {
+type DataTablePaginationProps<TData> = {
   table: Table<TData>;
-}
+};
 
 export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
   return (

@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface FavoriteButtonProps {
+type FavoriteButtonProps = {
   projectId: string;
   isFavorited: boolean;
   size?: "sm" | "default";
-}
+};
 
 export function FavoriteButton({ projectId, isFavorited, size = "sm" }: FavoriteButtonProps) {
   const router = useRouter();

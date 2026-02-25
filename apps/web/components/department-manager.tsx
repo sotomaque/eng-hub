@@ -35,20 +35,20 @@ const COLOR_PRESETS = [
   "#6366f1", // indigo
 ];
 
-interface Department {
+type Department = {
   id: string;
   name: string;
   color: string | null;
   titles: Title[];
   _count: { people: number };
-}
+};
 
-interface Title {
+type Title = {
   id: string;
   name: string;
   sortOrder: number;
   departmentId: string | null;
-}
+};
 
 export function DepartmentManager() {
   const trpc = useTRPC();

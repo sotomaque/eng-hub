@@ -121,11 +121,11 @@ type ExistingAssessment = {
   designVibeNotes: unknown;
 };
 
-interface HealthAssessmentFormProps {
+type HealthAssessmentFormProps = {
   projectId: string;
   assessment?: ExistingAssessment;
   prefill?: ExistingAssessment;
-}
+};
 
 function getStatusKey(key: DimensionKey): `${DimensionKey}Status` {
   return `${key}Status`;
@@ -393,12 +393,12 @@ export function HealthAssessmentForm({
   );
 }
 
-interface NotesToggleProps {
+type NotesToggleProps = {
   notes: JSONContent | undefined;
   onChange: (content: JSONContent) => void;
   disabled?: boolean;
   defaultOpen?: boolean;
-}
+};
 
 function NotesToggle({ notes, onChange, disabled, defaultOpen = false }: NotesToggleProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -427,7 +427,7 @@ function NotesToggle({ notes, onChange, disabled, defaultOpen = false }: NotesTo
   );
 }
 
-interface DimensionSectionProps {
+type DimensionSectionProps = {
   label: string;
   description: string;
   status: HealthStatus | null;
@@ -435,7 +435,7 @@ interface DimensionSectionProps {
   onStatusChange: (status: HealthStatus) => void;
   onNotesChange: (content: JSONContent) => void;
   disabled?: boolean;
-}
+};
 
 function DimensionSection({
   label,

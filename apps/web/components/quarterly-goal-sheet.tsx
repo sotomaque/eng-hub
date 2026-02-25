@@ -39,16 +39,16 @@ import {
   createQuarterlyGoalSchema,
 } from "@/lib/validations/quarterly-goal";
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultData {
+type KeyResultData = {
   id: string;
   title: string;
   targetValue: number;
@@ -56,9 +56,9 @@ interface KeyResultData {
   unit: string | null;
   status: string;
   sortOrder: number;
-}
+};
 
-interface GoalData {
+type GoalData = {
   id: string;
   title: string;
   description: string | null;
@@ -68,13 +68,13 @@ interface GoalData {
   parentId: string | null;
   assignments: AssignmentPerson[];
   keyResults: KeyResultData[];
-}
+};
 
-interface QuarterlyGoalSheetProps {
+type QuarterlyGoalSheetProps = {
   projectId: string;
   goal?: GoalData;
   defaultParentId?: string;
-}
+};
 
 export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: QuarterlyGoalSheetProps) {
   const router = useRouter();

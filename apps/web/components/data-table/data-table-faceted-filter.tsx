@@ -8,12 +8,12 @@ import { Separator } from "@workspace/ui/components/separator";
 import { cn } from "@workspace/ui/lib/utils";
 import { Check, PlusCircle } from "lucide-react";
 
-interface FilterOption {
+type FilterOption = {
   label: string;
   value: string;
-}
+};
 
-interface DataTableFacetedFilterProps<TData, TValue> {
+type DataTableFacetedFilterProps<TData, TValue> = {
   column?: Column<TData, TValue>;
   title: string;
   options: FilterOption[];
@@ -21,7 +21,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   value?: string[];
   /** Controlled mode: called when selection changes */
   onValueChange?: (values: string[]) => void;
-}
+};
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,

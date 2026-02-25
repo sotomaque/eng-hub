@@ -6,7 +6,7 @@ import { Eye, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ContributorStatsData } from "@/lib/tiers";
 
-interface StatsInsightsProps {
+type StatsInsightsProps = {
   stats: ContributorStatsData[];
   memberMap: Record<
     string,
@@ -18,7 +18,7 @@ interface StatsInsightsProps {
       imageUrl: string | null;
     }
   >;
-}
+};
 
 const THRESHOLD_OPTIONS = [10, 20, 30, 50];
 

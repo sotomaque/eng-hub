@@ -7,6 +7,11 @@ import { getMe } from "./_lib/queries";
 
 export const metadata: Metadata = { title: "My Dashboard" };
 
+function serializeDate(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  return typeof date === "string" ? date : date.toISOString();
+}
+
 async function MeContent() {
   const person = await getMe();
 
@@ -20,23 +25,12 @@ async function MeContent() {
       person={{
         ...person,
         milestoneAssignments: person.milestoneAssignments.map((a) => ({
-          milestone: {
-            ...a.milestone,
-            targetDate: a.milestone.targetDate
-              ? typeof a.milestone.targetDate === "string"
-                ? a.milestone.targetDate
-                : a.milestone.targetDate.toISOString()
-              : null,
-          },
+          milestone: { ...a.milestone, targetDate: serializeDate(a.milestone.targetDate) },
         })),
         quarterlyGoalAssignments: person.quarterlyGoalAssignments.map((a) => ({
           quarterlyGoal: {
             ...a.quarterlyGoal,
-            targetDate: a.quarterlyGoal.targetDate
-              ? typeof a.quarterlyGoal.targetDate === "string"
-                ? a.quarterlyGoal.targetDate
-                : a.quarterlyGoal.targetDate.toISOString()
-              : null,
+            targetDate: serializeDate(a.quarterlyGoal.targetDate),
           },
         })),
       }}

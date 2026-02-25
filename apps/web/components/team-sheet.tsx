@@ -26,9 +26,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface TeamSheetProps {
+type TeamSheetProps = {
   projectId: string;
-}
+};
 
 export function TeamSheet({ projectId }: TeamSheetProps) {
   const router = useRouter();

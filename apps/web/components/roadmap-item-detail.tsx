@@ -44,21 +44,21 @@ import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
 import { useBreadcrumbTitle } from "@/lib/contexts/breadcrumb-context";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultItem {
+type KeyResultItem = {
   id: string;
   status: string;
-}
+};
 
-interface KeyResultFull {
+type KeyResultFull = {
   id: string;
   title: string;
   targetValue: number;
@@ -66,9 +66,9 @@ interface KeyResultFull {
   unit: string | null;
   status: string;
   sortOrder: number;
-}
+};
 
-interface ChildItem {
+type ChildItem = {
   id: string;
   title: string;
   description: string | null;
@@ -78,9 +78,9 @@ interface ChildItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
   quarter: string | null;
-}
+};
 
-interface RoadmapItem {
+type RoadmapItem = {
   id: string;
   title: string;
   description: string | null;
@@ -92,13 +92,13 @@ interface RoadmapItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultFull[];
   children: ChildItem[];
-}
+};
 
-interface RoadmapItemDetailProps {
+type RoadmapItemDetailProps = {
   projectId: string;
   type: "milestone" | "quarterlyGoal";
   item: RoadmapItem;
-}
+};
 
 export function RoadmapItemDetail({ projectId, type, item }: RoadmapItemDetailProps) {
   const router = useRouter();

@@ -24,10 +24,10 @@ import { ImageUploader } from "@/components/image-uploader";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreateTeamInput, createTeamSchema } from "@/lib/validations/team";
 
-interface TeamEditSheetProps {
+type TeamEditSheetProps = {
   projectId: string;
   team?: Team;
-}
+};
 
 export function TeamEditSheet({ projectId, team }: TeamEditSheetProps) {
   const router = useRouter();

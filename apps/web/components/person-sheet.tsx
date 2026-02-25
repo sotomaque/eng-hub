@@ -44,9 +44,9 @@ type PersonWithMemberships = {
   }[];
 };
 
-interface PersonSheetProps {
+type PersonSheetProps = {
   person?: PersonWithMemberships;
-}
+};
 
 export function PersonSheet({ person }: PersonSheetProps) {
   const router = useRouter();

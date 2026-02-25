@@ -11,11 +11,11 @@ import {
   Trello,
 } from "lucide-react";
 
-interface LinkMeta {
+type LinkMeta = {
   icon: LucideIcon;
   label: string;
   color: string;
-}
+};
 
 const SERVICE_MAP: { pattern: string; meta: LinkMeta }[] = [
   {

@@ -17,11 +17,11 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface PersonMultiSelectProps {
+type PersonMultiSelectProps = {
   value: string[];
   onChange: (ids: string[]) => void;
   placeholder?: string;
-}
+};
 
 export function PersonMultiSelect({
   value,

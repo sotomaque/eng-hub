@@ -26,7 +26,7 @@ import { Fragment, type ReactNode, useState } from "react";
 
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
-interface DataTableProps<TData, TValue> {
+type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   toolbar?: (table: TanstackTable<TData>) => ReactNode;
@@ -50,7 +50,7 @@ interface DataTableProps<TData, TValue> {
   getRowId?: (originalRow: TData, index: number) => string;
   /** Custom row wrapper, e.g. for drag-and-drop sortable rows */
   renderRow?: (props: { rowId: string; children: ReactNode }) => ReactNode;
-}
+};
 
 export function DataTable<TData, TValue>({
   columns,

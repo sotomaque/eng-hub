@@ -18,10 +18,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 
-interface MeSidebarProps {
+type MeSidebarProps = {
   personName: string;
   personImageUrl?: string | null;
-}
+};
 
 const navItems = [
   { label: "Profile", icon: LayoutDashboard, path: "" },

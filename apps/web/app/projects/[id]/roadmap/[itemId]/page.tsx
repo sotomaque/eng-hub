@@ -8,7 +8,7 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string; itemId: string }>;
   searchParams: Promise<{
     addMilestone?: string;
@@ -16,7 +16,7 @@ interface PageProps {
     addGoal?: string;
     editGoal?: string;
   }>;
-}
+};
 
 function serializeDate(d: Date | string | null): string | null {
   if (!d) return null;

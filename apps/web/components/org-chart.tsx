@@ -39,16 +39,16 @@ type ManagerChange = {
   createdAt: string;
 };
 
-interface OrgChartProps {
+type OrgChartProps = {
   members: OrgMember[];
   recentChanges: ManagerChange[];
   emptyMessage?: string;
-}
+};
 
-interface TreeNode {
+type TreeNode = {
   member: OrgMember;
   children: TreeNode[];
-}
+};
 
 function buildTree(members: OrgMember[]): {
   roots: TreeNode[];

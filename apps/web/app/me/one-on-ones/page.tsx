@@ -15,7 +15,7 @@ import { useTRPC } from "@/lib/trpc/client";
 
 const EMPTY_MEETINGS: Meeting[] = [];
 
-interface Meeting {
+type Meeting = {
   id: string;
   date: string;
   createdAt: string;
@@ -27,7 +27,7 @@ interface Meeting {
     imageUrl: string | null;
   };
   template: { id: string; name: string } | null;
-}
+};
 
 export default function OneOnOnesPage() {
   const trpc = useTRPC();

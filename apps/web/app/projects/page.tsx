@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Projects" };
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   searchParams: Promise<{
     edit?: string;
     create?: string;
@@ -25,7 +25,7 @@ interface PageProps {
     type?: string;
     favorite?: string;
   }>;
-}
+};
 
 async function ProjectsContent({
   page,

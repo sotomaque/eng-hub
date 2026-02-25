@@ -38,13 +38,13 @@ import {
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
-interface ToolbarButtonProps {
+type ToolbarButtonProps = {
   onClick: () => void;
   isActive?: boolean;
   disabled?: boolean;
   tooltip: string;
   children: React.ReactNode;
-}
+};
 
 function ToolbarButton({ onClick, isActive, disabled, tooltip, children }: ToolbarButtonProps) {
   return (
@@ -71,12 +71,12 @@ function ToolbarButton({ onClick, isActive, disabled, tooltip, children }: Toolb
   );
 }
 
-interface TiptapEditorProps {
+type TiptapEditorProps = {
   initialContent?: JSONContent;
   onChange?: (content: JSONContent) => void;
   editable?: boolean;
   className?: string;
-}
+};
 
 export function TiptapEditor({
   initialContent,

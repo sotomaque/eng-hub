@@ -47,12 +47,12 @@ type MemberWithRelations = {
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
-interface FilterOption {
+type FilterOption = {
   label: string;
   value: string;
-}
+};
 
-interface TeamMembersTableProps {
+type TeamMembersTableProps = {
   projectId: string;
   members: MemberWithRelations[];
   titleColorMap: TitleColorMap;
@@ -63,7 +63,7 @@ interface TeamMembersTableProps {
   filterCount?: number;
   onFilterChange?: (key: "title" | "department", values: string[]) => void;
   onResetFilters?: () => void;
-}
+};
 
 export function TeamMembersTable({
   projectId,

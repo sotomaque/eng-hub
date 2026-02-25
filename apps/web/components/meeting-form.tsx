@@ -37,7 +37,7 @@ const TiptapEditor = dynamic(
 
 import { useTRPC } from "@/lib/trpc/client";
 
-interface MeetingFormProps {
+type MeetingFormProps = {
   meeting?: {
     id: string;
     date: string;
@@ -48,7 +48,7 @@ interface MeetingFormProps {
   defaultPersonId?: string;
   defaultTemplateId?: string;
   directReports: Array<{ id: string; firstName: string; lastName: string }>;
-}
+};
 
 export function MeetingForm({
   meeting,

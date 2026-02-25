@@ -27,7 +27,7 @@ const TiptapEditor = dynamic(
 
 import { useTRPC } from "@/lib/trpc/client";
 
-interface TemplateFormProps {
+type TemplateFormProps = {
   template?: {
     id: string;
     name: string;
@@ -35,7 +35,7 @@ interface TemplateFormProps {
     content: unknown;
   };
   readOnly?: boolean;
-}
+};
 
 export function TemplateForm({ template, readOnly }: TemplateFormProps) {
   const router = useRouter();

@@ -25,10 +25,10 @@ import {
   createProjectLinkSchema,
 } from "@/lib/validations/project-link";
 
-interface ProjectLinkSheetProps {
+type ProjectLinkSheetProps = {
   projectId: string;
   link?: ProjectLink;
-}
+};
 
 export function ProjectLinkSheet({ projectId, link }: ProjectLinkSheetProps) {
   const router = useRouter();

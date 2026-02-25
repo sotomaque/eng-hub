@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { STATUS_LABELS } from "@/lib/constants/roadmap";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface KeyResultData {
+type KeyResultData = {
   id: string;
   title: string;
   targetValue: number;
@@ -25,14 +25,14 @@ interface KeyResultData {
   unit: string | null;
   status: string;
   sortOrder: number;
-}
+};
 
-interface KeyResultsEditorProps {
+type KeyResultsEditorProps = {
   keyResults: KeyResultData[];
   milestoneId?: string;
   quarterlyGoalId?: string;
   onChanged: () => void;
-}
+};
 
 export function KeyResultsEditor({
   keyResults,

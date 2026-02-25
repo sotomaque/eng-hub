@@ -1,9 +1,9 @@
-interface CropArea {
+type CropArea = {
   x: number;
   y: number;
   width: number;
   height: number;
-}
+};
 
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

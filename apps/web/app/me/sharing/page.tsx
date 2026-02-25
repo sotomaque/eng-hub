@@ -27,7 +27,7 @@ import { useTRPC } from "@/lib/trpc/client";
 const EMPTY_GRANTS: Grant[] = [];
 const EMPTY_PEOPLE: Person[] = [];
 
-interface Grant {
+type Grant = {
   id: string;
   granteeId: string;
   createdAt: string;
@@ -37,14 +37,14 @@ interface Grant {
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface Person {
+type Person = {
   id: string;
   firstName: string;
   lastName: string;
   imageUrl: string | null;
-}
+};
 
 export default function SharingPage() {
   const trpc = useTRPC();

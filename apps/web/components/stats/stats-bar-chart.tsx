@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { assignTiers, type ContributorStatsData, tierConfig } from "@/lib/tiers";
 
-interface StatsBarChartProps {
+type StatsBarChartProps = {
   stats: ContributorStatsData[];
   memberMap: Record<
     string,
@@ -16,7 +16,7 @@ interface StatsBarChartProps {
       imageUrl: string | null;
     }
   >;
-}
+};
 
 export function StatsBarChart({ stats, memberMap }: StatsBarChartProps) {
   const tierMap = assignTiers(stats);

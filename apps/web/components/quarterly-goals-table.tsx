@@ -51,21 +51,21 @@ const depthFilterOptions = [
   { label: "Sub-item", value: "sub" },
 ];
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultItem {
+type KeyResultItem = {
   id: string;
   status: string;
-}
+};
 
-interface GoalChild {
+type GoalChild = {
   id: string;
   title: string;
   description: string | null;
@@ -75,9 +75,9 @@ interface GoalChild {
   sortOrder: number;
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
-}
+};
 
-export interface QuarterlyGoalItem {
+export type QuarterlyGoalItem = {
   id: string;
   title: string;
   description: string | null;
@@ -89,9 +89,9 @@ export interface QuarterlyGoalItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
   children: GoalChild[];
-}
+};
 
-interface FlatGoal {
+type FlatGoal = {
   id: string;
   title: string;
   quarter: string | null;
@@ -101,16 +101,16 @@ interface FlatGoal {
   keyResults: KeyResultItem[];
   depth: number;
   parentId: string | null;
-}
+};
 
-interface QuarterlyGoalsTableProps {
+type QuarterlyGoalsTableProps = {
   projectId: string;
   goals: QuarterlyGoalItem[];
   filterStatus?: string[];
   filterQuarter?: string[];
   filterType?: string[];
   filterAssignee?: string[];
-}
+};
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
 

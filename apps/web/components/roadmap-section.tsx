@@ -10,7 +10,7 @@ import { MilestonesTable } from "@/components/milestones-table";
 import type { QuarterlyGoalItem } from "@/components/quarterly-goals-table";
 import { QuarterlyGoalsTable } from "@/components/quarterly-goals-table";
 
-interface RoadmapSectionProps {
+type RoadmapSectionProps = {
   projectId: string;
   milestones: MilestoneItem[];
   quarterlyGoals: QuarterlyGoalItem[];
@@ -21,7 +21,7 @@ interface RoadmapSectionProps {
   qgQuarter?: string[];
   qgType?: string[];
   qgAssignee?: string[];
-}
+};
 
 function countWithChildren<T extends { children: { length: number } }>(items: T[]): number {
   let count = items.length;

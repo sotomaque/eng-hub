@@ -38,10 +38,10 @@ const ALL_DIMENSIONS: {
   { key: "designVibeStatus", label: "Design", section: "vibe" },
 ];
 
-interface HealthSectionProps {
+type HealthSectionProps = {
   projectId: string;
   assessments: AssessmentItem[];
-}
+};
 
 function StatusChip({ status }: { status: HealthStatus | null }) {
   if (!status) {

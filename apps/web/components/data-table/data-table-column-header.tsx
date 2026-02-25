@@ -5,11 +5,11 @@ import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
-interface DataTableColumnHeaderProps<TData, TValue> {
+type DataTableColumnHeaderProps<TData, TValue> = {
   column: Column<TData, TValue>;
   title: string;
   className?: string;
-}
+};
 
 export function DataTableColumnHeader<TData, TValue>({
   column,

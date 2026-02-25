@@ -29,13 +29,13 @@ type MemberWithRelations = {
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
-interface TeamSectionProps {
+type TeamSectionProps = {
   projectId: string;
   members: MemberWithRelations[];
   teams: Team[];
   filterTitle?: string[];
   filterDepartment?: string[];
-}
+};
 
 export function TeamSection({
   projectId,

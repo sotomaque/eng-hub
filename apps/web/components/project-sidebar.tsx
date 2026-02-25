@@ -31,7 +31,7 @@ import { usePathname } from "next/navigation";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ModeToggle } from "@/components/mode-toggle";
 
-interface ProjectSidebarProps {
+type ProjectSidebarProps = {
   projectId: string;
   projectName: string;
   projectImageUrl?: string | null;
@@ -44,7 +44,7 @@ interface ProjectSidebarProps {
     imageUrl: string | null;
   }[];
   isFavorited?: boolean;
-}
+};
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "" },

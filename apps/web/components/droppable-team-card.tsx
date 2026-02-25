@@ -11,7 +11,7 @@ import { DraggableMemberChip } from "@/components/draggable-member-chip";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
 import type { TitleColorMap } from "@/lib/constants/team";
 
-interface TeamMemberData {
+type TeamMemberData = {
   id: string;
   person: {
     firstName: string;
@@ -21,16 +21,16 @@ interface TeamMemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface DroppableTeamCardProps {
+type DroppableTeamCardProps = {
   teamId: string;
   teamName: string;
   members: TeamMemberData[];
   onRename: (teamId: string, name: string) => void;
   onDelete: (teamId: string) => void;
   titleColorMap: TitleColorMap;
-}
+};
 
 export function DroppableTeamCard({
   teamId,

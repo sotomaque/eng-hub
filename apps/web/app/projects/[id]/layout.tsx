@@ -24,10 +24,10 @@ export async function generateMetadata({
   };
 }
 
-interface LayoutProps {
+type LayoutProps = {
   children: React.ReactNode;
   params: Promise<{ id: string }>;
-}
+};
 
 export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { id } = await params;
