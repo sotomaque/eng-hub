@@ -1,7 +1,7 @@
 export type Tier = "S" | "A" | "B" | "C";
 
 /** Serialized ContributorStats shape from tRPC (dates as strings) */
-export interface ContributorStatsData {
+export type ContributorStatsData = {
   id: string;
   projectId: string;
   githubUsername: string;
@@ -18,19 +18,16 @@ export interface ContributorStatsData {
   avgWeeklyReviews: number;
   recentWeeklyReviews: number;
   reviewTrend: string;
-}
+};
 
-export function assignTiers<T extends { commits: number }>(
-  stats: T[],
-): Map<T, Tier> {
+export function assignTiers<T extends { commits: number }>(stats: T[]): Map<T, Tier> {
   const sorted = [...stats].sort((a, b) => b.commits - a.commits);
   const total = sorted.length;
   const result = new Map<T, Tier>();
 
   for (let i = 0; i < sorted.length; i++) {
     const pct = (i + 1) / total;
-    const tier: Tier =
-      pct <= 0.1 ? "S" : pct <= 0.3 ? "A" : pct <= 0.6 ? "B" : "C";
+    const tier: Tier = pct <= 0.1 ? "S" : pct <= 0.3 ? "A" : pct <= 0.6 ? "B" : "C";
     const item = sorted[i];
     if (item) result.set(item, tier);
   }

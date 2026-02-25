@@ -1,14 +1,10 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { cn } from "@workspace/ui/lib/utils";
 
-interface DraggableMemberChipProps {
+type DraggableMemberChipProps = {
   id: string;
   firstName: string;
   lastName: string;
@@ -17,7 +13,7 @@ interface DraggableMemberChipProps {
   department: { name: string; color: string | null } | null;
   sourceTeamId: string | null;
   imageUrl?: string | null;
-}
+};
 
 export function DraggableMemberChip({
   id,
@@ -65,9 +61,7 @@ export function DraggableMemberChip({
         </span>
       )}
       {department && (
-        <span className="text-muted-foreground ml-auto shrink-0 text-xs">
-          {department.name}
-        </span>
+        <span className="text-muted-foreground ml-auto shrink-0 text-xs">{department.name}</span>
       )}
     </div>
   );

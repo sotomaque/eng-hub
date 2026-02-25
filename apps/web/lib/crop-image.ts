@@ -1,9 +1,9 @@
-interface CropArea {
+type CropArea = {
   x: number;
   y: number;
   width: number;
   height: number;
-}
+};
 
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -15,10 +15,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-export async function getCroppedImage(
-  imageSrc: string,
-  cropAreaPixels: CropArea,
-): Promise<Blob> {
+export async function getCroppedImage(imageSrc: string, cropAreaPixels: CropArea): Promise<Blob> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");

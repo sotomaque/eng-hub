@@ -6,11 +6,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -43,16 +39,16 @@ import {
   createQuarterlyGoalSchema,
 } from "@/lib/validations/quarterly-goal";
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultData {
+type KeyResultData = {
   id: string;
   title: string;
   targetValue: number;
@@ -60,9 +56,9 @@ interface KeyResultData {
   unit: string | null;
   status: string;
   sortOrder: number;
-}
+};
 
-interface GoalData {
+type GoalData = {
   id: string;
   title: string;
   description: string | null;
@@ -72,19 +68,15 @@ interface GoalData {
   parentId: string | null;
   assignments: AssignmentPerson[];
   keyResults: KeyResultData[];
-}
+};
 
-interface QuarterlyGoalSheetProps {
+type QuarterlyGoalSheetProps = {
   projectId: string;
   goal?: GoalData;
   defaultParentId?: string;
-}
+};
 
-export function QuarterlyGoalSheet({
-  projectId,
-  goal,
-  defaultParentId,
-}: QuarterlyGoalSheetProps) {
+export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: QuarterlyGoalSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!goal;
@@ -95,9 +87,7 @@ export function QuarterlyGoalSheet({
   const [keyResultsVersion, setKeyResultsVersion] = useState(0);
   const [createAnother, setCreateAnother] = useState(false);
 
-  const goalsQuery = useQuery(
-    trpc.quarterlyGoal.getByProjectId.queryOptions({ projectId }),
-  );
+  const goalsQuery = useQuery(trpc.quarterlyGoal.getByProjectId.queryOptions({ projectId }));
 
   const parentOptions = (goalsQuery.data ?? [])
     .filter((g) => g.id !== goal?.id)
@@ -118,8 +108,7 @@ export function QuarterlyGoalSheet({
       description: goal?.description ?? "",
       quarter: goal?.quarter ?? "",
       targetDate: goal?.targetDate ? new Date(goal.targetDate) : undefined,
-      status:
-        (goal?.status as CreateQuarterlyGoalInput["status"]) ?? "NOT_STARTED",
+      status: (goal?.status as CreateQuarterlyGoalInput["status"]) ?? "NOT_STARTED",
       parentId: goal?.parentId ?? defaultParentId ?? null,
     },
   });
@@ -200,16 +189,13 @@ export function QuarterlyGoalSheet({
     setKeyResultsVersion((v) => v + 1);
   }, []);
 
-  const currentKeyResults =
-    keyResultsVersion >= 0 ? (goal?.keyResults ?? []) : [];
+  const currentKeyResults = keyResultsVersion >= 0 ? (goal?.keyResults ?? []) : [];
 
   return (
     <Sheet open onOpenChange={(open) => !open && handleClose()}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>
-            {isEditing ? "Edit Quarterly Goal" : "Add Quarterly Goal"}
-          </SheetTitle>
+          <SheetTitle>{isEditing ? "Edit Quarterly Goal" : "Add Quarterly Goal"}</SheetTitle>
           <SheetDescription>
             {isEditing
               ? "Update the quarterly goal details."
@@ -217,10 +203,7 @@ export function QuarterlyGoalSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -230,11 +213,7 @@ export function QuarterlyGoalSheet({
                 {...register("title")}
                 aria-invalid={!!errors.title}
               />
-              {errors.title && (
-                <p className="text-destructive text-sm">
-                  {errors.title.message}
-                </p>
-              )}
+              {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -253,9 +232,7 @@ export function QuarterlyGoalSheet({
                 control={control}
                 render={({ field }) => (
                   <Select
-                    onValueChange={(val) =>
-                      field.onChange(val === "__none__" ? "" : val)
-                    }
+                    onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
                     value={field.value || "__none__"}
                   >
                     <SelectTrigger>
@@ -291,17 +268,13 @@ export function QuarterlyGoalSheet({
                           )}
                         >
                           <CalendarIcon className="mr-2 size-4" />
-                          {field.value
-                            ? format(field.value, "PPP")
-                            : "Pick a date"}
+                          {field.value ? format(field.value, "PPP") : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={
-                            field.value ? new Date(field.value) : undefined
-                          }
+                          selected={field.value ? new Date(field.value) : undefined}
                           onSelect={(date) => field.onChange(date ?? null)}
                         />
                       </PopoverContent>
@@ -352,18 +325,14 @@ export function QuarterlyGoalSheet({
                   control={control}
                   render={({ field }) => (
                     <Select
-                      onValueChange={(val) =>
-                        field.onChange(val === "__none__" ? null : val)
-                      }
+                      onValueChange={(val) => field.onChange(val === "__none__" ? null : val)}
                       value={field.value ?? "__none__"}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select parent…" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">
-                          None (top-level)
-                        </SelectItem>
+                        <SelectItem value="__none__">None (top-level)</SelectItem>
                         {parentOptions.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
@@ -380,10 +349,7 @@ export function QuarterlyGoalSheet({
 
             <div className="space-y-2">
               <Label>Assignees</Label>
-              <PersonMultiSelect
-                value={assigneeIds}
-                onChange={setAssigneeIds}
-              />
+              <PersonMultiSelect value={assigneeIds} onChange={setAssigneeIds} />
             </div>
 
             {isEditing && goal && (
@@ -412,20 +378,13 @@ export function QuarterlyGoalSheet({
                 Create another
               </label>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={
-                isSubmitting ||
-                (!isDirty &&
-                  assigneeIds.length === (goal?.assignments.length ?? 0))
+                isSubmitting || (!isDirty && assigneeIds.length === (goal?.assignments.length ?? 0))
               }
             >
               {isSubmitting && (

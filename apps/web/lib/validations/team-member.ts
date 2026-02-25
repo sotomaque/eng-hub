@@ -15,11 +15,9 @@ export const createTeamMemberSchema = z.object({
   managerId: z.string().optional().or(z.literal("")),
 });
 
-export const updateTeamMemberSchema = createTeamMemberSchema
-  .omit({ projectId: true })
-  .extend({
-    id: z.string(),
-  });
+export const updateTeamMemberSchema = createTeamMemberSchema.omit({ projectId: true }).extend({
+  id: z.string(),
+});
 
 export type CreateTeamMemberInput = z.infer<typeof createTeamMemberSchema>;
 export type UpdateTeamMemberInput = z.infer<typeof updateTeamMemberSchema>;

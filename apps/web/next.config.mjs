@@ -10,7 +10,15 @@ jiti("./env");
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
   experimental: {
-    optimizePackageImports: ["lucide-react", "@workspace/ui", "date-fns"],
+    optimizePackageImports: [
+      "lucide-react",
+      "@workspace/ui",
+      "date-fns",
+      "sonner",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@tiptap/core",
+    ],
   },
   images: {
     remotePatterns: [

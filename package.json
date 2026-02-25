@@ -10,11 +10,10 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "lint:fix": "turbo lint:fix",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "biome format --write .",
     "biome:check": "biome check .",
     "biome:fix": "biome check --write .",
-    "biome:format": "biome format --write .",
-    "prepare": "husky",
+    "prepare": "lefthook install",
     "test": "turbo test",
     "ci": "turbo ci",
     "test:e2e": "bun --filter=web test:e2e",
@@ -23,17 +22,10 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "@workspace/typescript-config": "workspace:*",
-    "husky": "^9.1.7",
     "knip": "^5.84.1",
-    "lint-staged": "^16.2.7",
-    "prettier": "^3.7.4",
+    "lefthook": "^2.1.1",
     "turbo": "^2.7.4",
     "typescript": "5.7.3"
-  },
-  "lint-staged": {
-    "apps/web/**/*.{ts,tsx}": [
-      "bun --filter=web lint:fix"
-    ]
   },
   "engines": {
     "node": ">=20",

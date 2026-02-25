@@ -3,22 +3,19 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 
-interface UserCreatedEvent {
+type UserCreatedEvent = {
   type: "user.created";
   data: {
     id: string;
     email_addresses: { email_address: string }[];
     public_metadata: Record<string, unknown>;
   };
-}
+};
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    return NextResponse.json(
-      { error: "Webhook secret not configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
   // Verify the webhook signature
@@ -28,10 +25,7 @@ export async function POST(req: Request) {
   const svixSignature = headerPayload.get("svix-signature");
 
   if (!svixId || !svixTimestamp || !svixSignature) {
-    return NextResponse.json(
-      { error: "Missing svix headers" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing svix headers" }, { status: 400 });
   }
 
   const body = await req.text();
@@ -82,14 +76,21 @@ export async function POST(req: Request) {
       where: { id: personId },
       data: { clerkUserId },
     });
-  } catch {
-    // Person might not exist or already linked — not a fatal error
+  } catch (e) {
+    // P2025 = record not found, P2002 = unique constraint (already linked)
+    const code = (e as { code?: string }).code;
+    if (code !== "P2025" && code !== "P2002") throw e;
     return NextResponse.json({ received: true, linked: false });
   }
 
   // 4. Clean up the PendingInvite row if it existed
   if (email) {
-    await db.pendingInvite.delete({ where: { email } }).catch(() => {});
+    await db.pendingInvite.delete({ where: { email } }).catch((e: unknown) => {
+      // P2025 = row already gone (expected when linked via publicMetadata)
+      if ((e as { code?: string }).code !== "P2025") {
+        console.error("[clerk-webhook] Failed to cleanup pending invite", e);
+      }
+    });
   }
 
   return NextResponse.json({ received: true, linked: true });

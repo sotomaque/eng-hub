@@ -1,11 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -22,11 +18,7 @@ import {
   CommandItem,
   CommandList,
 } from "@workspace/ui/components/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import { Loader2, Share2, Trash2, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -35,7 +27,7 @@ import { useTRPC } from "@/lib/trpc/client";
 const EMPTY_GRANTS: Grant[] = [];
 const EMPTY_PEOPLE: Person[] = [];
 
-interface Grant {
+type Grant = {
   id: string;
   granteeId: string;
   createdAt: string;
@@ -45,14 +37,14 @@ interface Grant {
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface Person {
+type Person = {
   id: string;
   firstName: string;
   lastName: string;
   imageUrl: string | null;
-}
+};
 
 export default function SharingPage() {
   const trpc = useTRPC();
@@ -87,10 +79,7 @@ export default function SharingPage() {
   const allPeople = (peopleQuery.data as Person[] | undefined) ?? EMPTY_PEOPLE;
   const myId = meQuery.data?.id;
 
-  const granteeIds = useMemo(
-    () => new Set(grants.map((g) => g.grantee.id)),
-    [grants],
-  );
+  const granteeIds = useMemo(() => new Set(grants.map((g) => g.grantee.id)), [grants]);
 
   const availablePeople = useMemo(
     () => allPeople.filter((p) => p.id !== myId && !granteeIds.has(p.id)),
@@ -104,9 +93,8 @@ export default function SharingPage() {
       <div>
         <h1 className="text-2xl font-bold">Meeting Note Sharing</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Control who can view your direct reports&apos; 1:1 meeting notes on
-          their profile pages. People in your management chain already have
-          access by default.
+          Control who can view your direct reports&apos; 1:1 meeting notes on their profile pages.
+          People in your management chain already have access by default.
         </p>
       </div>
 
@@ -116,8 +104,7 @@ export default function SharingPage() {
             <Share2 className="text-muted-foreground mb-4 size-12" />
             <h2 className="text-lg font-semibold">No direct reports</h2>
             <p className="text-muted-foreground text-sm">
-              Sharing is available when you have direct reports with meeting
-              notes.
+              Sharing is available when you have direct reports with meeting notes.
             </p>
           </CardContent>
         </Card>
@@ -148,9 +135,7 @@ export default function SharingPage() {
                           <CommandItem
                             key={person.id}
                             value={`${person.firstName} ${person.lastName}`}
-                            onSelect={() =>
-                              grantMutation.mutate({ granteeId: person.id })
-                            }
+                            onSelect={() => grantMutation.mutate({ granteeId: person.id })}
                           >
                             <Avatar className="mr-2 size-6 shrink-0">
                               <AvatarImage src={person.imageUrl ?? undefined} />
@@ -205,14 +190,11 @@ export default function SharingPage() {
                       variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-destructive size-8"
-                      onClick={() =>
-                        revokeMutation.mutate({ granteeId: grant.grantee.id })
-                      }
+                      onClick={() => revokeMutation.mutate({ granteeId: grant.grantee.id })}
                       disabled={revokeMutation.isPending}
                     >
                       {revokeMutation.isPending &&
-                      revokeMutation.variables?.granteeId ===
-                        grant.grantee.id ? (
+                      revokeMutation.variables?.granteeId === grant.grantee.id ? (
                         <Loader2 className="size-4 animate-spin" />
                       ) : (
                         <Trash2 className="size-4" />

@@ -1,49 +1,43 @@
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Flag, Target } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
 
-interface RoadmapAssignment {
+type RoadmapAssignment = {
   id: string;
   title: string;
   status: string;
   targetDate: string | null;
   projectId: string;
   project: { id: string; name: string };
-}
+};
 
-interface MilestoneAssignment {
+type MilestoneAssignment = {
   milestone: RoadmapAssignment;
-}
+};
 
-interface GoalAssignment {
+type GoalAssignment = {
   quarterlyGoal: RoadmapAssignment & { quarter: string | null };
-}
+};
 
-interface PersonRoadmapCardProps {
+type PersonRoadmapCardProps = {
   milestoneAssignments: MilestoneAssignment[];
   quarterlyGoalAssignments: GoalAssignment[];
-}
+};
 
-interface GroupedItems {
+type GroupedItems = {
   projectName: string;
   projectId: string;
   milestones: RoadmapAssignment[];
   goals: (RoadmapAssignment & { quarter: string | null })[];
-}
+};
 
 export function PersonRoadmapCard({
   milestoneAssignments,
   quarterlyGoalAssignments,
 }: PersonRoadmapCardProps) {
-  const totalCount =
-    milestoneAssignments.length + quarterlyGoalAssignments.length;
+  const totalCount = milestoneAssignments.length + quarterlyGoalAssignments.length;
 
   const grouped = new Map<string, GroupedItems>();
 
@@ -73,9 +67,7 @@ export function PersonRoadmapCard({
     grouped.get(key)?.goals.push(a.quarterlyGoal);
   }
 
-  const projects = [...grouped.values()].sort((a, b) =>
-    a.projectName.localeCompare(b.projectName),
-  );
+  const projects = [...grouped.values()].sort((a, b) => a.projectName.localeCompare(b.projectName));
 
   return (
     <Card>
@@ -91,9 +83,7 @@ export function PersonRoadmapCard({
       </CardHeader>
       <CardContent>
         {totalCount === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            Not assigned to any roadmap items
-          </p>
+          <p className="text-muted-foreground text-sm">Not assigned to any roadmap items</p>
         ) : (
           <div className="space-y-4">
             {projects.map((proj) => (
@@ -117,9 +107,7 @@ export function PersonRoadmapCard({
                       <Badge
                         className={`shrink-0 text-[10px] ${STATUS_STYLES[m.status as keyof typeof STATUS_STYLES] ?? ""}`}
                       >
-                        {STATUS_LABELS[
-                          m.status as keyof typeof STATUS_LABELS
-                        ] ?? m.status}
+                        {STATUS_LABELS[m.status as keyof typeof STATUS_LABELS] ?? m.status}
                       </Badge>
                     </li>
                   ))}
@@ -135,9 +123,7 @@ export function PersonRoadmapCard({
                       <Badge
                         className={`shrink-0 text-[10px] ${STATUS_STYLES[g.status as keyof typeof STATUS_STYLES] ?? ""}`}
                       >
-                        {STATUS_LABELS[
-                          g.status as keyof typeof STATUS_LABELS
-                        ] ?? g.status}
+                        {STATUS_LABELS[g.status as keyof typeof STATUS_LABELS] ?? g.status}
                       </Badge>
                     </li>
                   ))}

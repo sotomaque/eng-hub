@@ -86,7 +86,9 @@ async function main() {
   for (const assignment of TITLE_ASSIGNMENTS) {
     const deptId = deptMap.get(assignment.department);
     if (!deptId) {
-      console.log(`  Skipped "${assignment.name}" — department "${assignment.department}" not found`);
+      console.log(
+        `  Skipped "${assignment.name}" — department "${assignment.department}" not found`,
+      );
       continue;
     }
     const result = await db.title.updateMany({
@@ -94,7 +96,9 @@ async function main() {
       data: { departmentId: deptId, sortOrder: assignment.sortOrder },
     });
     if (result.count > 0) {
-      console.log(`  ${assignment.name} → ${assignment.department} (sortOrder=${assignment.sortOrder})`);
+      console.log(
+        `  ${assignment.name} → ${assignment.department} (sortOrder=${assignment.sortOrder})`,
+      );
     } else {
       console.log(`  Skipped "${assignment.name}" (title not found)`);
     }

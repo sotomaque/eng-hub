@@ -9,11 +9,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useMutation } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -27,11 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { CornerDownRight, GripVertical, Pencil, Trash2 } from "lucide-react";
@@ -59,21 +51,21 @@ const depthFilterOptions = [
   { label: "Sub-item", value: "sub" },
 ];
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultItem {
+type KeyResultItem = {
   id: string;
   status: string;
-}
+};
 
-interface MilestoneChild {
+type MilestoneChild = {
   id: string;
   title: string;
   description: string | null;
@@ -82,9 +74,9 @@ interface MilestoneChild {
   sortOrder: number;
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
-}
+};
 
-export interface MilestoneItem {
+export type MilestoneItem = {
   id: string;
   title: string;
   description: string | null;
@@ -95,9 +87,9 @@ export interface MilestoneItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
   children: MilestoneChild[];
-}
+};
 
-interface FlatMilestone {
+type FlatMilestone = {
   id: string;
   title: string;
   targetDate: string | null;
@@ -106,15 +98,17 @@ interface FlatMilestone {
   keyResults: KeyResultItem[];
   depth: number;
   parentId: string | null;
-}
+};
 
-interface MilestonesTableProps {
+type MilestonesTableProps = {
   projectId: string;
   milestones: MilestoneItem[];
   filterStatus?: string[];
   filterType?: string[];
   filterAssignee?: string[];
-}
+};
+
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
 
 export function MilestonesTable({
   projectId,
@@ -145,29 +139,21 @@ export function MilestonesTable({
   );
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor),
   );
 
-  const deletingId = deleteMutation.isPending
-    ? (deleteMutation.variables?.id ?? null)
-    : null;
+  const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
 
   const buildParams = useCallback(
-    (overrides: {
-      msStatus?: string[];
-      msType?: string[];
-      msAssignee?: string[];
-    }) => {
+    (overrides: { msStatus?: string[]; msType?: string[]; msAssignee?: string[] }) => {
       const params = new URLSearchParams(window.location.search);
       for (const [key, fallback] of [
         ["msStatus", filterStatus],
         ["msType", filterType],
         ["msAssignee", filterAssignee],
       ] as const) {
-        const val =
-          overrides[key as keyof typeof overrides] ??
-          (fallback as string[] | undefined);
+        const val = overrides[key as keyof typeof overrides] ?? (fallback as string[] | undefined);
         if (val?.length) {
           params.set(key, val.join(","));
         } else {
@@ -201,9 +187,7 @@ export function MilestonesTable({
   }, [buildParams, projectId, router]);
 
   const filterCount =
-    (filterStatus?.length ?? 0) +
-    (filterType?.length ?? 0) +
-    (filterAssignee?.length ?? 0);
+    (filterStatus?.length ?? 0) + (filterType?.length ?? 0) + (filterAssignee?.length ?? 0);
 
   const allRows = useMemo(() => {
     const rows: FlatMilestone[] = [];
@@ -265,9 +249,7 @@ export function MilestonesTable({
     }
     if (filterAssignee?.length) {
       const ids = new Set(filterAssignee);
-      rows = rows.filter((r) =>
-        r.assignments.some((a) => ids.has(a.person.id)),
-      );
+      rows = rows.filter((r) => r.assignments.some((a) => ids.has(a.person.id)));
     }
     return rows;
   }, [allRows, filterStatus, filterType, filterAssignee]);
@@ -307,24 +289,18 @@ export function MilestonesTable({
       {
         id: "dragHandle",
         header: () => <span className="sr-only">Drag</span>,
-        cell: () => (
-          <GripVertical className="size-4 cursor-grab text-muted-foreground" />
-        ),
+        cell: () => <GripVertical className="size-4 cursor-grab text-muted-foreground" />,
         enableSorting: false,
         size: 30,
       },
       {
         accessorKey: "title",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Title" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Title" />,
         cell: ({ row }) => {
           const isChild = row.original.depth === 1;
           return (
             <div className="flex items-center gap-1.5">
-              {isChild && (
-                <CornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />
-              )}
+              {isChild && <CornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />}
               <Link
                 href={`/projects/${projectId}/roadmap/${row.original.id}`}
                 className={`font-medium hover:underline ${isChild ? "text-muted-foreground" : ""}`}
@@ -337,11 +313,7 @@ export function MilestonesTable({
       },
       {
         id: "assignees",
-        header: () => (
-          <span className="hidden text-xs font-medium sm:inline">
-            Assignees
-          </span>
-        ),
+        header: () => <span className="hidden text-xs font-medium sm:inline">Assignees</span>,
         cell: ({ row }) => {
           const { assignments } = row.original;
           if (assignments.length === 0) return null;
@@ -351,10 +323,7 @@ export function MilestonesTable({
             <div className="hidden items-center sm:flex">
               <div className="flex -space-x-1.5">
                 {visible.map((a) => (
-                  <Avatar
-                    key={a.person.id}
-                    className="size-6 border-2 border-background"
-                  >
+                  <Avatar key={a.person.id} className="size-6 border-2 border-background">
                     <AvatarImage src={a.person.imageUrl ?? undefined} />
                     <AvatarFallback className="text-[10px]">
                       {a.person.firstName[0]}
@@ -364,9 +333,7 @@ export function MilestonesTable({
                 ))}
               </div>
               {overflow > 0 && (
-                <span className="ml-1 text-xs text-muted-foreground">
-                  +{overflow}
-                </span>
+                <span className="ml-1 text-xs text-muted-foreground">+{overflow}</span>
               )}
             </div>
           );
@@ -375,15 +342,11 @@ export function MilestonesTable({
       },
       {
         id: "keyResults",
-        header: () => (
-          <span className="hidden text-xs font-medium md:inline">KRs</span>
-        ),
+        header: () => <span className="hidden text-xs font-medium md:inline">KRs</span>,
         cell: ({ row }) => {
           const krs = row.original.keyResults;
           if (krs.length === 0) return null;
-          const completed = krs.filter(
-            (kr) => kr.status === "COMPLETED",
-          ).length;
+          const completed = krs.filter((kr) => kr.status === "COMPLETED").length;
           return (
             <span className="hidden text-xs text-muted-foreground md:inline">
               {completed}/{krs.length}
@@ -395,11 +358,7 @@ export function MilestonesTable({
       {
         accessorKey: "targetDate",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Target Date"
-            className="hidden sm:flex"
-          />
+          <DataTableColumnHeader column={column} title="Target Date" className="hidden sm:flex" />
         ),
         cell: ({ row }) => {
           const date = row.getValue("targetDate") as string | null;
@@ -412,17 +371,11 @@ export function MilestonesTable({
       },
       {
         accessorKey: "status",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
           const status = row.getValue("status") as string;
           return (
-            <Badge
-              className={
-                STATUS_STYLES[status as keyof typeof STATUS_STYLES] ?? ""
-              }
-            >
+            <Badge className={STATUS_STYLES[status as keyof typeof STATUS_STYLES] ?? ""}>
               {STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status}
             </Badge>
           );
@@ -439,10 +392,9 @@ export function MilestonesTable({
                 variant="ghost"
                 size="icon"
                 onClick={() =>
-                  router.push(
-                    `/projects/${projectId}/roadmap?editMilestone=${milestone.id}`,
-                    { scroll: false },
-                  )
+                  router.push(`/projects/${projectId}/roadmap?editMilestone=${milestone.id}`, {
+                    scroll: false,
+                  })
                 }
               >
                 <Pencil className="size-4" />
@@ -466,9 +418,7 @@ export function MilestonesTable({
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() =>
-                        deleteMutation.mutate({ id: milestone.id })
-                      }
+                      onClick={() => deleteMutation.mutate({ id: milestone.id })}
                       disabled={deletingId === milestone.id}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
@@ -487,15 +437,8 @@ export function MilestonesTable({
   );
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={flatData.map((r) => r.id)}
-        strategy={verticalListSortingStrategy}
-      >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={flatData.map((r) => r.id)} strategy={verticalListSortingStrategy}>
         <DataTable
           columns={columns}
           data={flatData}

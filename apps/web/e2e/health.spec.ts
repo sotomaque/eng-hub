@@ -14,8 +14,6 @@ test.describe("Health assessments", () => {
 
   test("new assessment button is visible", async ({ page }) => {
     await page.goto("/projects/proj-alpha/health");
-    await expect(
-      page.getByRole("link", { name: "New Assessment" }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "New Assessment" })).toBeVisible();
   });
 });

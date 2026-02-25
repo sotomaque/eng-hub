@@ -10,18 +10,12 @@ export async function POST(request: Request): Promise<Response> {
   // Guard 2: Require shared secret
   const secret = process.env.E2E_RESET_SECRET;
   if (!secret) {
-    return NextResponse.json(
-      { error: "E2E_RESET_SECRET is not configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "E2E_RESET_SECRET is not configured" }, { status: 500 });
   }
 
   const token = request.headers.get("x-e2e-reset-token");
   if (token !== secret) {
-    return NextResponse.json(
-      { error: "Invalid or missing reset token" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Invalid or missing reset token" }, { status: 401 });
   }
 
   try {

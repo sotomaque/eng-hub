@@ -93,7 +93,7 @@ const features = [
     icon: Users,
     title: "People Directory & Profiles",
     description:
-      "A central directory for the engineering organization with searchable profiles, manager hierarchies, and an audit trail of every reporting change.",
+      "The directory for your engineering org. Searchable profiles, manager hierarchies, and a full audit trail for every reporting change.",
     items: [
       "Searchable, paginated people table with filters by project, department, and title",
       "Person profiles showing projects, teams, manager, direct reports, and roadmap assignments",
@@ -113,16 +113,13 @@ export default function FAQPage() {
       <section className="relative overflow-hidden">
         <div className="from-primary/5 via-accent/5 pointer-events-none absolute inset-0 to-transparent bg-gradient-to-b" />
         <div className="relative mx-auto max-w-3xl px-4 pt-24 pb-16 text-center sm:px-6 sm:pt-32 sm:pb-20 lg:px-8">
-          <p className="text-primary text-sm font-medium tracking-wide uppercase">
-            Features
-          </p>
+          <p className="text-primary text-sm font-medium tracking-wide uppercase">Features</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             What can Eng Hub do?
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-xl text-lg leading-relaxed">
-            A unified engineering management platform that replaces Figma
-            boards, spreadsheets, personal docs, and manual repo spelunking with
-            a single source of truth.
+            Everything below replaces a Figma board, a spreadsheet, a personal doc, and a lot of
+            manual GitHub checking.
           </p>
         </div>
       </section>
@@ -140,9 +137,7 @@ export default function FAQPage() {
                   <feature.icon className="size-5" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    {feature.title}
-                  </h2>
+                  <h2 className="text-xl font-semibold tracking-tight">{feature.title}</h2>
                   <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                     {feature.description}
                   </p>

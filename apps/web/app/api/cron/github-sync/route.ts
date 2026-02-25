@@ -34,8 +34,7 @@ async function handler(request: Request): Promise<Response> {
 
 // QStash signature verification — only enabled when signing keys are configured.
 // Preview environments don't have QStash credentials, so the handler runs unwrapped.
-const hasQStash =
-  process.env.QSTASH_CURRENT_SIGNING_KEY && process.env.QSTASH_NEXT_SIGNING_KEY;
+const hasQStash = process.env.QSTASH_CURRENT_SIGNING_KEY && process.env.QSTASH_NEXT_SIGNING_KEY;
 
 export async function POST(request: Request): Promise<Response> {
   if (hasQStash) {

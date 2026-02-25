@@ -9,9 +9,9 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 export default async function ArrangementsPage({ params }: PageProps) {
   const { id } = await params;

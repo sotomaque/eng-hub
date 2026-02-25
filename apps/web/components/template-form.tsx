@@ -27,7 +27,7 @@ const TiptapEditor = dynamic(
 
 import { useTRPC } from "@/lib/trpc/client";
 
-interface TemplateFormProps {
+type TemplateFormProps = {
   template?: {
     id: string;
     name: string;
@@ -35,16 +35,14 @@ interface TemplateFormProps {
     content: unknown;
   };
   readOnly?: boolean;
-}
+};
 
 export function TemplateForm({ template, readOnly }: TemplateFormProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [name, setName] = useState(template?.name ?? "");
   const [description, setDescription] = useState(template?.description ?? "");
-  const [content, setContent] = useState<JSONContent>(
-    (template?.content as JSONContent) ?? {},
-  );
+  const [content, setContent] = useState<JSONContent>((template?.content as JSONContent) ?? {});
 
   const createMutation = useMutation(
     trpc.meetingTemplate.create.mutationOptions({
@@ -111,19 +109,11 @@ export function TemplateForm({ template, readOnly }: TemplateFormProps) {
         </div>
         {!readOnly && (
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => router.push("/me/templates")}
-            >
+            <Button type="button" variant="ghost" onClick={() => router.push("/me/templates")}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending
-                ? "Saving…"
-                : template
-                  ? "Save Changes"
-                  : "Create Template"}
+              {isPending ? "Saving…" : template ? "Save Changes" : "Create Template"}
             </Button>
           </div>
         )}

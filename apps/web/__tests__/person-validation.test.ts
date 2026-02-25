@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createPersonSchema,
-  updatePersonSchema,
-} from "@/lib/validations/person";
+import { createPersonSchema, updatePersonSchema } from "@/lib/validations/person";
 
 describe("createPersonSchema", () => {
   const validInput = {

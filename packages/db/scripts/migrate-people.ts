@@ -7,10 +7,7 @@ async function main() {
   console.log(`Found ${members.length} team members`);
 
   // Group by email — each unique email becomes one Person
-  const byEmail = new Map<
-    string,
-    (typeof members)[number][]
-  >();
+  const byEmail = new Map<string, (typeof members)[number][]>();
   for (const m of members) {
     const group = byEmail.get(m.email) ?? [];
     group.push(m);
@@ -31,8 +28,8 @@ async function main() {
       if (m.firstName !== canonical.firstName || m.lastName !== canonical.lastName) {
         console.warn(
           `  WARNING: email "${email}" has conflicting names: ` +
-          `"${canonical.firstName} ${canonical.lastName}" vs "${m.firstName} ${m.lastName}". ` +
-          `Using "${canonical.firstName} ${canonical.lastName}".`
+            `"${canonical.firstName} ${canonical.lastName}" vs "${m.firstName} ${m.lastName}". ` +
+            `Using "${canonical.firstName} ${canonical.lastName}".`,
         );
       }
     }

@@ -16,9 +16,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface DepartmentSheetProps {
+type DepartmentSheetProps = {
   returnPath: string;
-}
+};
 
 export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
   const router = useRouter();
@@ -87,8 +87,8 @@ export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
         <SheetHeader>
           <SheetTitle>Manage Departments</SheetTitle>
           <SheetDescription>
-            Departments are shared across all projects. Add, edit, or remove
-            departments that can be assigned to team members.
+            Departments are shared across all projects. Add, edit, or remove departments that can be
+            assigned to team members.
           </SheetDescription>
         </SheetHeader>
 
@@ -101,9 +101,7 @@ export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleUpdate(dept.id)
-                      }
+                      onKeyDown={(e) => e.key === "Enter" && handleUpdate(dept.id)}
                       className="flex-1"
                       autoFocus
                     />
@@ -114,11 +112,7 @@ export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
                     >
                       Save
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingId(null)}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
                       Cancel
                     </Button>
                   </>
@@ -131,9 +125,7 @@ export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
                       />
                     )}
                     <span className="flex-1 text-sm">{dept.name}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {dept._count.people}
-                    </span>
+                    <span className="text-muted-foreground text-xs">{dept._count.people}</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -177,14 +169,8 @@ export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
                   className="flex-1"
                   autoFocus
                 />
-                <Button
-                  size="sm"
-                  onClick={handleAdd}
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending && (
-                    <Loader2 className="animate-spin" />
-                  )}
+                <Button size="sm" onClick={handleAdd} disabled={createMutation.isPending}>
+                  {createMutation.isPending && <Loader2 className="animate-spin" />}
                   Add
                 </Button>
                 <Button
@@ -199,11 +185,7 @@ export function DepartmentSheet({ returnPath }: DepartmentSheetProps) {
                 </Button>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsAdding(true)}
-              >
+              <Button variant="outline" className="w-full" onClick={() => setIsAdding(true)}>
                 <Plus className="size-4" />
                 Add Department
               </Button>

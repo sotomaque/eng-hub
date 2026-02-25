@@ -4,9 +4,7 @@ const mockFindUnique = mock(() =>
   Promise.resolve(null as { id?: string; managerId?: string | null } | null),
 );
 
-const mockGrantFindUnique = mock(() =>
-  Promise.resolve(null as { id: string } | null),
-);
+const mockGrantFindUnique = mock(() => Promise.resolve(null as { id: string } | null));
 
 mock.module("@workspace/db", () => ({
   db: {

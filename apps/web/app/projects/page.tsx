@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Projects" };
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   searchParams: Promise<{
     edit?: string;
     create?: string;
@@ -25,7 +25,7 @@ interface PageProps {
     type?: string;
     favorite?: string;
   }>;
-}
+};
 
 async function ProjectsContent({
   page,
@@ -43,7 +43,7 @@ async function ProjectsContent({
   status?: ("GREEN" | "YELLOW" | "RED" | "NONE")[];
   type?: ("toplevel" | "subproject")[];
   favorite?: boolean;
-  sortBy?: "name" | "updatedAt";
+  sortBy?: "name" | "updatedAt" | "favorite";
   sortOrder?: "asc" | "desc";
 }) {
   const trpc = await createServerCaller();
@@ -68,10 +68,7 @@ async function ProjectsContent({
         name: p.name,
         imageUrl: p.imageUrl,
         description: p.description,
-        updatedAt:
-          typeof p.updatedAt === "string"
-            ? p.updatedAt
-            : p.updatedAt.toISOString(),
+        updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : p.updatedAt.toISOString(),
         healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
         parentId: p.parentId,
         parentName: p.parent?.name ?? null,
@@ -103,12 +100,10 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const isCreating = params.create === "true";
   const page = Math.max(1, Number(params.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 10));
-  const validSortBy = ["name", "updatedAt"] as const;
+  const validSortBy = ["name", "updatedAt", "favorite"] as const;
   const sortBy = validSortBy.find((v) => v === params.sortBy);
   const sortOrder =
-    params.sortOrder === "asc" || params.sortOrder === "desc"
-      ? params.sortOrder
-      : undefined;
+    params.sortOrder === "asc" || params.sortOrder === "desc" ? params.sortOrder : undefined;
   const validStatuses = ["GREEN", "YELLOW", "RED", "NONE"] as const;
   const status = params.status
     ?.split(",")
@@ -118,9 +113,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const validTypes = ["toplevel", "subproject"] as const;
   const type = params.type
     ?.split(",")
-    .filter((t): t is (typeof validTypes)[number] =>
-      (validTypes as readonly string[]).includes(t),
-    );
+    .filter((t): t is (typeof validTypes)[number] => (validTypes as readonly string[]).includes(t));
   const favorite = params.favorite === "true" ? true : undefined;
 
   return (

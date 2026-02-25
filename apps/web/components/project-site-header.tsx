@@ -14,10 +14,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useBreadcrumbTitle } from "@/lib/contexts/breadcrumb-context";
 
-interface ProjectSiteHeaderProps {
+type ProjectSiteHeaderProps = {
   projectName: string;
   projectId: string;
-}
+};
 
 const SEGMENT_LABELS: Record<string, string> = {
   health: "Health",
@@ -29,10 +29,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   stats: "Stats",
 };
 
-export function ProjectSiteHeader({
-  projectName,
-  projectId,
-}: ProjectSiteHeaderProps) {
+export function ProjectSiteHeader({ projectName, projectId }: ProjectSiteHeaderProps) {
   const pathname = usePathname();
   const { title: deepTitle } = useBreadcrumbTitle();
   const basePath = `/projects/${projectId}`;
@@ -67,9 +64,7 @@ export function ProjectSiteHeader({
                 <>
                   <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                      <Link href={`${basePath}/${sectionSlug}`}>
-                        {sectionLabel}
-                      </Link>
+                      <Link href={`${basePath}/${sectionSlug}`}>{sectionLabel}</Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />

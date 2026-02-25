@@ -2,12 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,7 +24,7 @@ const TiptapEditor = dynamic(
   { ssr: false },
 );
 
-interface Meeting {
+type Meeting = {
   id: string;
   date: string;
   content: Record<string, unknown>;
@@ -37,23 +32,20 @@ interface Meeting {
   personId: string;
   createdAt: string;
   template: { id: string; name: string } | null;
-}
+};
 
-interface PersonMeetingsProps {
+type PersonMeetingsProps = {
   personId: string;
-}
+};
 
 export function PersonMeetings({ personId }: PersonMeetingsProps) {
   const trpc = useTRPC();
-  const meetingsQuery = useQuery(
-    trpc.meeting.getByPersonId.queryOptions({ personId }),
-  );
+  const meetingsQuery = useQuery(trpc.meeting.getByPersonId.queryOptions({ personId }));
 
   // null means no access — hide the section entirely
   if (meetingsQuery.isLoading || meetingsQuery.data === null) return null;
 
-  const meetings =
-    (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
+  const meetings = (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
 
   return (
     <Card>
@@ -72,9 +64,7 @@ export function PersonMeetings({ personId }: PersonMeetingsProps) {
         {meetings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <NotebookPen className="text-muted-foreground mb-2 size-8" />
-            <p className="text-muted-foreground text-sm">
-              No meeting notes yet.
-            </p>
+            <p className="text-muted-foreground text-sm">No meeting notes yet.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -97,9 +87,7 @@ function MeetingItem({ meeting }: { meeting: Meeting }) {
         <ChevronRight
           className={`size-4 shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
         />
-        <span className="font-medium">
-          {format(new Date(meeting.date), "PPP")}
-        </span>
+        <span className="font-medium">{format(new Date(meeting.date), "PPP")}</span>
         {meeting.template && (
           <Badge variant="secondary" className="text-xs">
             {meeting.template.name}

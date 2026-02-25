@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mocks ────────────────────────────────────────────────────
 
-const mockResolveClerkPerson = mock(() =>
-  Promise.resolve("person-1" as string | null),
-);
+const mockResolveClerkPerson = mock(() => Promise.resolve("person-1" as string | null));
 
 mock.module("../../lib/hierarchy", () => ({
   resolveClerkPerson: mockResolveClerkPerson,
@@ -66,10 +64,7 @@ describe("project.myFavoriteIds", () => {
   });
 
   test("returns project IDs for the current user", async () => {
-    mockFavFindMany.mockResolvedValue([
-      { projectId: "proj-1" },
-      { projectId: "proj-2" },
-    ]);
+    mockFavFindMany.mockResolvedValue([{ projectId: "proj-1" }, { projectId: "proj-2" }]);
 
     const result = await caller.myFavoriteIds();
 
@@ -163,9 +158,7 @@ describe("project.toggleFavorite", () => {
   test("throws BAD_REQUEST when no linked person", async () => {
     mockResolveClerkPerson.mockResolvedValue(null);
 
-    await expect(
-      caller.toggleFavorite({ projectId: "proj-1" }),
-    ).rejects.toMatchObject({
+    await expect(caller.toggleFavorite({ projectId: "proj-1" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("No linked person"),
     });

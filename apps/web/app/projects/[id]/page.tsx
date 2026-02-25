@@ -10,9 +10,9 @@ import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 async function OverviewContent({ id }: { id: string }) {
   const project = await getCachedProject(id);
@@ -27,11 +27,7 @@ async function OverviewContent({ id }: { id: string }) {
       teamCount={project.teams.length}
       milestones={project.milestones}
       quarterlyGoals={project.quarterlyGoals}
-      linkCount={
-        project.links.length +
-        (project.githubUrl ? 1 : 0) +
-        (project.gitlabUrl ? 1 : 0)
-      }
+      linkCount={project.links.length + (project.githubUrl ? 1 : 0) + (project.gitlabUrl ? 1 : 0)}
       subProjects={project.children}
       fundedBy={project.fundedBy ?? null}
       owners={project.owners.map((o) => o.person)}

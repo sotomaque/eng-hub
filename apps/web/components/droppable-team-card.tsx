@@ -2,12 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
 import { Check, Pencil, Trash2, X } from "lucide-react";
@@ -16,7 +11,7 @@ import { DraggableMemberChip } from "@/components/draggable-member-chip";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
 import type { TitleColorMap } from "@/lib/constants/team";
 
-interface TeamMemberData {
+type TeamMemberData = {
   id: string;
   person: {
     firstName: string;
@@ -26,16 +21,16 @@ interface TeamMemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface DroppableTeamCardProps {
+type DroppableTeamCardProps = {
   teamId: string;
   teamName: string;
   members: TeamMemberData[];
   onRename: (teamId: string, name: string) => void;
   onDelete: (teamId: string) => void;
   titleColorMap: TitleColorMap;
-}
+};
 
 export function DroppableTeamCard({
   teamId,
@@ -64,10 +59,7 @@ export function DroppableTeamCard({
   return (
     <Card
       ref={setNodeRef}
-      className={cn(
-        "transition-all",
-        isOver && "ring-primary ring-2 ring-offset-2",
-      )}
+      className={cn("transition-all", isOver && "ring-primary ring-2 ring-offset-2")}
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
@@ -86,11 +78,7 @@ export function DroppableTeamCard({
               <Button variant="ghost" size="icon" onClick={handleSave}>
                 <Check className="size-3" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsEditing(false)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
                 <X className="size-3" />
               </Button>
             </div>
@@ -98,9 +86,7 @@ export function DroppableTeamCard({
             <>
               <CardTitle className="text-sm">{teamName}</CardTitle>
               <div className="flex items-center gap-1">
-                <span className="text-muted-foreground mr-1 text-xs">
-                  {members.length}
-                </span>
+                <span className="text-muted-foreground mr-1 text-xs">{members.length}</span>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -135,9 +121,7 @@ export function DroppableTeamCard({
       )}
       <CardContent>
         {members.length === 0 ? (
-          <p className="text-muted-foreground py-4 text-center text-xs">
-            Drag members here
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-xs">Drag members here</p>
         ) : (
           <div className="space-y-1.5">
             {members.map((member) => (

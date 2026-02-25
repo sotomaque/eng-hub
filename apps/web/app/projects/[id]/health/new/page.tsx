@@ -4,16 +4,14 @@ import { createServerCaller } from "@/lib/trpc/server";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 async function NewAssessmentContent({ projectId }: { projectId: string }) {
   const trpc = await createServerCaller();
   const latest = await trpc.healthAssessment.getLatest({ projectId });
-  return (
-    <HealthAssessmentForm projectId={projectId} prefill={latest ?? undefined} />
-  );
+  return <HealthAssessmentForm projectId={projectId} prefill={latest ?? undefined} />;
 }
 
 export default async function NewHealthAssessmentPage({ params }: PageProps) {

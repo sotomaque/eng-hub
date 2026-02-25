@@ -9,9 +9,9 @@ import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 async function HealthContent({ id }: { id: string }) {
   const project = await getCachedProject(id);
@@ -31,10 +31,7 @@ async function HealthContent({ id }: { id: string }) {
         engineeringVibeStatus: a.engineeringVibeStatus,
         productVibeStatus: a.productVibeStatus,
         designVibeStatus: a.designVibeStatus,
-        createdAt:
-          typeof a.createdAt === "string"
-            ? a.createdAt
-            : a.createdAt.toISOString(),
+        createdAt: typeof a.createdAt === "string" ? a.createdAt : a.createdAt.toISOString(),
       }))}
     />
   );

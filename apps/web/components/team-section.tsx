@@ -1,18 +1,9 @@
 "use client";
 
 import type { Team, TeamMembership } from "@prisma/client";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { Pencil, Plus, Search, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -38,13 +29,13 @@ type MemberWithRelations = {
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
-interface TeamSectionProps {
+type TeamSectionProps = {
   projectId: string;
   members: MemberWithRelations[];
   teams: Team[];
   filterTitle?: string[];
   filterDepartment?: string[];
-}
+};
 
 export function TeamSection({
   projectId,
@@ -68,9 +59,7 @@ export function TeamSection({
   // Derive full option lists from unfiltered members
   const titleOptions = useMemo(() => {
     const names = [
-      ...new Set(
-        members.map((m) => m.person.title?.name).filter(Boolean) as string[],
-      ),
+      ...new Set(members.map((m) => m.person.title?.name).filter(Boolean) as string[]),
     ];
     names.sort();
     return names.map((n) => ({ label: n, value: n }));
@@ -78,11 +67,7 @@ export function TeamSection({
 
   const departmentOptions = useMemo(() => {
     const names = [
-      ...new Set(
-        members
-          .map((m) => m.person.department?.name)
-          .filter(Boolean) as string[],
-      ),
+      ...new Set(members.map((m) => m.person.department?.name).filter(Boolean) as string[]),
     ];
     names.sort();
     return names.map((n) => ({ label: n, value: n }));
@@ -111,8 +96,7 @@ export function TeamSection({
     });
   }, [projectId, router]);
 
-  const filterCount =
-    (filterTitle?.length ?? 0) + (filterDepartment?.length ?? 0);
+  const filterCount = (filterTitle?.length ?? 0) + (filterDepartment?.length ?? 0);
 
   const filteredMembers = useMemo(() => {
     let result = members;
@@ -130,14 +114,10 @@ export function TeamSection({
       });
     }
     if (filterTitle?.length) {
-      result = result.filter((m) =>
-        filterTitle.includes(m.person.title?.name ?? ""),
-      );
+      result = result.filter((m) => filterTitle.includes(m.person.title?.name ?? ""));
     }
     if (filterDepartment?.length) {
-      result = result.filter((m) =>
-        filterDepartment.includes(m.person.department?.name ?? ""),
-      );
+      result = result.filter((m) => filterDepartment.includes(m.person.department?.name ?? ""));
     }
     return result;
   }, [members, search, filterTitle, filterDepartment]);
@@ -163,9 +143,7 @@ export function TeamSection({
         groups.push({ team, members: teamMembers });
       }
     }
-    const unassigned = filteredMembers.filter(
-      (m) => !assignedMemberIds.has(m.id),
-    );
+    const unassigned = filteredMembers.filter((m) => !assignedMemberIds.has(m.id));
     if (unassigned.length > 0) {
       groups.push({ team: null, members: unassigned });
     }
@@ -244,9 +222,7 @@ export function TeamSection({
                         </AvatarFallback>
                       </Avatar>
                     )}
-                    <h4 className="text-sm font-medium">
-                      {group.team?.name ?? "Unassigned"}
-                    </h4>
+                    <h4 className="text-sm font-medium">{group.team?.name ?? "Unassigned"}</h4>
                     <span className="text-muted-foreground rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
                       {group.members.length}
                     </span>
@@ -256,10 +232,9 @@ export function TeamSection({
                         size="icon"
                         className="size-6"
                         onClick={() =>
-                          router.push(
-                            `/projects/${projectId}/team?editTeam=${group.team?.id}`,
-                            { scroll: false },
-                          )
+                          router.push(`/projects/${projectId}/team?editTeam=${group.team?.id}`, {
+                            scroll: false,
+                          })
                         }
                       >
                         <Pencil className="size-3" />

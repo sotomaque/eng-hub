@@ -6,7 +6,7 @@ import { Input } from "@workspace/ui/components/input";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
-interface DataTableToolbarProps<TData> {
+type DataTableToolbarProps<TData> = {
   table: Table<TData>;
   searchColumn?: string;
   searchPlaceholder?: string;
@@ -19,7 +19,7 @@ interface DataTableToolbarProps<TData> {
   filterCount?: number;
   /** Called when Reset is clicked to clear URL-param filters */
   onResetFilters?: () => void;
-}
+};
 
 export function DataTableToolbar<TData>({
   table,
@@ -44,8 +44,7 @@ export function DataTableToolbar<TData>({
         value={
           isServerSearch
             ? (searchValue ?? "")
-            : ((table.getColumn(searchColumn)?.getFilterValue() as string) ??
-              "")
+            : ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? "")
         }
         onChange={(event) => {
           if (isServerSearch) {

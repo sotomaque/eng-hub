@@ -6,9 +6,7 @@ import { db } from "./index";
 
 export async function resetAndSeed(): Promise<void> {
   // ── Truncate all data ──────────────────────────────────────────
-  await db.$executeRawUnsafe(
-    `TRUNCATE roles, projects, meeting_templates CASCADE`,
-  );
+  await db.$executeRawUnsafe(`TRUNCATE roles, projects, meeting_templates CASCADE`);
 
   // ── Departments (table: roles) ─────────────────────────────────
   await db.$executeRawUnsafe(`

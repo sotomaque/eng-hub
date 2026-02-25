@@ -22,14 +22,10 @@ export const createHealthAssessmentSchema = z.object({
   designVibeNotes: z.any().optional(),
 });
 
-export type CreateHealthAssessmentInput = z.infer<
-  typeof createHealthAssessmentSchema
->;
+export type CreateHealthAssessmentInput = z.infer<typeof createHealthAssessmentSchema>;
 
 export const updateHealthAssessmentSchema = createHealthAssessmentSchema
   .omit({ projectId: true })
   .extend({ id: z.string() });
 
-export type UpdateHealthAssessmentInput = z.infer<
-  typeof updateHealthAssessmentSchema
->;
+export type UpdateHealthAssessmentInput = z.infer<typeof updateHealthAssessmentSchema>;

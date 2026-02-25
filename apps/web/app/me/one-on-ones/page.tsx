@@ -1,19 +1,10 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
 import { format } from "date-fns";
 import { NotebookPen, Plus, Trash2 } from "lucide-react";
@@ -24,7 +15,7 @@ import { useTRPC } from "@/lib/trpc/client";
 
 const EMPTY_MEETINGS: Meeting[] = [];
 
-interface Meeting {
+type Meeting = {
   id: string;
   date: string;
   createdAt: string;
@@ -36,7 +27,7 @@ interface Meeting {
     imageUrl: string | null;
   };
   template: { id: string; name: string } | null;
-}
+};
 
 export default function OneOnOnesPage() {
   const trpc = useTRPC();
@@ -53,15 +44,11 @@ export default function OneOnOnesPage() {
     }),
   );
 
-  const meetings =
-    (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
+  const meetings = (meetingsQuery.data as Meeting[] | undefined) ?? EMPTY_MEETINGS;
 
   // Group meetings by person
   const grouped = useMemo(() => {
-    const map = new Map<
-      string,
-      { person: Meeting["person"]; meetings: Meeting[] }
-    >();
+    const map = new Map<string, { person: Meeting["person"]; meetings: Meeting[] }>();
     for (const m of meetings) {
       const existing = map.get(m.person.id);
       if (existing) {
@@ -135,11 +122,7 @@ export default function OneOnOnesPage() {
                 <button
                   key={person.id}
                   type="button"
-                  onClick={() =>
-                    setFilterPersonId(
-                      filterPersonId === person.id ? null : person.id,
-                    )
-                  }
+                  onClick={() => setFilterPersonId(filterPersonId === person.id ? null : person.id)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-colors",
                     filterPersonId === person.id

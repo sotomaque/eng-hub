@@ -9,12 +9,13 @@ import { PersonSheet } from "@/components/person-sheet";
 import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";
 import { TitleSheet } from "@/components/title-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
+import { getCachedDepartmentNames, getCachedProjectNames } from "./_lib/queries";
 
 export const metadata: Metadata = { title: "People" };
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   searchParams: Promise<{
     create?: string;
     edit?: string;
@@ -30,7 +31,7 @@ interface PageProps {
     department?: string;
     project?: string;
   }>;
-}
+};
 
 async function PeopleContent({
   page,
@@ -52,29 +53,20 @@ async function PeopleContent({
   projects?: string[];
 }) {
   const trpc = await createServerCaller();
-  const [listResult, projectsResult, departmentsResult] =
-    await Promise.allSettled([
-      trpc.person.list({
-        page,
-        pageSize,
-        search: search || undefined,
-        departments,
-        projects,
-        sortBy,
-        sortOrder,
-        multiProject,
-      }),
-      trpc.project.getAll(),
-      trpc.department.getAll(),
-    ]);
-  if (listResult.status === "rejected") throw listResult.reason;
-  const { items, totalCount } = listResult.value;
-  const allProjects =
-    projectsResult.status === "fulfilled" ? projectsResult.value : [];
-  const projectNames = [...new Set(allProjects.map((p) => p.name))].sort();
-  const allDepartments =
-    departmentsResult.status === "fulfilled" ? departmentsResult.value : [];
-  const departmentNames = allDepartments.map((d) => d.name).sort();
+  const [{ items, totalCount }, projectNames, departmentNames] = await Promise.all([
+    trpc.person.list({
+      page,
+      pageSize,
+      search: search || undefined,
+      departments,
+      projects,
+      sortBy,
+      sortOrder,
+      multiProject,
+    }),
+    getCachedProjectNames(),
+    getCachedDepartmentNames(),
+  ]);
   return (
     <PeopleTable
       people={items}
@@ -95,14 +87,14 @@ async function PeopleContent({
 
 async function EditPersonContent({ personId }: { personId: string }) {
   const trpc = await createServerCaller();
-  const person = await trpc.person.getById({ id: personId });
+  const person = await trpc.person.getForEdit({ id: personId });
   if (!person) return null;
   return <PersonSheet person={person} />;
 }
 
 async function AddToProjectContent({ personId }: { personId: string }) {
   const trpc = await createServerCaller();
-  const person = await trpc.person.getById({ id: personId });
+  const person = await trpc.person.getForEdit({ id: personId });
   if (!person) return null;
   return (
     <AddToProjectDialog
@@ -129,9 +121,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const validSortBy = ["name", "email", "department"] as const;
   const sortBy = validSortBy.find((v) => v === params.sortBy);
   const sortOrder =
-    params.sortOrder === "asc" || params.sortOrder === "desc"
-      ? params.sortOrder
-      : undefined;
+    params.sortOrder === "asc" || params.sortOrder === "desc" ? params.sortOrder : undefined;
   const multiProject = params.multiProject === "true" ? true : undefined;
   const departments = params.department?.split(",").filter(Boolean);
   const projects = params.project?.split(",").filter(Boolean);
@@ -169,9 +159,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         </Suspense>
       )}
 
-      {params.manageTitles === "true" && (
-        <TitleSheet returnPath={manageReturnPath(params)} />
-      )}
+      {params.manageTitles === "true" && <TitleSheet returnPath={manageReturnPath(params)} />}
       {params.manageDepartments === "true" && (
         <DepartmentSheet returnPath={manageReturnPath(params)} />
       )}

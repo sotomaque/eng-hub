@@ -5,20 +5,15 @@ import { CSS } from "@dnd-kit/utilities";
 import { TableRow } from "@workspace/ui/components/table";
 import type { ReactNode } from "react";
 
-interface SortableTableRowProps {
+type SortableTableRowProps = {
   id: string;
   children: ReactNode;
-}
+};
 
 export function SortableTableRow({ id, children }: SortableTableRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
 
   return (
     <TableRow

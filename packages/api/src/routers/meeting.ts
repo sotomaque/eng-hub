@@ -78,26 +78,24 @@ export const meetingRouter = createTRPCRouter({
       return meetings.map(serializeMeeting);
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const meeting = await db.meeting.findUnique({
-        where: { id: input.id },
-        include: meetingInclude,
-      });
-      if (!meeting) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const meeting = await db.meeting.findUnique({
+      where: { id: input.id },
+      include: meetingInclude,
+    });
+    if (!meeting) {
+      throw new TRPCError({ code: "NOT_FOUND" });
+    }
 
-      if (meeting.authorId !== ctx.userId) {
-        const hasAccess = await canViewMeetings(ctx.userId, meeting.personId);
-        if (!hasAccess) {
-          throw new TRPCError({ code: "FORBIDDEN" });
-        }
+    if (meeting.authorId !== ctx.userId) {
+      const hasAccess = await canViewMeetings(ctx.userId, meeting.personId);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN" });
       }
+    }
 
-      return serializeMeeting(meeting);
-    }),
+    return serializeMeeting(meeting);
+  }),
 
   create: protectedProcedure
     .input(

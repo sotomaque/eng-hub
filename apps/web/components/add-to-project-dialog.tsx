@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Check, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -33,11 +33,11 @@ const addToProjectSchema = z.object({
 
 type AddToProjectInput = z.infer<typeof addToProjectSchema>;
 
-interface AddToProjectDialogProps {
+type AddToProjectDialogProps = {
   personId: string;
   personName: string;
   existingProjectIds: string[];
-}
+};
 
 export function AddToProjectDialog({
   personId,
@@ -45,11 +45,13 @@ export function AddToProjectDialog({
   existingProjectIds,
 }: AddToProjectDialogProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const trpc = useTRPC();
   const projectsQuery = useQuery(trpc.project.getAll.queryOptions());
 
+  const existingProjectIdSet = new Set(existingProjectIds);
   const availableProjects = (projectsQuery.data ?? []).filter(
-    (p) => !existingProjectIds.includes(p.id),
+    (p) => !existingProjectIdSet.has(p.id),
   );
 
   const {
@@ -85,7 +87,9 @@ export function AddToProjectDialog({
   const isSubmitting = joinMutation.isPending;
 
   function handleClose() {
-    router.push("/people", { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("addToProject");
+    router.push(`/people?${params.toString()}`, { scroll: false });
   }
 
   function onSubmit(data: AddToProjectInput) {
@@ -106,10 +110,7 @@ export function AddToProjectDialog({
           <SheetDescription>Add {personName} to a project.</SheetDescription>
         </SheetHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label>Project</Label>
@@ -132,9 +133,7 @@ export function AddToProjectDialog({
                 )}
               />
               {errors.projectId && (
-                <p className="text-destructive text-sm">
-                  {errors.projectId.message}
-                </p>
+                <p className="text-destructive text-sm">{errors.projectId.message}</p>
               )}
               {availableProjects.length === 0 && (
                 <p className="text-muted-foreground text-sm">
@@ -151,9 +150,10 @@ export function AddToProjectDialog({
                   control={control}
                   render={({ field }) => {
                     const selected = field.value ?? [];
+                    const selectedSet = new Set(selected);
                     const toggle = (teamId: string) => {
                       field.onChange(
-                        selected.includes(teamId)
+                        selectedSet.has(teamId)
                           ? selected.filter((id) => id !== teamId)
                           : [...selected, teamId],
                       );
@@ -161,7 +161,7 @@ export function AddToProjectDialog({
                     return (
                       <div className="flex flex-wrap gap-2">
                         {teams.map((team) => {
-                          const isSelected = selected.includes(team.id);
+                          const isSelected = selectedSet.has(team.id);
                           return (
                             <Button
                               key={team.id}
@@ -184,19 +184,12 @@ export function AddToProjectDialog({
             )}
           </div>
           <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting || !isDirty || availableProjects.length === 0
-              }
+              disabled={isSubmitting || !isDirty || availableProjects.length === 0}
             >
               {isSubmitting && <Loader2 className="animate-spin" />}
               Add to Project

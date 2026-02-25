@@ -1,12 +1,7 @@
 import type { HealthStatus } from "@prisma/client";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Activity, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { HEALTH_STATUS_BADGE, HEALTH_STATUS_LABEL } from "@/lib/health-status";
@@ -43,27 +38,20 @@ const ALL_DIMENSIONS: {
   { key: "designVibeStatus", label: "Design", section: "vibe" },
 ];
 
-interface HealthSectionProps {
+type HealthSectionProps = {
   projectId: string;
   assessments: AssessmentItem[];
-}
+};
 
 function StatusChip({ status }: { status: HealthStatus | null }) {
   if (!status) {
     return (
-      <Badge
-        variant="outline"
-        className="text-muted-foreground border-dashed text-xs"
-      >
+      <Badge variant="outline" className="text-muted-foreground border-dashed text-xs">
         —
       </Badge>
     );
   }
-  return (
-    <Badge className={HEALTH_STATUS_BADGE[status]}>
-      {HEALTH_STATUS_LABEL[status]}
-    </Badge>
-  );
+  return <Badge className={HEALTH_STATUS_BADGE[status]}>{HEALTH_STATUS_LABEL[status]}</Badge>;
 }
 
 export function HealthSection({ projectId, assessments }: HealthSectionProps) {
@@ -77,8 +65,7 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
           <h2 className="text-lg font-semibold">Health</h2>
           {assessments.length > 0 && (
             <span className="text-muted-foreground rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
-              {assessments.length}{" "}
-              {assessments.length === 1 ? "assessment" : "assessments"}
+              {assessments.length} {assessments.length === 1 ? "assessment" : "assessments"}
             </span>
           )}
         </div>
@@ -99,8 +86,8 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
                 No health assessments yet
               </p>
               <p className="text-muted-foreground max-w-sm text-xs">
-                Create your first assessment to start tracking project health
-                across business dimensions and team vibes.
+                Create your first assessment to start tracking project health across business
+                dimensions and team vibes.
               </p>
             </div>
           </CardContent>
@@ -134,26 +121,19 @@ export function HealthSection({ projectId, assessments }: HealthSectionProps) {
               {/* All dimensions in a single scannable list */}
               <div className="divide-y divide-border/50">
                 {ALL_DIMENSIONS.map(({ key, label, section }, i) => {
-                  const prevSection =
-                    i > 0 ? ALL_DIMENSIONS[i - 1]?.section : null;
+                  const prevSection = i > 0 ? ALL_DIMENSIONS[i - 1]?.section : null;
                   const isNewSection = section !== prevSection;
 
                   return (
                     <div key={key}>
                       {isNewSection && (
                         <p className="text-muted-foreground px-3 pt-4 pb-1 text-[11px] font-medium uppercase tracking-wider">
-                          {section === "business"
-                            ? "Business Dimensions"
-                            : "Vibe Checks"}
+                          {section === "business" ? "Business Dimensions" : "Vibe Checks"}
                         </p>
                       )}
                       <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-muted-foreground text-sm">
-                          {label}
-                        </span>
-                        <StatusChip
-                          status={latest[key] as HealthStatus | null}
-                        />
+                        <span className="text-muted-foreground text-sm">{label}</span>
+                        <StatusChip status={latest[key] as HealthStatus | null} />
                       </div>
                     </div>
                   );

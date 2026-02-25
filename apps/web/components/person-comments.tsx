@@ -1,18 +1,9 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { Loader2, MessageSquare, Pencil, Trash2 } from "lucide-react";
@@ -20,11 +11,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface PersonCommentsProps {
+type PersonCommentsProps = {
   personId: string;
-}
+};
 
-interface Comment {
+type Comment = {
   id: string;
   content: string;
   authorId: string;
@@ -36,7 +27,7 @@ interface Comment {
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
 function formatRelativeTime(date: string): string {
   const now = Date.now();
@@ -57,9 +48,7 @@ export function PersonComments({ personId }: PersonCommentsProps) {
   const trpc = useTRPC();
   const [newContent, setNewContent] = useState("");
 
-  const commentsQuery = useQuery(
-    trpc.personComment.getByPersonId.queryOptions({ personId }),
-  );
+  const commentsQuery = useQuery(trpc.personComment.getByPersonId.queryOptions({ personId }));
   const meQuery = useQuery(trpc.person.me.queryOptions());
 
   const createMutation = useMutation(
@@ -127,13 +116,9 @@ export function PersonComments({ personId }: PersonCommentsProps) {
                 }}
               />
               <div className="flex items-center justify-between">
-                <span
-                  className="text-muted-foreground text-xs"
-                  suppressHydrationWarning
-                >
+                <span className="text-muted-foreground text-xs" suppressHydrationWarning>
                   Press{" "}
-                  {typeof navigator !== "undefined" &&
-                  navigator.platform?.includes("Mac")
+                  {typeof navigator !== "undefined" && navigator.platform?.includes("Mac")
                     ? "\u2318"
                     : "Ctrl"}
                   +Enter to submit
@@ -141,9 +126,7 @@ export function PersonComments({ personId }: PersonCommentsProps) {
                 <Button
                   size="sm"
                   onClick={handleSubmit}
-                  disabled={
-                    createMutation.isPending || newContent.trim().length === 0
-                  }
+                  disabled={createMutation.isPending || newContent.trim().length === 0}
                 >
                   {createMutation.isPending && (
                     <span className="animate-spin">
@@ -156,9 +139,7 @@ export function PersonComments({ personId }: PersonCommentsProps) {
             </div>
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            Claim your profile to leave notes.
-          </p>
+          <p className="text-muted-foreground text-sm">Claim your profile to leave notes.</p>
         )}
 
         {comments.length > 0 && <Separator />}
@@ -166,9 +147,7 @@ export function PersonComments({ personId }: PersonCommentsProps) {
         {comments.length === 0 && (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <MessageSquare className="text-muted-foreground mb-2 size-8" />
-            <p className="text-muted-foreground text-sm">
-              No notes yet. Be the first to add one.
-            </p>
+            <p className="text-muted-foreground text-sm">No notes yet. Be the first to add one.</p>
           </div>
         )}
 
@@ -179,10 +158,7 @@ export function PersonComments({ personId }: PersonCommentsProps) {
               comment={comment}
               isAuthor={comment.authorId === me?.clerkUserId}
               onDelete={() => deleteMutation.mutate({ id: comment.id })}
-              isDeleting={
-                deleteMutation.isPending &&
-                deleteMutation.variables?.id === comment.id
-              }
+              isDeleting={deleteMutation.isPending && deleteMutation.variables?.id === comment.id}
               onUpdated={() => commentsQuery.refetch()}
             />
           ))}
@@ -235,10 +211,7 @@ function CommentItem({
   return (
     <div className="flex gap-3">
       <Avatar className="size-8 shrink-0">
-        <AvatarImage
-          src={comment.author.imageUrl ?? undefined}
-          alt={authorName}
-        />
+        <AvatarImage src={comment.author.imageUrl ?? undefined} alt={authorName} />
         <AvatarFallback className="text-xs">{authorInitials}</AvatarFallback>
       </Avatar>
       <div className="flex-1 space-y-1">
@@ -291,11 +264,7 @@ function CommentItem({
               }}
             />
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={updateMutation.isPending}
-              >
+              <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <span className="animate-spin">
                     <Loader2 />
@@ -303,11 +272,7 @@ function CommentItem({
                 )}
                 Save
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-              >
+              <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
             </div>

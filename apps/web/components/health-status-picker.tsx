@@ -25,17 +25,13 @@ const STATUS_OPTIONS: {
   },
 ];
 
-interface HealthStatusPickerProps {
+type HealthStatusPickerProps = {
   value: HealthStatus | null | undefined;
   onChange: (status: HealthStatus) => void;
   disabled?: boolean;
-}
+};
 
-export function HealthStatusPicker({
-  value,
-  onChange,
-  disabled,
-}: HealthStatusPickerProps) {
+export function HealthStatusPicker({ value, onChange, disabled }: HealthStatusPickerProps) {
   return (
     <div className="flex gap-2">
       {STATUS_OPTIONS.map((option) => {
@@ -54,12 +50,7 @@ export function HealthStatusPicker({
                 : "bg-muted/50 text-muted-foreground ring-border hover:bg-muted",
             )}
           >
-            <span
-              className={cn(
-                "size-2 rounded-full",
-                HEALTH_STATUS_DOT[option.value],
-              )}
-            />
+            <span className={cn("size-2 rounded-full", HEALTH_STATUS_DOT[option.value])} />
             {HEALTH_STATUS_LABEL[option.value]}
           </button>
         );

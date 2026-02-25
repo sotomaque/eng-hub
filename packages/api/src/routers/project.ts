@@ -161,7 +161,7 @@ export const projectRouter = createTRPCRouter({
         status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
         type: z.array(z.enum(["toplevel", "subproject"])).optional(),
         favorite: z.boolean().optional(),
-        sortBy: z.enum(["name", "updatedAt"]).optional().default("updatedAt"),
+        sortBy: z.enum(["name", "updatedAt", "favorite"]).optional().default("updatedAt"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
       }),
     )
@@ -195,13 +195,65 @@ export const projectRouter = createTRPCRouter({
           where.parentId = { not: null };
         }
       }
+      const needsPersonId = input.favorite || input.sortBy === "favorite";
+      const personId = needsPersonId ? await resolveClerkPerson(ctx.userId) : null;
+
       if (input.favorite) {
-        const personId = await resolveClerkPerson(ctx.userId);
         if (personId) {
           where.favoritedBy = { some: { personId } };
         } else {
           return { items: [], totalCount: 0 };
         }
+      }
+
+      if (input.sortBy === "favorite") {
+        if (!personId) return { items: [], totalCount: 0 };
+
+        // Fetch all matching IDs with secondary sort by updatedAt
+        const allIds = (
+          await db.project.findMany({
+            where,
+            select: { id: true },
+            orderBy: { updatedAt: "desc" },
+          })
+        ).map((p) => p.id);
+
+        const favoritedSet = new Set(
+          (
+            await db.favoriteProject.findMany({
+              where: { personId, projectId: { in: allIds } },
+              select: { projectId: true },
+            })
+          ).map((f) => f.projectId),
+        );
+
+        const favIds = allIds.filter((id) => favoritedSet.has(id));
+        const nonFavIds = allIds.filter((id) => !favoritedSet.has(id));
+        // desc = favorites first (default); asc = favorites last
+        const orderedIds =
+          input.sortOrder === "asc" ? [...nonFavIds, ...favIds] : [...favIds, ...nonFavIds];
+
+        const skip = (input.page - 1) * input.pageSize;
+        const pageIds = orderedIds.slice(skip, skip + input.pageSize);
+
+        if (pageIds.length === 0) {
+          return { items: [], totalCount: orderedIds.length };
+        }
+
+        const projects = await db.project.findMany({
+          where: { id: { in: pageIds } },
+          include: {
+            healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
+            parent: { select: { id: true, name: true } },
+          },
+        });
+
+        const projectMap = new Map(projects.map((p) => [p.id, p]));
+        const items = pageIds
+          .map((id) => projectMap.get(id))
+          .filter((p): p is NonNullable<typeof p> => !!p);
+
+        return { items, totalCount: orderedIds.length };
       }
 
       const orderByMap: Record<string, object> = {
@@ -226,80 +278,72 @@ export const projectRouter = createTRPCRouter({
       return { items, totalCount };
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      return fetchProject(input.id);
-    }),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return fetchProject(input.id);
+  }),
 
-  create: protectedProcedure
-    .input(createProjectSchema)
-    .mutation(async ({ input }) => {
-      const parentId = input.parentId || null;
-      const fundedById = input.fundedById || null;
+  create: protectedProcedure.input(createProjectSchema).mutation(async ({ input }) => {
+    const parentId = input.parentId || null;
+    const fundedById = input.fundedById || null;
 
-      const result = await db.project.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          githubUrl: input.githubUrl || null,
-          gitlabUrl: input.gitlabUrl || null,
-          imageUrl: input.imageUrl || null,
-          parentId,
-          fundedById,
-        },
+    const result = await db.project.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        githubUrl: input.githubUrl || null,
+        gitlabUrl: input.gitlabUrl || null,
+        imageUrl: input.imageUrl || null,
+        parentId,
+        fundedById,
+      },
+    });
+
+    return result;
+  }),
+
+  update: protectedProcedure.input(updateProjectSchema).mutation(async ({ input }) => {
+    const { id, ...data } = input;
+    const parentId = data.parentId || null;
+    const fundedById = data.fundedById || null;
+
+    if (parentId === id || fundedById === id) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "A project cannot reference itself.",
       });
+    }
 
-      return result;
-    }),
-
-  update: protectedProcedure
-    .input(updateProjectSchema)
-    .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      const parentId = data.parentId || null;
-      const fundedById = data.fundedById || null;
-
-      if (parentId === id || fundedById === id) {
+    if (parentId) {
+      const hasCycle = await detectProjectCycle(id, parentId);
+      if (hasCycle) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "A project cannot reference itself.",
+          message: "Setting this parent would create a circular hierarchy.",
         });
       }
+    }
 
-      if (parentId) {
-        const hasCycle = await detectProjectCycle(id, parentId);
-        if (hasCycle) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Setting this parent would create a circular hierarchy.",
-          });
-        }
-      }
+    const result = await db.project.update({
+      where: { id },
+      data: {
+        name: data.name,
+        description: data.description,
+        githubUrl: data.githubUrl || null,
+        gitlabUrl: data.gitlabUrl || null,
+        imageUrl: data.imageUrl || null,
+        parentId,
+        fundedById,
+      },
+    });
 
-      const result = await db.project.update({
-        where: { id },
-        data: {
-          name: data.name,
-          description: data.description,
-          githubUrl: data.githubUrl || null,
-          gitlabUrl: data.gitlabUrl || null,
-          imageUrl: data.imageUrl || null,
-          parentId,
-          fundedById,
-        },
-      });
+    return result;
+  }),
 
-      return result;
-    }),
-
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      return db.project.delete({
-        where: { id: input.id },
-      });
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    return db.project.delete({
+      where: { id: input.id },
+    });
+  }),
 
   myFavoriteIds: protectedProcedure.query(async ({ ctx }) => {
     const personId = await resolveClerkPerson(ctx.userId);

@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createKeyResultSchema,
-  updateKeyResultSchema,
-} from "@/lib/validations/key-result";
+import { createKeyResultSchema, updateKeyResultSchema } from "@/lib/validations/key-result";
 
 describe("createKeyResultSchema", () => {
   const validInput = {

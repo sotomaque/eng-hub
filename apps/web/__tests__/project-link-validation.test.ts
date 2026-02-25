@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createProjectLinkSchema,
-  updateProjectLinkSchema,
-} from "@/lib/validations/project-link";
+import { createProjectLinkSchema, updateProjectLinkSchema } from "@/lib/validations/project-link";
 
 describe("createProjectLinkSchema", () => {
   const validInput = {

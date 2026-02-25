@@ -10,9 +10,9 @@ import { getCachedProject } from "@/lib/trpc/cached-queries";
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
-}
+};
 
 async function StatsContent({ id }: { id: string }) {
   const project = await getCachedProject(id);
@@ -24,8 +24,8 @@ async function StatsContent({ id }: { id: string }) {
         <AlertCircle className="text-muted-foreground size-10" />
         <h2 className="text-lg font-semibold">No Repository Configured</h2>
         <p className="text-muted-foreground max-w-md text-sm">
-          Add a GitHub or GitLab URL to this project&apos;s settings to see
-          contributor stats and analytics.
+          Add a GitHub or GitLab URL to this project&apos;s settings to see contributor stats and
+          analytics.
         </p>
       </div>
     );

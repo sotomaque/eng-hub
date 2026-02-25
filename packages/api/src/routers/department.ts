@@ -44,11 +44,9 @@ export const departmentRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      return db.department.delete({ where: { id: input.id } });
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    return db.department.delete({ where: { id: input.id } });
+  }),
 
   merge: protectedProcedure
     .input(

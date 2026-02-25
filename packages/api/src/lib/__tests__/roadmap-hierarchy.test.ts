@@ -3,9 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 const mockMilestoneFindUnique = mock(() =>
   Promise.resolve(null as { parentId: string | null } | null),
 );
-const mockGoalFindUnique = mock(() =>
-  Promise.resolve(null as { parentId: string | null } | null),
-);
+const mockGoalFindUnique = mock(() => Promise.resolve(null as { parentId: string | null } | null));
 const mockProjectFindUnique = mock(() =>
   Promise.resolve(null as { parentId: string | null } | null),
 );
@@ -18,8 +16,9 @@ mock.module("@workspace/db", () => ({
   },
 }));
 
-const { detectMilestoneCycle, detectGoalCycle, detectProjectCycle } =
-  await import("../roadmap-hierarchy");
+const { detectMilestoneCycle, detectGoalCycle, detectProjectCycle } = await import(
+  "../roadmap-hierarchy"
+);
 
 describe("detectMilestoneCycle", () => {
   beforeEach(() => {

@@ -26,14 +26,12 @@ const highlights = [
   {
     icon: Users,
     title: "People",
-    description:
-      "Searchable directory with profiles, org charts, and manager change audit trails.",
+    description: "Searchable directory with profiles, org charts, and manager change audit trails.",
   },
   {
     icon: Target,
     title: "Goals",
-    description:
-      "Hierarchical milestones, quarterly OKRs, key results, and assignee tracking.",
+    description: "Hierarchical milestones, quarterly OKRs, key results, and assignee tracking.",
   },
 ];
 
@@ -75,8 +73,8 @@ export default function HomePage() {
             <span className="text-primary">organized.</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-xl text-lg leading-relaxed sm:text-xl">
-            One place for projects, people, goals, and 1:1s. Replace the
-            patchwork of tools with a single source of truth.
+            One place for projects, people, goals, and 1:1s. Less time in Figma boards,
+            spreadsheets, and manual GitHub checks.
           </p>
 
           <div className="mt-10 flex items-center justify-center gap-4">
@@ -109,9 +107,7 @@ export default function HomePage() {
               <div className="text-primary mb-5">
                 <item.icon className="size-7" strokeWidth={1.5} />
               </div>
-              <h3 className="text-lg font-semibold tracking-tight">
-                {item.title}
-              </h3>
+              <h3 className="text-lg font-semibold tracking-tight">{item.title}</h3>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                 {item.description}
               </p>
@@ -127,29 +123,22 @@ export default function HomePage() {
             <p className="text-primary text-sm font-medium tracking-wide uppercase">
               Built for engineering leaders
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything your org needs
-            </h2>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">What's included</h2>
             <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-base">
-              From health assessments to delivery analytics, Eng Hub covers the
-              full surface area of engineering management.
+              Health tracking, 1:1 notes, team planning, and delivery stats. The tools engineering
+              managers actually use.
             </p>
           </div>
 
           <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2">
             {capabilities.map((cap) => (
-              <div
-                key={cap.label}
-                className="bg-card flex items-start gap-4 p-8"
-              >
+              <div key={cap.label} className="bg-card flex items-start gap-4 p-8">
                 <div className="bg-primary/10 text-primary shrink-0 rounded-xl p-2.5">
                   <cap.icon className="size-5" strokeWidth={1.5} />
                 </div>
                 <div>
                   <h3 className="font-semibold tracking-tight">{cap.label}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                    {cap.detail}
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{cap.detail}</p>
                 </div>
               </div>
             ))}
@@ -160,12 +149,9 @@ export default function HomePage() {
       {/* CTA */}
       <section className="border-t">
         <div className="mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Ready to consolidate your tooling?
-          </h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">All in one place</h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-md text-base">
-            Stop context-switching between Figma, spreadsheets, and GitHub.
-            Start managing everything in one place.
+            Projects, people, goals, and 1:1s without the spreadsheet.
           </p>
           <div className="mt-8">
             <Button asChild size="lg" className="h-12 rounded-full px-8">

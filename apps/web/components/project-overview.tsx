@@ -1,9 +1,5 @@
 import type { HealthStatus, RoadmapStatus } from "@prisma/client";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -28,7 +24,7 @@ type ChildProject = {
   imageUrl: string | null;
 };
 
-interface ProjectOverviewProps {
+type ProjectOverviewProps = {
   projectId: string;
   description: string | null;
   latestStatus: { overallStatus: HealthStatus } | null;
@@ -45,7 +41,7 @@ interface ProjectOverviewProps {
     lastName: string;
     imageUrl: string | null;
   }[];
-}
+};
 
 function countByStatus(items: { status: RoadmapStatus }[]) {
   const counts = { completed: 0, inProgress: 0, atRisk: 0, notStarted: 0 };
@@ -58,15 +54,7 @@ function countByStatus(items: { status: RoadmapStatus }[]) {
   return counts;
 }
 
-function StatPill({
-  count,
-  label,
-  color,
-}: {
-  count: number;
-  label: string;
-  color: string;
-}) {
+function StatPill({ count, label, color }: { count: number; label: string; color: string }) {
   if (count === 0) return null;
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${color}`}>
@@ -164,9 +152,7 @@ export function ProjectOverview({
             </div>
           )}
           {description && (
-            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-              {description}
-            </p>
+            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">{description}</p>
           )}
         </div>
       )}
@@ -184,9 +170,7 @@ export function ProjectOverview({
               </span>
             </div>
           ) : (
-            <span className="text-muted-foreground text-sm">
-              No assessments yet
-            </span>
+            <span className="text-muted-foreground text-sm">No assessments yet</span>
           )}
         </MetricCard>
 
@@ -195,16 +179,13 @@ export function ProjectOverview({
           <div className="text-2xl font-bold tracking-tight">{memberCount}</div>
           <p className="text-muted-foreground mt-0.5 text-xs">
             {memberCount === 1 ? "member" : "members"}
-            {teamCount > 0 &&
-              ` across ${teamCount} ${teamCount === 1 ? "team" : "teams"}`}
+            {teamCount > 0 && ` across ${teamCount} ${teamCount === 1 ? "team" : "teams"}`}
           </p>
         </MetricCard>
 
         {/* Milestones */}
         <MetricCard href={`${basePath}/roadmap`} icon={Flag} label="Milestones">
-          <div className="text-2xl font-bold tracking-tight">
-            {milestones.length}
-          </div>
+          <div className="text-2xl font-bold tracking-tight">{milestones.length}</div>
           {milestones.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
               <StatPill
@@ -227,14 +208,8 @@ export function ProjectOverview({
         </MetricCard>
 
         {/* Quarterly Goals */}
-        <MetricCard
-          href={`${basePath}/roadmap`}
-          icon={Target}
-          label="Quarterly Goals"
-        >
-          <div className="text-2xl font-bold tracking-tight">
-            {quarterlyGoals.length}
-          </div>
+        <MetricCard href={`${basePath}/roadmap`} icon={Target} label="Quarterly Goals">
+          <div className="text-2xl font-bold tracking-tight">{quarterlyGoals.length}</div>
           {quarterlyGoals.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
               <StatPill
@@ -287,9 +262,7 @@ export function ProjectOverview({
               >
                 <Avatar className="size-8 shrink-0 rounded-md">
                   <AvatarImage src={child.imageUrl ?? undefined} />
-                  <AvatarFallback className="rounded-md text-xs">
-                    {child.name[0]}
-                  </AvatarFallback>
+                  <AvatarFallback className="rounded-md text-xs">{child.name[0]}</AvatarFallback>
                 </Avatar>
                 <span className="truncate font-medium">{child.name}</span>
               </Link>
@@ -298,9 +271,7 @@ export function ProjectOverview({
         ) : (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center">
             <FolderOpen className="text-muted-foreground/50 size-8" />
-            <p className="text-muted-foreground mt-2 text-sm">
-              No sub-projects yet
-            </p>
+            <p className="text-muted-foreground mt-2 text-sm">No sub-projects yet</p>
             <Button asChild size="sm" variant="outline" className="mt-3">
               <Link href={`/projects?create=true&parentId=${projectId}`}>
                 <Plus className="size-4" />

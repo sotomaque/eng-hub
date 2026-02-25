@@ -16,18 +16,14 @@ const links = [
 export function MainNav() {
   const pathname = usePathname();
   const { user } = useUser();
-  const isAdmin =
-    (user?.publicMetadata as { role?: string } | undefined)?.role === "admin";
+  const isAdmin = (user?.publicMetadata as { role?: string } | undefined)?.role === "admin";
 
-  const visibleLinks = isAdmin
-    ? [...links, { href: "/admin", label: "Admin" }]
-    : links;
+  const visibleLinks = isAdmin ? [...links, { href: "/admin", label: "Admin" }] : links;
 
   return (
     <nav className="flex items-center gap-4">
       {visibleLinks.map((link) => {
-        const isActive =
-          link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+        const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
         return (
           <Link
             key={link.href}

@@ -25,7 +25,7 @@ function manageReturnPath(
   return base;
 }
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
     addMember?: string;
@@ -38,7 +38,7 @@ interface PageProps {
     title?: string;
     department?: string;
   }>;
-}
+};
 
 async function TeamContent({
   id,
@@ -63,13 +63,7 @@ async function TeamContent({
   );
 }
 
-async function EditTeamContent({
-  projectId,
-  teamId,
-}: {
-  projectId: string;
-  teamId: string;
-}) {
+async function EditTeamContent({ projectId, teamId }: { projectId: string; teamId: string }) {
   const trpc = await createServerCaller();
   const team = await trpc.team.getById({ id: teamId });
   if (!team) return null;
@@ -99,11 +93,7 @@ export default async function TeamPage({ params, searchParams }: PageProps) {
   return (
     <>
       <Suspense fallback={null}>
-        <TeamContent
-          id={id}
-          filterTitle={filterTitle}
-          filterDepartment={filterDepartment}
-        />
+        <TeamContent id={id} filterTitle={filterTitle} filterDepartment={filterDepartment} />
       </Suspense>
 
       {sp.addMember === "true" && <TeamMemberSheet projectId={id} />}
@@ -121,12 +111,8 @@ export default async function TeamPage({ params, searchParams }: PageProps) {
       )}
 
       {sp.manageTeams === "true" && <TeamSheet projectId={id} />}
-      {sp.manageDepartments === "true" && (
-        <DepartmentSheet returnPath={manageReturnPath(id, sp)} />
-      )}
-      {sp.manageTitles === "true" && (
-        <TitleSheet returnPath={manageReturnPath(id, sp)} />
-      )}
+      {sp.manageDepartments === "true" && <DepartmentSheet returnPath={manageReturnPath(id, sp)} />}
+      {sp.manageTitles === "true" && <TitleSheet returnPath={manageReturnPath(id, sp)} />}
     </>
   );
 }

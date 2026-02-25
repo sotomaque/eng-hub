@@ -9,11 +9,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -26,11 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -52,21 +44,21 @@ import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
 import { useBreadcrumbTitle } from "@/lib/contexts/breadcrumb-context";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface AssignmentPerson {
+type AssignmentPerson = {
   person: {
     id: string;
     firstName: string;
     lastName: string;
     imageUrl: string | null;
   };
-}
+};
 
-interface KeyResultItem {
+type KeyResultItem = {
   id: string;
   status: string;
-}
+};
 
-interface KeyResultFull {
+type KeyResultFull = {
   id: string;
   title: string;
   targetValue: number;
@@ -74,9 +66,9 @@ interface KeyResultFull {
   unit: string | null;
   status: string;
   sortOrder: number;
-}
+};
 
-interface ChildItem {
+type ChildItem = {
   id: string;
   title: string;
   description: string | null;
@@ -86,9 +78,9 @@ interface ChildItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultItem[];
   quarter: string | null;
-}
+};
 
-interface RoadmapItem {
+type RoadmapItem = {
   id: string;
   title: string;
   description: string | null;
@@ -100,19 +92,15 @@ interface RoadmapItem {
   assignments: AssignmentPerson[];
   keyResults: KeyResultFull[];
   children: ChildItem[];
-}
+};
 
-interface RoadmapItemDetailProps {
+type RoadmapItemDetailProps = {
   projectId: string;
   type: "milestone" | "quarterlyGoal";
   item: RoadmapItem;
-}
+};
 
-export function RoadmapItemDetail({
-  projectId,
-  type,
-  item,
-}: RoadmapItemDetailProps) {
+export function RoadmapItemDetail({ projectId, type, item }: RoadmapItemDetailProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const { setTitle } = useBreadcrumbTitle();
@@ -123,17 +111,14 @@ export function RoadmapItemDetail({
   }, [item.title, setTitle]);
 
   const deleteSuccessHandler = () => {
-    toast.success(
-      `${type === "milestone" ? "Milestone" : "Quarterly goal"} deleted`,
-    );
+    toast.success(`${type === "milestone" ? "Milestone" : "Quarterly goal"} deleted`);
     const backUrl = item.parent
       ? `/projects/${projectId}/roadmap/${item.parent.id}`
       : `/projects/${projectId}/roadmap`;
     router.push(backUrl);
     router.refresh();
   };
-  const deleteErrorHandler = (error: { message: string }) =>
-    toast.error(error.message);
+  const deleteErrorHandler = (error: { message: string }) => toast.error(error.message);
 
   const deleteMilestoneMutation = useMutation(
     trpc.milestone.delete.mutationOptions({
@@ -147,8 +132,7 @@ export function RoadmapItemDetail({
       onError: deleteErrorHandler,
     }),
   );
-  const deleteMutation =
-    type === "milestone" ? deleteMilestoneMutation : deleteGoalMutation;
+  const deleteMutation = type === "milestone" ? deleteMilestoneMutation : deleteGoalMutation;
 
   const reorderMilestoneMutation = useMutation(
     trpc.milestone.reorder.mutationOptions({
@@ -162,8 +146,7 @@ export function RoadmapItemDetail({
       onError: (error) => toast.error(error.message),
     }),
   );
-  const reorderMutation =
-    type === "milestone" ? reorderMilestoneMutation : reorderGoalMutation;
+  const reorderMutation = type === "milestone" ? reorderMilestoneMutation : reorderGoalMutation;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -209,36 +192,22 @@ export function RoadmapItemDetail({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Badge
-              className={
-                STATUS_STYLES[item.status as keyof typeof STATUS_STYLES] ?? ""
-              }
-            >
-              {STATUS_LABELS[item.status as keyof typeof STATUS_LABELS] ??
-                item.status}
+            <Badge className={STATUS_STYLES[item.status as keyof typeof STATUS_STYLES] ?? ""}>
+              {STATUS_LABELS[item.status as keyof typeof STATUS_LABELS] ?? item.status}
             </Badge>
-            {item.quarter && (
-              <span className="text-sm text-muted-foreground">
-                {item.quarter}
-              </span>
-            )}
+            {item.quarter && <span className="text-sm text-muted-foreground">{item.quarter}</span>}
           </div>
           <h1 className="text-2xl font-bold">{item.title}</h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             {item.targetDate && (
-              <span>
-                Target: {new Date(item.targetDate).toLocaleDateString()}
-              </span>
+              <span>Target: {new Date(item.targetDate).toLocaleDateString()}</span>
             )}
             {item.assignments.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <span>Assignees:</span>
                 <div className="flex -space-x-1.5">
                   {item.assignments.map((a) => (
-                    <Avatar
-                      key={a.person.id}
-                      className="size-6 border-2 border-background"
-                    >
+                    <Avatar key={a.person.id} className="size-6 border-2 border-background">
                       <AvatarImage src={a.person.imageUrl ?? undefined} />
                       <AvatarFallback className="text-[10px]">
                         {a.person.firstName[0]}
@@ -273,12 +242,9 @@ export function RoadmapItemDetail({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Delete {typeLabel.toLowerCase()}?
-                </AlertDialogTitle>
+                <AlertDialogTitle>Delete {typeLabel.toLowerCase()}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete &quot;{item.title}&quot; and all
-                  its sub-items.
+                  This will permanently delete &quot;{item.title}&quot; and all its sub-items.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -299,9 +265,7 @@ export function RoadmapItemDetail({
       {/* Description */}
       {item.description && (
         <div className="prose prose-sm dark:prose-invert max-w-none">
-          <p className="whitespace-pre-wrap text-muted-foreground">
-            {item.description}
-          </p>
+          <p className="whitespace-pre-wrap text-muted-foreground">{item.description}</p>
         </div>
       )}
 
@@ -319,9 +283,7 @@ export function RoadmapItemDetail({
       {/* Sub-items */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            Sub-items ({item.children.length})
-          </h2>
+          <h2 className="text-lg font-semibold">Sub-items ({item.children.length})</h2>
           <Button
             variant="outline"
             size="sm"
@@ -354,15 +316,9 @@ export function RoadmapItemDetail({
                         <span className="sr-only">Drag</span>
                       </TableHead>
                       <TableHead>Title</TableHead>
-                      <TableHead className="hidden sm:table-cell">
-                        Assignees
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell">
-                        KRs
-                      </TableHead>
-                      <TableHead className="hidden sm:table-cell">
-                        Target Date
-                      </TableHead>
+                      <TableHead className="hidden sm:table-cell">Assignees</TableHead>
+                      <TableHead className="hidden md:table-cell">KRs</TableHead>
+                      <TableHead className="hidden sm:table-cell">Target Date</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[80px]">
                         <span className="sr-only">Actions</span>
@@ -391,9 +347,7 @@ export function RoadmapItemDetail({
                                   key={a.person.id}
                                   className="size-6 border-2 border-background"
                                 >
-                                  <AvatarImage
-                                    src={a.person.imageUrl ?? undefined}
-                                  />
+                                  <AvatarImage src={a.person.imageUrl ?? undefined} />
                                   <AvatarFallback className="text-[10px]">
                                     {a.person.firstName[0]}
                                     {a.person.lastName[0]}
@@ -411,12 +365,8 @@ export function RoadmapItemDetail({
                         <TableCell className="hidden md:table-cell">
                           {child.keyResults.length > 0 && (
                             <span className="text-xs text-muted-foreground">
-                              {
-                                child.keyResults.filter(
-                                  (kr) => kr.status === "COMPLETED",
-                                ).length
-                              }
-                              /{child.keyResults.length}
+                              {child.keyResults.filter((kr) => kr.status === "COMPLETED").length}/
+                              {child.keyResults.length}
                             </span>
                           )}
                         </TableCell>
@@ -430,14 +380,11 @@ export function RoadmapItemDetail({
                         <TableCell>
                           <Badge
                             className={
-                              STATUS_STYLES[
-                                child.status as keyof typeof STATUS_STYLES
-                              ] ?? ""
+                              STATUS_STYLES[child.status as keyof typeof STATUS_STYLES] ?? ""
                             }
                           >
-                            {STATUS_LABELS[
-                              child.status as keyof typeof STATUS_LABELS
-                            ] ?? child.status}
+                            {STATUS_LABELS[child.status as keyof typeof STATUS_LABELS] ??
+                              child.status}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -447,10 +394,9 @@ export function RoadmapItemDetail({
                               size="icon"
                               className="size-7"
                               onClick={() =>
-                                router.push(
-                                  `${basePath}/${item.id}?${editParam}=${child.id}`,
-                                  { scroll: false },
-                                )
+                                router.push(`${basePath}/${item.id}?${editParam}=${child.id}`, {
+                                  scroll: false,
+                                })
                               }
                             >
                               <Pencil className="size-3.5" />

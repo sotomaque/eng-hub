@@ -23,9 +23,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface TitleSheetProps {
+type TitleSheetProps = {
   returnPath: string;
-}
+};
 
 export function TitleSheet({ returnPath }: TitleSheetProps) {
   const router = useRouter();
@@ -106,8 +106,8 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
         <SheetHeader>
           <SheetTitle>Manage Titles</SheetTitle>
           <SheetDescription>
-            Titles are shared across all projects. Add, edit, or remove titles
-            that can be assigned to team members.
+            Titles are shared across all projects. Add, edit, or remove titles that can be assigned
+            to team members.
           </SheetDescription>
         </SheetHeader>
 
@@ -120,16 +120,11 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleUpdate(title.id)
-                      }
+                      onKeyDown={(e) => e.key === "Enter" && handleUpdate(title.id)}
                       className="flex-1"
                       autoFocus
                     />
-                    <Select
-                      value={editingDeptId}
-                      onValueChange={setEditingDeptId}
-                    >
+                    <Select value={editingDeptId} onValueChange={setEditingDeptId}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="No department" />
                       </SelectTrigger>
@@ -158,11 +153,7 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                       >
                         Save
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingId(null)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
                         Cancel
                       </Button>
                     </div>
@@ -183,9 +174,7 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                         </span>
                       )}
                     </div>
-                    <span className="text-muted-foreground text-xs">
-                      {title._count.people}
-                    </span>
+                    <span className="text-muted-foreground text-xs">{title._count.people}</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -250,14 +239,8 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                   </SelectContent>
                 </Select>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleAdd}
-                    disabled={createMutation.isPending}
-                  >
-                    {createMutation.isPending && (
-                      <Loader2 className="animate-spin" />
-                    )}
+                  <Button size="sm" onClick={handleAdd} disabled={createMutation.isPending}>
+                    {createMutation.isPending && <Loader2 className="animate-spin" />}
                     Add
                   </Button>
                   <Button
@@ -274,11 +257,7 @@ export function TitleSheet({ returnPath }: TitleSheetProps) {
                 </div>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsAdding(true)}
-              >
+              <Button variant="outline" className="w-full" onClick={() => setIsAdding(true)}>
                 <Plus className="size-4" />
                 Add Title
               </Button>

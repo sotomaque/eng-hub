@@ -120,9 +120,7 @@ describe("person.update", () => {
     // person-1 wants new-mgr, but new-mgr's manager is person-1 → cycle
     mockPersonFindUnique.mockResolvedValueOnce({ managerId: "person-1" });
 
-    await expect(
-      caller.update({ ...validInput, managerId: "new-mgr" }),
-    ).rejects.toMatchObject({
+    await expect(caller.update({ ...validInput, managerId: "new-mgr" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: expect.stringContaining("circular"),
     });

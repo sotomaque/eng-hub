@@ -17,19 +17,14 @@ import Cropper from "react-easy-crop";
 import { toast } from "sonner";
 import { getCroppedImage } from "@/lib/crop-image";
 
-interface CropDialogProps {
+type CropDialogProps = {
   imageSrc: string;
   cropShape: "round" | "rect";
   onConfirm: (croppedBlob: Blob) => void;
   onCancel: () => void;
-}
+};
 
-export function CropDialog({
-  imageSrc,
-  cropShape,
-  onConfirm,
-  onCancel,
-}: CropDialogProps) {
+export function CropDialog({ imageSrc, cropShape, onConfirm, onCancel }: CropDialogProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -46,9 +41,7 @@ export function CropDialog({
       const blob = await getCroppedImage(imageSrc, croppedAreaPixels);
       onConfirm(blob);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to crop image",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to crop image");
       setIsProcessing(false);
     }
   }

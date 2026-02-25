@@ -4,12 +4,7 @@ import { z } from "zod";
 import { detectMilestoneCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
-const roadmapStatusEnum = z.enum([
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "AT_RISK",
-]);
+const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
 
 const personSelect = {
   id: true,
@@ -61,81 +56,72 @@ export const milestoneRouter = createTRPCRouter({
       });
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      return db.milestone.findUnique({
-        where: { id: input.id },
-        include: {
-          ...milestoneInclude,
-          parent: { select: { id: true, title: true } },
-        },
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return db.milestone.findUnique({
+      where: { id: input.id },
+      include: {
+        ...milestoneInclude,
+        parent: { select: { id: true, title: true } },
+      },
+    });
+  }),
+
+  create: protectedProcedure.input(createMilestoneSchema).mutation(async ({ input }) => {
+    const result = await db.milestone.create({
+      data: {
+        projectId: input.projectId,
+        title: input.title,
+        description: input.description,
+        targetDate: input.targetDate ?? null,
+        status: input.status,
+        parentId: input.parentId ?? null,
+        sortOrder: input.sortOrder ?? 0,
+      },
+    });
+    return result;
+  }),
+
+  update: protectedProcedure.input(updateMilestoneSchema).mutation(async ({ input }) => {
+    const { id, ...data } = input;
+    const newParentId = data.parentId ?? null;
+
+    if (newParentId) {
+      const current = await db.milestone.findUniqueOrThrow({
+        where: { id },
+        select: { parentId: true },
       });
-    }),
 
-  create: protectedProcedure
-    .input(createMilestoneSchema)
-    .mutation(async ({ input }) => {
-      const result = await db.milestone.create({
-        data: {
-          projectId: input.projectId,
-          title: input.title,
-          description: input.description,
-          targetDate: input.targetDate ?? null,
-          status: input.status,
-          parentId: input.parentId ?? null,
-          sortOrder: input.sortOrder ?? 0,
-        },
-      });
-      return result;
-    }),
-
-  update: protectedProcedure
-    .input(updateMilestoneSchema)
-    .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      const newParentId = data.parentId ?? null;
-
-      if (newParentId) {
-        const current = await db.milestone.findUniqueOrThrow({
-          where: { id },
-          select: { parentId: true },
-        });
-
-        if (newParentId !== current.parentId) {
-          const hasCycle = await detectMilestoneCycle(id, newParentId);
-          if (hasCycle) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message:
-                "Cannot set this parent — it would create a circular hierarchy.",
-            });
-          }
+      if (newParentId !== current.parentId) {
+        const hasCycle = await detectMilestoneCycle(id, newParentId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot set this parent — it would create a circular hierarchy.",
+          });
         }
       }
+    }
 
-      const result = await db.milestone.update({
-        where: { id },
-        data: {
-          title: data.title,
-          description: data.description,
-          targetDate: data.targetDate ?? null,
-          status: data.status,
-          parentId: newParentId,
-          sortOrder: data.sortOrder ?? 0,
-        },
-      });
-      return result;
-    }),
+    const result = await db.milestone.update({
+      where: { id },
+      data: {
+        title: data.title,
+        description: data.description,
+        targetDate: data.targetDate ?? null,
+        status: data.status,
+        parentId: newParentId,
+        sortOrder: data.sortOrder ?? 0,
+      },
+    });
+    return result;
+  }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      const result = await db.milestone.delete({
-        where: { id: input.id },
-      });
-      return result;
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    const result = await db.milestone.delete({
+      where: { id: input.id },
+    });
+    return result;
+  }),
 
   reorder: protectedProcedure
     .input(

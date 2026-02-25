@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { ImageIcon, Loader2, Upload, X } from "lucide-react";
@@ -13,7 +9,7 @@ import { toast } from "sonner";
 import { CropDialog } from "@/components/crop-dialog";
 import { useUploadThing } from "@/lib/uploadthing-components";
 
-interface ImageUploaderProps {
+type ImageUploaderProps = {
   label?: string;
   currentImageUrl?: string | null;
   onUploadComplete: (url: string) => void;
@@ -21,7 +17,7 @@ interface ImageUploaderProps {
   onUploadingChange?: (uploading: boolean) => void;
   fallbackText?: string;
   shape?: "circle" | "square";
-}
+};
 
 export function ImageUploader({
   label = "Image",
@@ -104,11 +100,7 @@ export function ImageUploader({
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
           >
-            {isUploading ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Upload className="size-4" />
-            )}
+            {isUploading ? <Loader2 className="animate-spin" /> : <Upload className="size-4" />}
             {isUploading ? "Uploading…" : "Upload"}
           </Button>
           {currentImageUrl && (

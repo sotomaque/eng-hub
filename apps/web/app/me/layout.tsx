@@ -1,7 +1,4 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@workspace/ui/components/sidebar";
+import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar";
 import { redirect } from "next/navigation";
 import { MeSidebar } from "@/components/me-sidebar";
 import { MeSiteHeader } from "@/components/me-site-header";
@@ -9,9 +6,9 @@ import { getMe } from "./_lib/queries";
 
 export const dynamic = "force-dynamic";
 
-interface LayoutProps {
+type LayoutProps = {
   children: React.ReactNode;
-}
+};
 
 export default async function MeLayout({ children }: LayoutProps) {
   const person = await getMe();

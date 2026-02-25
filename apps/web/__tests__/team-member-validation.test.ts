@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createTeamMemberSchema,
-  updateTeamMemberSchema,
-} from "@/lib/validations/team-member";
+import { createTeamMemberSchema, updateTeamMemberSchema } from "@/lib/validations/team-member";
 
 describe("createTeamMemberSchema", () => {
   const validInput = {

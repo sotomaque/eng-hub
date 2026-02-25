@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { getMe } from "@/app/me/_lib/queries";
 import { AppHeader } from "@/components/app-header";
 import { PersonComments } from "@/components/person-comments";
 import { PersonMeetings } from "@/components/person-meetings";
@@ -7,12 +8,20 @@ import { PersonProfile } from "@/components/person-profile";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { getCachedPerson } from "./_lib/queries";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
+function serializeDate(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  return typeof date === "string" ? date : date.toISOString();
 }
 
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
 async function PersonContent({ id }: { id: string }) {
-  const person = await getCachedPerson(id);
+  // Run both fetches concurrently — getMe() is React.cache()-deduped so no extra DB call
+  const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
+
+  if (me?.id === id) redirect("/me");
   if (!person) notFound();
 
   return (
@@ -20,23 +29,12 @@ async function PersonContent({ id }: { id: string }) {
       person={{
         ...person,
         milestoneAssignments: person.milestoneAssignments.map((a) => ({
-          milestone: {
-            ...a.milestone,
-            targetDate: a.milestone.targetDate
-              ? typeof a.milestone.targetDate === "string"
-                ? a.milestone.targetDate
-                : a.milestone.targetDate.toISOString()
-              : null,
-          },
+          milestone: { ...a.milestone, targetDate: serializeDate(a.milestone.targetDate) },
         })),
         quarterlyGoalAssignments: person.quarterlyGoalAssignments.map((a) => ({
           quarterlyGoal: {
             ...a.quarterlyGoal,
-            targetDate: a.quarterlyGoal.targetDate
-              ? typeof a.quarterlyGoal.targetDate === "string"
-                ? a.quarterlyGoal.targetDate
-                : a.quarterlyGoal.targetDate.toISOString()
-              : null,
+            targetDate: serializeDate(a.quarterlyGoal.targetDate),
           },
         })),
       }}

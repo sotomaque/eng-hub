@@ -20,13 +20,13 @@ import { useTRPC } from "@/lib/trpc/client";
 
 type CloneSource = "empty" | "active" | "live";
 
-interface CreateArrangementDialogProps {
+type CreateArrangementDialogProps = {
   projectId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activeArrangement: { id: string; name: string } | null;
   hasLiveTeams: boolean;
-}
+};
 
 export function CreateArrangementDialog({
   projectId,
@@ -79,9 +79,7 @@ export function CreateArrangementDialog({
   );
 
   const isSubmitting =
-    createMutation.isPending ||
-    cloneMutation.isPending ||
-    cloneFromLiveMutation.isPending;
+    createMutation.isPending || cloneMutation.isPending || cloneFromLiveMutation.isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -136,9 +134,7 @@ export function CreateArrangementDialog({
                 />
                 <div>
                   <p className="text-sm font-medium">Start empty</p>
-                  <p className="text-muted-foreground text-xs">
-                    Begin with all members unassigned
-                  </p>
+                  <p className="text-muted-foreground text-xs">Begin with all members unassigned</p>
                 </div>
               </label>
 
@@ -153,9 +149,7 @@ export function CreateArrangementDialog({
                     className="accent-primary"
                   />
                   <div>
-                    <p className="text-sm font-medium">
-                      Clone active configuration
-                    </p>
+                    <p className="text-sm font-medium">Clone active configuration</p>
                     <p className="text-muted-foreground text-xs">
                       Copy teams and assignments from &quot;
                       {activeArrangement.name}&quot;

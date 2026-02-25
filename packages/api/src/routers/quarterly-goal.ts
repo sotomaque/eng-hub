@@ -4,12 +4,7 @@ import { z } from "zod";
 import { detectGoalCycle } from "../lib/roadmap-hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
-const roadmapStatusEnum = z.enum([
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "AT_RISK",
-]);
+const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
 
 const personSelect = {
   id: true,
@@ -63,83 +58,74 @@ export const quarterlyGoalRouter = createTRPCRouter({
       });
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      return db.quarterlyGoal.findUnique({
-        where: { id: input.id },
-        include: {
-          ...goalInclude,
-          parent: { select: { id: true, title: true } },
-        },
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    return db.quarterlyGoal.findUnique({
+      where: { id: input.id },
+      include: {
+        ...goalInclude,
+        parent: { select: { id: true, title: true } },
+      },
+    });
+  }),
+
+  create: protectedProcedure.input(createQuarterlyGoalSchema).mutation(async ({ input }) => {
+    const result = await db.quarterlyGoal.create({
+      data: {
+        projectId: input.projectId,
+        title: input.title,
+        description: input.description,
+        quarter: input.quarter,
+        targetDate: input.targetDate ?? null,
+        status: input.status,
+        parentId: input.parentId ?? null,
+        sortOrder: input.sortOrder ?? 0,
+      },
+    });
+    return result;
+  }),
+
+  update: protectedProcedure.input(updateQuarterlyGoalSchema).mutation(async ({ input }) => {
+    const { id, ...data } = input;
+    const newParentId = data.parentId ?? null;
+
+    if (newParentId) {
+      const current = await db.quarterlyGoal.findUniqueOrThrow({
+        where: { id },
+        select: { parentId: true },
       });
-    }),
 
-  create: protectedProcedure
-    .input(createQuarterlyGoalSchema)
-    .mutation(async ({ input }) => {
-      const result = await db.quarterlyGoal.create({
-        data: {
-          projectId: input.projectId,
-          title: input.title,
-          description: input.description,
-          quarter: input.quarter,
-          targetDate: input.targetDate ?? null,
-          status: input.status,
-          parentId: input.parentId ?? null,
-          sortOrder: input.sortOrder ?? 0,
-        },
-      });
-      return result;
-    }),
-
-  update: protectedProcedure
-    .input(updateQuarterlyGoalSchema)
-    .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      const newParentId = data.parentId ?? null;
-
-      if (newParentId) {
-        const current = await db.quarterlyGoal.findUniqueOrThrow({
-          where: { id },
-          select: { parentId: true },
-        });
-
-        if (newParentId !== current.parentId) {
-          const hasCycle = await detectGoalCycle(id, newParentId);
-          if (hasCycle) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message:
-                "Cannot set this parent — it would create a circular hierarchy.",
-            });
-          }
+      if (newParentId !== current.parentId) {
+        const hasCycle = await detectGoalCycle(id, newParentId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot set this parent — it would create a circular hierarchy.",
+          });
         }
       }
+    }
 
-      const result = await db.quarterlyGoal.update({
-        where: { id },
-        data: {
-          title: data.title,
-          description: data.description,
-          quarter: data.quarter,
-          targetDate: data.targetDate ?? null,
-          status: data.status,
-          parentId: newParentId,
-          sortOrder: data.sortOrder ?? 0,
-        },
-      });
-      return result;
-    }),
+    const result = await db.quarterlyGoal.update({
+      where: { id },
+      data: {
+        title: data.title,
+        description: data.description,
+        quarter: data.quarter,
+        targetDate: data.targetDate ?? null,
+        status: data.status,
+        parentId: newParentId,
+        sortOrder: data.sortOrder ?? 0,
+      },
+    });
+    return result;
+  }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      const result = await db.quarterlyGoal.delete({
-        where: { id: input.id },
-      });
-      return result;
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    const result = await db.quarterlyGoal.delete({
+      where: { id: input.id },
+    });
+    return result;
+  }),
 
   reorder: protectedProcedure
     .input(

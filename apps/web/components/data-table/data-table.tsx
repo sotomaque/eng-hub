@@ -26,7 +26,7 @@ import { Fragment, type ReactNode, useState } from "react";
 
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
-interface DataTableProps<TData, TValue> {
+type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   toolbar?: (table: TanstackTable<TData>) => ReactNode;
@@ -43,17 +43,14 @@ interface DataTableProps<TData, TValue> {
   /** Server-side sorting: current sort direction */
   sortOrder?: "asc" | "desc";
   /** Server-side sorting: called when sorting changes */
-  onSortingChange?: (
-    sortBy: string | undefined,
-    sortOrder: "asc" | "desc",
-  ) => void;
+  onSortingChange?: (sortBy: string | undefined, sortOrder: "asc" | "desc") => void;
   /** Initial column visibility (e.g. { multiProject: false }) */
   initialColumnVisibility?: VisibilityState;
   /** ID accessor for each data row, used for drag-and-drop integration */
   getRowId?: (originalRow: TData, index: number) => string;
   /** Custom row wrapper, e.g. for drag-and-drop sortable rows */
   renderRow?: (props: { rowId: string; children: ReactNode }) => ReactNode;
-}
+};
 
 export function DataTable<TData, TValue>({
   columns,
@@ -104,17 +101,10 @@ export function DataTable<TData, TValue>({
   // Sync server sort state on prop change (browser back/forward)
   const [prevSortBy, setPrevSortBy] = useState(serverSortBy);
   const [prevSortOrder, setPrevSortOrder] = useState(serverSortOrder);
-  if (
-    isServerSorting &&
-    (serverSortBy !== prevSortBy || serverSortOrder !== prevSortOrder)
-  ) {
+  if (isServerSorting && (serverSortBy !== prevSortBy || serverSortOrder !== prevSortOrder)) {
     setPrevSortBy(serverSortBy);
     setPrevSortOrder(serverSortOrder);
-    setSorting(
-      serverSortBy
-        ? [{ id: serverSortBy, desc: serverSortOrder === "desc" }]
-        : [],
-    );
+    setSorting(serverSortBy ? [{ id: serverSortBy, desc: serverSortOrder === "desc" }] : []);
   }
 
   const table = useReactTable({
@@ -123,9 +113,7 @@ export function DataTable<TData, TValue>({
     ...(getRowId ? { getRowId } : {}),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    ...(isServerSorting
-      ? { manualSorting: true }
-      : { getSortedRowModel: getSortedRowModel() }),
+    ...(isServerSorting ? { manualSorting: true } : { getSortedRowModel: getSortedRowModel() }),
     ...(isServerPagination
       ? { manualPagination: true, pageCount: serverPageCount }
       : { getPaginationRowModel: getPaginationRowModel() }),
@@ -140,8 +128,7 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
-      const next =
-        typeof updater === "function" ? updater(pagination) : updater;
+      const next = typeof updater === "function" ? updater(pagination) : updater;
       setPagination(next);
       if (isServerPagination && onPageChange) {
         onPageChange(next.pageIndex + 1, next.pageSize);
@@ -167,10 +154,7 @@ export function DataTable<TData, TValue>({
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -183,10 +167,7 @@ export function DataTable<TData, TValue>({
                   .getVisibleCells()
                   .map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ));
                 if (renderRow) {
@@ -200,10 +181,7 @@ export function DataTable<TData, TValue>({
               })
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>

@@ -14,11 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { FolderPlus, Layers, Pencil, Plus, Trash2 } from "lucide-react";
@@ -53,7 +49,7 @@ type PersonWithMemberships = {
   projectMemberships: MembershipWithRelations[];
 };
 
-interface PeopleTableProps {
+type PeopleTableProps = {
   people: PersonWithMemberships[];
   projectNames: string[];
   departmentNames: string[];
@@ -66,7 +62,7 @@ interface PeopleTableProps {
   multiProject?: boolean;
   departments?: string[];
   projects?: string[];
-}
+};
 
 export function PeopleTable({
   people,
@@ -115,10 +111,7 @@ export function PeopleTable({
       const so = overrides.order ?? sortOrder;
       if (sb) params.set("sortBy", sb);
       if (so) params.set("sortOrder", so);
-      const mp =
-        overrides.multiProject !== undefined
-          ? overrides.multiProject
-          : multiProject;
+      const mp = overrides.multiProject !== undefined ? overrides.multiProject : multiProject;
       if (mp) params.set("multiProject", "true");
       const d = overrides.departments ?? departments;
       if (d?.length) params.set("department", d.join(","));
@@ -126,15 +119,7 @@ export function PeopleTable({
       if (p?.length) params.set("project", p.join(","));
       return params.toString();
     },
-    [
-      pageSize,
-      searchInput,
-      sortBy,
-      sortOrder,
-      multiProject,
-      departments,
-      projects,
-    ],
+    [pageSize, searchInput, sortBy, sortOrder, multiProject, departments, projects],
   );
 
   const handleSearchChange = useCallback(
@@ -164,9 +149,7 @@ export function PeopleTable({
     }),
   );
 
-  const deletingId = deleteMutation.isPending
-    ? (deleteMutation.variables?.id ?? null)
-    : null;
+  const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
 
   const handleFilterChange = useCallback(
     (key: "departments" | "projects", values: string[]) => {
@@ -179,13 +162,39 @@ export function PeopleTable({
   );
 
   const handleResetFilters = useCallback(() => {
-    const qs = buildParams({ page: "1", departments: [], projects: [] });
+    clearTimeout(debounceRef.current);
+    setSearchInput("");
+    const qs = buildParams({
+      page: "1",
+      search: "",
+      departments: [],
+      projects: [],
+      multiProject: false,
+    });
     startSearchTransition(() => {
       router.replace(`/people?${qs}`, { scroll: false });
     });
   }, [buildParams, router]);
 
-  const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0);
+  const handleEdit = useCallback(
+    (id: string) => {
+      const params = new URLSearchParams(buildParams({ page: String(page) }));
+      params.set("edit", id);
+      router.push(`/people?${params.toString()}`, { scroll: false });
+    },
+    [router, buildParams, page],
+  );
+
+  const handleAddToProject = useCallback(
+    (id: string) => {
+      const params = new URLSearchParams(buildParams({ page: String(page) }));
+      params.set("addToProject", id);
+      router.push(`/people?${params.toString()}`, { scroll: false });
+    },
+    [router, buildParams, page],
+  );
+
+  const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0) + (multiProject ? 1 : 0);
 
   const projectOptions = useMemo(
     () => projectNames.map((n) => ({ label: n, value: n })),
@@ -203,17 +212,12 @@ export function PeopleTable({
         id: "name",
         accessorFn: (row) =>
           `${row.firstName}${row.callsign ? ` ${row.callsign}` : ""} ${row.lastName}`,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Name" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
         cell: ({ row }) => {
           const person = row.original;
           const isMe = person.id === myPersonId;
           return (
-            <Link
-              href={`/people/${person.id}`}
-              className="flex items-center gap-2 hover:underline"
-            >
+            <Link href={`/people/${person.id}`} className="flex items-center gap-2 hover:underline">
               <Avatar className="size-7 shrink-0">
                 <AvatarImage src={person.imageUrl ?? undefined} />
                 <AvatarFallback className="text-xs">
@@ -235,25 +239,16 @@ export function PeopleTable({
         id: "email",
         accessorFn: (row) => row.email,
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Email"
-            className="hidden sm:flex"
-          />
+          <DataTableColumnHeader column={column} title="Email" className="hidden sm:flex" />
         ),
         cell: ({ row }) => (
-          <span className="text-muted-foreground hidden sm:inline">
-            {row.getValue("email")}
-          </span>
+          <span className="text-muted-foreground hidden sm:inline">{row.getValue("email")}</span>
         ),
       },
       {
         id: "projects",
-        accessorFn: (row) =>
-          row.projectMemberships.map((m) => m.project.name).join(", "),
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Projects" />
-        ),
+        accessorFn: (row) => row.projectMemberships.map((m) => m.project.name).join(", "),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Projects" />,
         enableSorting: false,
         cell: ({ row }) => {
           const memberships = row.original.projectMemberships;
@@ -274,9 +269,7 @@ export function PeopleTable({
       {
         id: "departments",
         accessorFn: (row) => row.department?.name ?? "",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Department" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
         cell: ({ row }) => {
           const val = row.getValue("departments") as string;
           if (!val) {
@@ -289,11 +282,7 @@ export function PeopleTable({
         id: "githubUsername",
         accessorFn: (row) => row.githubUsername ?? "",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="GitHub"
-            className="hidden md:flex"
-          />
+          <DataTableColumnHeader column={column} title="GitHub" className="hidden md:flex" />
         ),
         cell: ({ row }) => (
           <span className="hidden md:inline">
@@ -311,25 +300,11 @@ export function PeopleTable({
           const person = row.original;
           return (
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  router.push(`/people?edit=${person.id}`, { scroll: false })
-                }
-              >
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(person.id)}>
                 <Pencil className="size-4" />
                 <span className="sr-only">Edit</span>
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  router.push(`/people?addToProject=${person.id}`, {
-                    scroll: false,
-                  })
-                }
-              >
+              <Button variant="ghost" size="icon" onClick={() => handleAddToProject(person.id)}>
                 <FolderPlus className="size-4" />
                 <span className="sr-only">Add to project</span>
               </Button>
@@ -344,8 +319,8 @@ export function PeopleTable({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete person?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete &quot;{person.firstName}{" "}
-                      {person.lastName}&quot; and remove them from all projects.
+                      This will permanently delete &quot;{person.firstName} {person.lastName}&quot;
+                      and remove them from all projects.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -366,7 +341,7 @@ export function PeopleTable({
         enableSorting: false,
       },
     ],
-    [myPersonId, deleteMutation, deletingId, router],
+    [myPersonId, deleteMutation, deletingId, handleEdit, handleAddToProject],
   );
 
   return (
@@ -375,25 +350,22 @@ export function PeopleTable({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">People</h1>
           <p className="text-muted-foreground text-sm">
-            {totalCount} {totalCount === 1 ? "person" : "people"} across all
-            projects
+            {totalCount} {totalCount === 1 ? "person" : "people"} across all projects
           </p>
         </div>
         <Button
-          onClick={() => router.push("/people?create=true", { scroll: false })}
+          onClick={() => {
+            const params = new URLSearchParams(buildParams({ page: String(page) }));
+            params.set("create", "true");
+            router.push(`/people?${params.toString()}`, { scroll: false });
+          }}
         >
           <Plus className="size-4" />
           Add Person
         </Button>
       </div>
 
-      <div
-        className={
-          isSearchPending
-            ? "opacity-60 transition-opacity"
-            : "transition-opacity"
-        }
-      >
+      <div className={isSearchPending ? "opacity-60 transition-opacity" : "transition-opacity"}>
         <DataTable
           columns={columns}
           data={people}

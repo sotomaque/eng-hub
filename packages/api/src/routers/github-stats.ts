@@ -97,8 +97,7 @@ export const githubStatsRouter = createTRPCRouter({
         await syncGitHubStatsForProject(input.projectId);
         return { success: true };
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Unknown error";
+        const message = error instanceof Error ? error.message : "Unknown error";
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `GitHub sync failed: ${message}`,

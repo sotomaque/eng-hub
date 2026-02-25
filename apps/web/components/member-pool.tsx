@@ -6,7 +6,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { useMemo, useState } from "react";
 import { DraggableMemberChip } from "@/components/draggable-member-chip";
 
-interface MemberData {
+type MemberData = {
   id: string;
   person: {
     firstName: string;
@@ -16,11 +16,11 @@ interface MemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface MemberPoolProps {
+type MemberPoolProps = {
   members: MemberData[];
-}
+};
 
 export function MemberPool({ members }: MemberPoolProps) {
   const { isOver, setNodeRef } = useDroppable({
@@ -38,9 +38,7 @@ export function MemberPool({ members }: MemberPoolProps) {
             `${m.person.firstName}${m.person.callsign ? ` ${m.person.callsign}` : ""} ${m.person.lastName}`
               .toLowerCase()
               .includes(lowerSearch) ||
-            (m.person.department?.name ?? "")
-              .toLowerCase()
-              .includes(lowerSearch) ||
+            (m.person.department?.name ?? "").toLowerCase().includes(lowerSearch) ||
             (m.person.title?.name ?? "").toLowerCase().includes(lowerSearch),
         )
       : members;
@@ -70,10 +68,7 @@ export function MemberPool({ members }: MemberPoolProps) {
     >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">
-          Unassigned{" "}
-          <span className="text-muted-foreground font-normal">
-            ({members.length})
-          </span>
+          Unassigned <span className="text-muted-foreground font-normal">({members.length})</span>
         </h3>
       </div>
 
@@ -87,35 +82,31 @@ export function MemberPool({ members }: MemberPoolProps) {
       <div className="flex-1 space-y-4 overflow-y-auto">
         {filtered.length === 0 ? (
           <p className="text-muted-foreground py-4 text-center text-xs">
-            {members.length === 0
-              ? "All members are assigned"
-              : "No matches found"}
+            {members.length === 0 ? "All members are assigned" : "No matches found"}
           </p>
         ) : (
-          Array.from(byDepartment.entries()).map(
-            ([departmentName, deptMembers]) => (
-              <div key={departmentName}>
-                <h4 className="text-muted-foreground mb-1.5 text-xs font-medium uppercase tracking-wider">
-                  {departmentName}
-                </h4>
-                <div className="space-y-1.5">
-                  {deptMembers.map((member) => (
-                    <DraggableMemberChip
-                      key={member.id}
-                      id={member.id}
-                      firstName={member.person.firstName}
-                      lastName={member.person.lastName}
-                      callsign={member.person.callsign}
-                      title={member.person.title}
-                      department={member.person.department}
-                      sourceTeamId={null}
-                      imageUrl={member.person.imageUrl}
-                    />
-                  ))}
-                </div>
+          Array.from(byDepartment.entries()).map(([departmentName, deptMembers]) => (
+            <div key={departmentName}>
+              <h4 className="text-muted-foreground mb-1.5 text-xs font-medium uppercase tracking-wider">
+                {departmentName}
+              </h4>
+              <div className="space-y-1.5">
+                {deptMembers.map((member) => (
+                  <DraggableMemberChip
+                    key={member.id}
+                    id={member.id}
+                    firstName={member.person.firstName}
+                    lastName={member.person.lastName}
+                    callsign={member.person.callsign}
+                    title={member.person.title}
+                    department={member.person.department}
+                    sourceTeamId={null}
+                    imageUrl={member.person.imageUrl}
+                  />
+                ))}
               </div>
-            ),
-          )
+            </div>
+          ))
         )}
       </div>
     </div>

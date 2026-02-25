@@ -10,9 +10,7 @@ export default function EditMeetingPage() {
   const params = useParams<{ meetingId: string }>();
   const trpc = useTRPC();
 
-  const meetingQuery = useQuery(
-    trpc.meeting.getById.queryOptions({ id: params.meetingId }),
-  );
+  const meetingQuery = useQuery(trpc.meeting.getById.queryOptions({ id: params.meetingId }));
   const meQuery = useQuery(trpc.person.me.queryOptions());
 
   if (meetingQuery.isLoading || meQuery.isLoading) {

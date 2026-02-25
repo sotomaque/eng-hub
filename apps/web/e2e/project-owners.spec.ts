@@ -30,23 +30,19 @@ test.describe("Project Owners - Display", () => {
   test("Beta project has no owners section in sidebar", async ({ page }) => {
     await page.goto("/projects/proj-beta");
     // Wait for the sidebar to be rendered with the navigation
-    await expect(
-      page.getByRole("link", { name: "Overview", exact: true }),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("link", { name: "Overview", exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
     // Owner group label should not be present (Beta has no owners in seed data)
     await expect(page.getByText("Owner", { exact: true })).toBeHidden();
   });
 });
 
 test.describe("Project Owners - CRUD", () => {
-  test("edit project to add an owner via PersonMultiSelect", async ({
-    page,
-  }) => {
+  test("edit project to add an owner via PersonMultiSelect", async ({ page }) => {
     // Open the edit sheet for Gamma (which already has Evan Chen as owner)
     await page.goto("/projects?edit=proj-gamma");
-    await expect(
-      page.getByRole("heading", { name: "Edit Project" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit Project" })).toBeVisible();
 
     // The owners field should show "1 person assigned" (Evan Chen from seed)
     await expect(page.getByText("1 person assigned")).toBeVisible();
@@ -68,9 +64,7 @@ test.describe("Project Owners - CRUD", () => {
     await page.getByRole("button", { name: "Save Changes" }).click();
 
     // Sheet closes on success
-    await expect(
-      page.getByRole("heading", { name: "Edit Project" }),
-    ).toBeHidden();
+    await expect(page.getByRole("heading", { name: "Edit Project" })).toBeHidden();
 
     // Navigate to Gamma detail page and verify both owners are shown
     await page.goto("/projects/proj-gamma");

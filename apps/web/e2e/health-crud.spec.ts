@@ -1,13 +1,9 @@
 import { expect, test } from "./helpers";
 
 test.describe("Health assessment CRUD", () => {
-  test("create a new health assessment with overall status", async ({
-    page,
-  }) => {
+  test("create a new health assessment with overall status", async ({ page }) => {
     await page.goto("/projects/proj-alpha/health/new");
-    await expect(
-      page.getByRole("heading", { name: "New Health Assessment" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New Health Assessment" })).toBeVisible();
 
     // Set overall status to Good (dimension accordions are collapsed)
     await page.getByRole("button", { name: "Good" }).first().click();

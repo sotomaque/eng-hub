@@ -2,12 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import {
   Select,
   SelectContent,
@@ -23,7 +18,7 @@ import { TeamCompositionBar } from "@/components/team-composition-bar";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface MemberData {
+type MemberData = {
   id: string;
   personId: string;
   person: {
@@ -33,25 +28,25 @@ interface MemberData {
     department: { name: string; color: string | null } | null;
     title: { name: string } | null;
   };
-}
+};
 
-interface AssignmentData {
+type AssignmentData = {
   teamMember: MemberData;
-}
+};
 
-interface TeamData {
+type TeamData = {
   id: string;
   name: string;
   assignments: AssignmentData[];
-}
+};
 
-interface TableTeamViewProps {
+type TableTeamViewProps = {
   teams: TeamData[];
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
   onDeleteTeam: (teamId: string) => void;
   titleColorMap: TitleColorMap;
-}
+};
 
 export function TableTeamView({
   teams,
@@ -96,9 +91,7 @@ export function TableTeamView({
       {/* Unassigned members */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">
-            Unassigned Members ({unassignedMembers.length})
-          </CardTitle>
+          <CardTitle className="text-sm">Unassigned Members ({unassignedMembers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {unassignedMembers.length === 0 ? (
@@ -118,21 +111,15 @@ export function TableTeamView({
                       className="truncate text-sm font-medium hover:underline"
                     >
                       {member.person.firstName}
-                      {member.person.callsign
-                        ? ` ${member.person.callsign}`
-                        : ""}{" "}
+                      {member.person.callsign ? ` ${member.person.callsign}` : ""}{" "}
                       {member.person.lastName}
                     </Link>
                     <p className="text-muted-foreground text-xs">
                       {member.person.department?.name ?? "—"}
-                      {member.person.title
-                        ? ` · ${member.person.title.name}`
-                        : ""}
+                      {member.person.title ? ` · ${member.person.title.name}` : ""}
                     </p>
                   </div>
-                  <Select
-                    onValueChange={(teamId) => handleAssign(member.id, teamId)}
-                  >
+                  <Select onValueChange={(teamId) => handleAssign(member.id, teamId)}>
                     <SelectTrigger className="h-8 w-36 text-xs">
                       <SelectValue placeholder="Assign to…" />
                     </SelectTrigger>
@@ -210,9 +197,7 @@ export function TableTeamView({
                           className="text-sm hover:underline"
                         >
                           {a.teamMember.person.firstName}
-                          {a.teamMember.person.callsign
-                            ? ` ${a.teamMember.person.callsign}`
-                            : ""}{" "}
+                          {a.teamMember.person.callsign ? ` ${a.teamMember.person.callsign}` : ""}{" "}
                           {a.teamMember.person.lastName}
                         </Link>
                         {a.teamMember.person.department && (

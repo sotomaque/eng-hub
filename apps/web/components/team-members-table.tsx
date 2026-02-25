@@ -14,11 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -51,12 +47,12 @@ type MemberWithRelations = {
   teamMemberships: (TeamMembership & { team: Team })[];
 };
 
-interface FilterOption {
+type FilterOption = {
   label: string;
   value: string;
-}
+};
 
-interface TeamMembersTableProps {
+type TeamMembersTableProps = {
   projectId: string;
   members: MemberWithRelations[];
   titleColorMap: TitleColorMap;
@@ -67,7 +63,7 @@ interface TeamMembersTableProps {
   filterCount?: number;
   onFilterChange?: (key: "title" | "department", values: string[]) => void;
   onResetFilters?: () => void;
-}
+};
 
 export function TeamMembersTable({
   projectId,
@@ -93,16 +89,12 @@ export function TeamMembersTable({
     }),
   );
 
-  const deletingId = deleteMutation.isPending
-    ? (deleteMutation.variables?.id ?? null)
-    : null;
+  const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
 
   // Use prop-provided options (from unfiltered data) or derive locally as fallback
   const titleOptions = useMemo(() => {
     if (titleOptionsProp) return titleOptionsProp;
-    const titles = [
-      ...new Set(members.map((m) => m.person.title?.name).filter(Boolean)),
-    ];
+    const titles = [...new Set(members.map((m) => m.person.title?.name).filter(Boolean))];
     titles.sort();
     return titles.map((t) => ({ label: t as string, value: t as string }));
   }, [titleOptionsProp, members]);
@@ -110,11 +102,7 @@ export function TeamMembersTable({
   const departmentOptions = useMemo(() => {
     if (departmentOptionsProp) return departmentOptionsProp;
     const depts = [
-      ...new Set(
-        members
-          .map((m) => m.person.department?.name)
-          .filter(Boolean) as string[],
-      ),
+      ...new Set(members.map((m) => m.person.department?.name).filter(Boolean) as string[]),
     ];
     depts.sort();
     return depts.map((d) => ({ label: d, value: d }));
@@ -126,9 +114,7 @@ export function TeamMembersTable({
         id: "name",
         accessorFn: (row) =>
           `${row.person.firstName}${row.person.callsign ? ` ${row.person.callsign}` : ""} ${row.person.lastName}`,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Name" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
         cell: ({ row }) => {
           const member = row.original;
           return (
@@ -152,44 +138,27 @@ export function TeamMembersTable({
         id: "email",
         accessorFn: (row) => row.person.email,
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Email"
-            className="hidden sm:flex"
-          />
+          <DataTableColumnHeader column={column} title="Email" className="hidden sm:flex" />
         ),
         cell: ({ row }) => (
-          <span className="hidden text-muted-foreground sm:inline">
-            {row.getValue("email")}
-          </span>
+          <span className="hidden text-muted-foreground sm:inline">{row.getValue("email")}</span>
         ),
       },
       {
         id: "titleName",
         accessorFn: (row) => row.person.title?.name ?? "",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Title"
-            className="hidden lg:flex"
-          />
+          <DataTableColumnHeader column={column} title="Title" className="hidden lg:flex" />
         ),
         cell: ({ row }) => {
           const val = row.getValue("titleName") as string;
           if (!val) {
-            return (
-              <span className="text-muted-foreground hidden lg:inline">
-                {"\u2014"}
-              </span>
-            );
+            return <span className="text-muted-foreground hidden lg:inline">{"\u2014"}</span>;
           }
           const color = titleColorMap.get(val) ?? TITLE_NO_TITLE_COLOR;
           return (
             <span className="hidden lg:inline">
-              <Badge
-                className="border-0 text-white"
-                style={{ backgroundColor: color }}
-              >
+              <Badge className="border-0 text-white" style={{ backgroundColor: color }}>
                 {val}
               </Badge>
             </span>
@@ -199,9 +168,7 @@ export function TeamMembersTable({
       {
         id: "departmentName",
         accessorFn: (row) => row.person.department?.name ?? "",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Department" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
         cell: ({ row }) => {
           const val = row.getValue("departmentName") as string;
           return val ? (
@@ -215,11 +182,7 @@ export function TeamMembersTable({
         id: "githubUsername",
         accessorFn: (row) => row.person.githubUsername ?? "",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="GitHub"
-            className="hidden md:flex"
-          />
+          <DataTableColumnHeader column={column} title="GitHub" className="hidden md:flex" />
         ),
         cell: ({ row }) => (
           <span className="hidden md:inline">
@@ -234,11 +197,7 @@ export function TeamMembersTable({
         id: "gitlabUsername",
         accessorFn: (row) => row.person.gitlabUsername ?? "",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="GitLab"
-            className="hidden md:flex"
-          />
+          <DataTableColumnHeader column={column} title="GitLab" className="hidden md:flex" />
         ),
         cell: ({ row }) => (
           <span className="hidden md:inline">
@@ -260,12 +219,9 @@ export function TeamMembersTable({
                 variant="ghost"
                 size="icon"
                 onClick={() =>
-                  router.push(
-                    `/projects/${projectId}/team?editMember=${member.id}`,
-                    {
-                      scroll: false,
-                    },
-                  )
+                  router.push(`/projects/${projectId}/team?editMember=${member.id}`, {
+                    scroll: false,
+                  })
                 }
               >
                 <Pencil className="size-4" />
@@ -282,8 +238,7 @@ export function TeamMembersTable({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Remove team member?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will remove &quot;{member.person.firstName}{" "}
-                      {member.person.lastName}
+                      This will remove &quot;{member.person.firstName} {member.person.lastName}
                       &quot; from the project team.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

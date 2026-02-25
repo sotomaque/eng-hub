@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -17,22 +13,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar";
-import {
-  ArrowLeft,
-  FileText,
-  LayoutDashboard,
-  NotebookPen,
-  Share2,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, FileText, LayoutDashboard, NotebookPen, Share2, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 
-interface MeSidebarProps {
+type MeSidebarProps = {
   personName: string;
   personImageUrl?: string | null;
-}
+};
 
 const navItems = [
   { label: "Profile", icon: LayoutDashboard, path: "" },
@@ -69,15 +58,11 @@ export function MeSidebar({ personName, personImageUrl }: MeSidebarProps) {
               <Link href={basePath}>
                 <Avatar className="size-8 shrink-0 rounded-full">
                   <AvatarImage src={personImageUrl ?? undefined} />
-                  <AvatarFallback className="text-sm">
-                    {initials}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-sm">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">{personName}</span>
-                  <span className="text-muted-foreground text-xs">
-                    My Dashboard
-                  </span>
+                  <span className="text-muted-foreground text-xs">My Dashboard</span>
                 </div>
               </Link>
             </SidebarMenuButton>

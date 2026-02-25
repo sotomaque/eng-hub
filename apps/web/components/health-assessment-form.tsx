@@ -121,11 +121,11 @@ type ExistingAssessment = {
   designVibeNotes: unknown;
 };
 
-interface HealthAssessmentFormProps {
+type HealthAssessmentFormProps = {
   projectId: string;
   assessment?: ExistingAssessment;
   prefill?: ExistingAssessment;
-}
+};
 
 function getStatusKey(key: DimensionKey): `${DimensionKey}Status` {
   return `${key}Status`;
@@ -158,9 +158,7 @@ export function HealthAssessmentForm({
     (assessment?.overallNotes as JSONContent) ?? undefined,
   );
 
-  const [dimensions, setDimensions] = useState<
-    Record<DimensionKey, DimensionState>
-  >(() => {
+  const [dimensions, setDimensions] = useState<Record<DimensionKey, DimensionState>>(() => {
     const initial: Record<DimensionKey, DimensionState> = {
       growth: { status: null, notes: undefined },
       margin: { status: null, notes: undefined },
@@ -176,9 +174,7 @@ export function HealthAssessmentForm({
         initial[key] = {
           status: source[getStatusKey(key)] ?? null,
           // Only prefill notes for edit mode, not for new assessments
-          notes: assessment
-            ? ((source[getNotesKey(key)] as JSONContent) ?? undefined)
-            : undefined,
+          notes: assessment ? ((source[getNotesKey(key)] as JSONContent) ?? undefined) : undefined,
         };
       }
     }
@@ -188,9 +184,7 @@ export function HealthAssessmentForm({
   const hasPrefilled =
     !isEdit &&
     prefill &&
-    [...BUSINESS_DIMENSIONS, ...VIBE_CHECKS].some(
-      (d) => prefill[getStatusKey(d.key)],
-    );
+    [...BUSINESS_DIMENSIONS, ...VIBE_CHECKS].some((d) => prefill[getStatusKey(d.key)]);
 
   const [openSections, setOpenSections] = useState<string[]>(
     isEdit || hasPrefilled ? ["business", "vibes"] : [],
@@ -299,11 +293,7 @@ export function HealthAssessmentForm({
           </Button>
           <Button type="submit" disabled={isSubmitting || !overallStatus}>
             {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-            {isSubmitting
-              ? "Saving…"
-              : isEdit
-                ? "Save Changes"
-                : "Create Assessment"}
+            {isSubmitting ? "Saving…" : isEdit ? "Save Changes" : "Create Assessment"}
           </Button>
         </div>
       </div>
@@ -337,10 +327,7 @@ export function HealthAssessmentForm({
         onValueChange={setOpenSections}
         className="flex flex-col gap-4 py-4 "
       >
-        <AccordionItem
-          value="business"
-          className="rounded-lg border last:border-b"
-        >
+        <AccordionItem value="business" className="rounded-lg border last:border-b">
           <AccordionTrigger className="px-5 hover:no-underline">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">Business Dimensions</span>
@@ -361,9 +348,7 @@ export function HealthAssessmentForm({
                     description={dim.description}
                     status={dimensions[dim.key].status}
                     notes={dimensions[dim.key].notes}
-                    onStatusChange={(s) =>
-                      updateDimension(dim.key, "status", s)
-                    }
+                    onStatusChange={(s) => updateDimension(dim.key, "status", s)}
                     onNotesChange={(n) => updateDimension(dim.key, "notes", n)}
                     disabled={isSubmitting}
                   />
@@ -373,10 +358,7 @@ export function HealthAssessmentForm({
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem
-          value="vibes"
-          className="rounded-lg border last:border-b"
-        >
+        <AccordionItem value="vibes" className="rounded-lg border last:border-b">
           <AccordionTrigger className="px-5 hover:no-underline">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">Vibe Checks</span>
@@ -397,9 +379,7 @@ export function HealthAssessmentForm({
                     description={dim.description}
                     status={dimensions[dim.key].status}
                     notes={dimensions[dim.key].notes}
-                    onStatusChange={(s) =>
-                      updateDimension(dim.key, "status", s)
-                    }
+                    onStatusChange={(s) => updateDimension(dim.key, "status", s)}
                     onNotesChange={(n) => updateDimension(dim.key, "notes", n)}
                     disabled={isSubmitting}
                   />
@@ -413,19 +393,14 @@ export function HealthAssessmentForm({
   );
 }
 
-interface NotesToggleProps {
+type NotesToggleProps = {
   notes: JSONContent | undefined;
   onChange: (content: JSONContent) => void;
   disabled?: boolean;
   defaultOpen?: boolean;
-}
+};
 
-function NotesToggle({
-  notes,
-  onChange,
-  disabled,
-  defaultOpen = false,
-}: NotesToggleProps) {
+function NotesToggle({ notes, onChange, disabled, defaultOpen = false }: NotesToggleProps) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -435,9 +410,7 @@ function NotesToggle({
         onClick={() => setOpen((prev) => !prev)}
         className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ChevronRight
-          className={`size-3.5 transition-transform ${open ? "rotate-90" : ""}`}
-        />
+        <ChevronRight className={`size-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
         {open ? "Hide notes" : "Add notes"}
       </button>
       {open && (
@@ -454,7 +427,7 @@ function NotesToggle({
   );
 }
 
-interface DimensionSectionProps {
+type DimensionSectionProps = {
   label: string;
   description: string;
   status: HealthStatus | null;
@@ -462,7 +435,7 @@ interface DimensionSectionProps {
   onStatusChange: (status: HealthStatus) => void;
   onNotesChange: (content: JSONContent) => void;
   disabled?: boolean;
-}
+};
 
 function DimensionSection({
   label,
@@ -479,11 +452,7 @@ function DimensionSection({
         <Label className="text-sm font-medium">{label}</Label>
         <p className="text-muted-foreground text-xs">{description}</p>
       </div>
-      <HealthStatusPicker
-        value={status}
-        onChange={onStatusChange}
-        disabled={disabled}
-      />
+      <HealthStatusPicker value={status} onChange={onStatusChange} disabled={disabled} />
       <NotesToggle
         notes={notes}
         onChange={onNotesChange}
