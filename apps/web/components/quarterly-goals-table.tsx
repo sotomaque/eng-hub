@@ -112,6 +112,8 @@ interface QuarterlyGoalsTableProps {
   filterAssignee?: string[];
 }
 
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
+
 export function QuarterlyGoalsTable({
   projectId,
   goals,
@@ -142,7 +144,7 @@ export function QuarterlyGoalsTable({
   );
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor),
   );
 

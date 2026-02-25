@@ -49,6 +49,8 @@ interface VisualTeamEditorProps {
   titleColorMap: TitleColorMap;
 }
 
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
+
 export function VisualTeamEditor({
   teams,
   unassignedMembers,
@@ -64,7 +66,7 @@ export function VisualTeamEditor({
   } | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor),
   );
 
