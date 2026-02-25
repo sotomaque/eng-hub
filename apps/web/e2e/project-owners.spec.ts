@@ -12,10 +12,11 @@ test.describe("Project Owners - Display", () => {
   test("Alpha sidebar shows owner section", async ({ page }) => {
     await page.goto("/projects/proj-alpha");
 
-    // The sidebar group label "Owner" is visible
-    await expect(
-      page.getByRole("link", { name: "AS Alice Smith", exact: true }),
-    ).toBeVisible({ timeout: 15_000 });
+    // The sidebar owner link uses data-slot="sidebar-menu-button"
+    const sidebarOwnerLink = page
+      .locator('[data-slot="sidebar-menu-button"]')
+      .filter({ hasText: "Alice Smith" });
+    await expect(sidebarOwnerLink).toBeVisible({ timeout: 15_000 });
   });
 
   test("Gamma project shows owner (Evan Chen)", async ({ page }) => {
