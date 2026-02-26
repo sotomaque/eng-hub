@@ -278,6 +278,81 @@ export const projectRouter = createTRPCRouter({
       return { items, totalCount };
     }),
 
+  listExport: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
+        type: z.array(z.enum(["toplevel", "subproject"])).optional(),
+        favorite: z.boolean().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = {};
+      if (input.search) {
+        where.name = { contains: input.search, mode: "insensitive" as const };
+      }
+      if (input.status?.length) {
+        const realStatuses = input.status.filter((s) => s !== "NONE");
+        const hasNone = input.status.includes("NONE");
+        const statusConditions: object[] = [];
+        if (realStatuses.length > 0) {
+          statusConditions.push({
+            healthAssessments: {
+              some: { overallStatus: { in: realStatuses } },
+            },
+          });
+        }
+        if (hasNone) {
+          statusConditions.push({ healthAssessments: { none: {} } });
+        }
+        where.OR = statusConditions;
+      }
+      if (input.type?.length) {
+        const hasToplevel = input.type.includes("toplevel");
+        const hasSubproject = input.type.includes("subproject");
+        if (hasToplevel && !hasSubproject) {
+          where.parentId = null;
+        } else if (hasSubproject && !hasToplevel) {
+          where.parentId = { not: null };
+        }
+      }
+      if (input.favorite) {
+        const personId = await resolveClerkPerson(ctx.userId);
+        if (personId) {
+          where.favoritedBy = { some: { personId } };
+        } else {
+          return [];
+        }
+      }
+
+      const STATUS_LABEL: Record<string, string> = {
+        GREEN: "Good",
+        YELLOW: "Neutral",
+        RED: "Bad",
+      };
+
+      const projects = await db.project.findMany({
+        where,
+        orderBy: { name: "asc" },
+        include: {
+          healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
+          parent: { select: { name: true } },
+        },
+      });
+
+      return projects.map((p) => ({
+        Name: p.name,
+        Description: p.description ?? "",
+        Status: p.healthAssessments[0]?.overallStatus
+          ? (STATUS_LABEL[p.healthAssessments[0].overallStatus] ?? "No status")
+          : "No status",
+        Type: p.parentId ? "Sub-project" : "Top-level",
+        Parent: p.parent?.name ?? "",
+        "Updated At": p.updatedAt.toISOString(),
+      }));
+    }),
+
   getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     return fetchProject(input.id);
   }),

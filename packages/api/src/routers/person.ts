@@ -221,6 +221,71 @@ export const personRouter = createTRPCRouter({
       return { items, totalCount };
     }),
 
+  listExport: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        departments: z.array(z.string()).optional(),
+        projects: z.array(z.string()).optional(),
+        multiProject: z.boolean().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      let multiProjectIds: string[] | undefined;
+      if (input.multiProject) {
+        const grouped = await db.teamMember.groupBy({
+          by: ["personId"],
+          _count: { personId: true },
+          having: { personId: { _count: { gt: 1 } } },
+        });
+        multiProjectIds = grouped.map((r) => r.personId);
+      }
+
+      const where: Record<string, unknown> = {};
+      if (input.search) {
+        where.OR = [
+          { firstName: { contains: input.search, mode: "insensitive" as const } },
+          { lastName: { contains: input.search, mode: "insensitive" as const } },
+          { email: { contains: input.search, mode: "insensitive" as const } },
+          { callsign: { contains: input.search, mode: "insensitive" as const } },
+        ];
+      }
+      if (input.departments?.length) {
+        where.department = { name: { in: input.departments } };
+      }
+      if (input.projects?.length) {
+        where.projectMemberships = {
+          some: { project: { name: { in: input.projects } } },
+        };
+      }
+      if (multiProjectIds) {
+        where.id = { in: multiProjectIds };
+      }
+
+      const people = await db.person.findMany({
+        where,
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        include: {
+          department: true,
+          title: true,
+          projectMemberships: {
+            include: { project: { select: { name: true } } },
+          },
+        },
+      });
+
+      return people.map((p) => ({
+        "First Name": p.firstName,
+        "Last Name": p.lastName,
+        Email: p.email,
+        Department: p.department?.name ?? "",
+        Title: p.title?.name ?? "",
+        Projects: p.projectMemberships.map((m) => m.project.name).join(", "),
+        GitHub: p.githubUsername ?? "",
+        GitLab: p.gitlabUsername ?? "",
+      }));
+    }),
+
   getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     return db.person.findUnique({
       where: { id: input.id },
