@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getMe } from "@/app/me/_lib/queries";
 import { AppHeader } from "@/components/app-header";
 import { PersonComments } from "@/components/person-comments";
+import { PersonGoals } from "@/components/person-goals";
 import { PersonMeetings } from "@/components/person-meetings";
 import { PersonProfile } from "@/components/person-profile";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
@@ -53,6 +54,7 @@ export default async function PersonPage({ params }: PageProps) {
           <PersonContent id={id} />
         </Suspense>
         <PersonMeetings personId={id} />
+        <PersonGoals personId={id} />
         <PersonComments personId={id} />
       </main>
     </div>

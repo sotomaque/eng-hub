@@ -173,6 +173,8 @@ model Person {
   favoriteProjects         FavoriteProject[]
   ownedProjects            ProjectOwner[]
   pendingInvites           PendingInvite[]
+  goals                    PersonGoal[]
+  accomplishments          PersonAccomplishment[]
 
   @@index([managerId])
   @@index([departmentId])
@@ -414,6 +416,38 @@ model PersonComment {
 
   @@index([personId])
   @@map("person_comments")
+}
+
+model PersonGoal {
+  id          String        @id @default(cuid())
+  personId    String        @map("person_id")
+  person      Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      RoadmapStatus @default(NOT_STARTED)
+  targetDate  DateTime?     @map("target_date")
+  quarter     String?
+  sortOrder   Int           @default(0) @map("sort_order")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([personId])
+  @@map("person_goals")
+}
+
+model PersonAccomplishment {
+  id          String    @id @default(cuid())
+  personId    String    @map("person_id")
+  person      Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  date        DateTime?
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([personId])
+  @@map("person_accomplishments")
 }
 
 model MilestoneAssignment {
