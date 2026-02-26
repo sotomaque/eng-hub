@@ -10,7 +10,9 @@ import { meetingRouter } from "./routers/meeting";
 import { meetingTemplateRouter } from "./routers/meeting-template";
 import { milestoneRouter } from "./routers/milestone";
 import { personRouter } from "./routers/person";
+import { personAccomplishmentRouter } from "./routers/person-accomplishment";
 import { personCommentRouter } from "./routers/person-comment";
+import { personGoalRouter } from "./routers/person-goal";
 import { projectRouter } from "./routers/project";
 import { projectLinkRouter } from "./routers/project-link";
 import { quarterlyGoalRouter } from "./routers/quarterly-goal";
@@ -30,7 +32,9 @@ export const appRouter = createTRPCRouter({
   meetingTemplate: meetingTemplateRouter,
   milestone: milestoneRouter,
   person: personRouter,
+  personAccomplishment: personAccomplishmentRouter,
   personComment: personCommentRouter,
+  personGoal: personGoalRouter,
   project: projectRouter,
   projectLink: projectLinkRouter,
   quarterlyGoal: quarterlyGoalRouter,

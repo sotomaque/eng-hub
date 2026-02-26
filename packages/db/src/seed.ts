@@ -167,4 +167,30 @@ export async function resetAndSeed(): Promise<void> {
        'person-alice', 'person-carol', NULL, NOW(), NOW())
     ON CONFLICT (id) DO NOTHING
   `);
+
+  // ── Person goals ───────────────────────────────────────────────
+  await db.$executeRawUnsafe(`
+    INSERT INTO person_goals (id, person_id, title, description, status, quarter, sort_order, created_at, updated_at) VALUES
+      ('pg-bob-1', 'person-bob', 'Refactor auth module', 'Improve security and performance of the authentication layer', 'IN_PROGRESS', 'Q1 2026', 1, NOW(), NOW()),
+      ('pg-bob-2', 'person-bob', 'Increase test coverage to 80%', NULL, 'NOT_STARTED', 'Q2 2026', 2, NOW(), NOW()),
+      ('pg-alice-1', 'person-alice', 'Launch new onboarding flow', 'Ship the redesigned onboarding experience to all new users', 'IN_PROGRESS', 'Q1 2026', 1, NOW(), NOW()),
+      ('pg-alice-2', 'person-alice', 'Hire two senior engineers', NULL, 'NOT_STARTED', 'Q2 2026', 2, NOW(), NOW())
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  // ── Person accomplishments ─────────────────────────────────────
+  await db.$executeRawUnsafe(`
+    INSERT INTO person_accomplishments (id, person_id, title, description, date, sort_order, created_at, updated_at) VALUES
+      ('pa-bob-1', 'person-bob', 'Shipped API v2', 'Successfully migrated all internal clients to the new API', NOW() - INTERVAL '30 days', 1, NOW(), NOW()),
+      ('pa-bob-2', 'person-bob', 'Reduced p99 latency by 40%', NULL, NOW() - INTERVAL '60 days', 2, NOW(), NOW()),
+      ('pa-alice-1', 'person-alice', 'Led Q4 planning', 'Coordinated roadmap planning across three teams', NOW() - INTERVAL '14 days', 1, NOW(), NOW())
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  // ── Optional: link E2E test user to person-alice ───────────────
+  // Set E2E_CLERK_USER_ID in Vercel preview env to enable CRUD tests on /me/goals.
+  const e2eClerkUserId = process.env.E2E_CLERK_USER_ID;
+  if (e2eClerkUserId) {
+    await db.$executeRaw`UPDATE people SET clerk_user_id = ${e2eClerkUserId} WHERE id = 'person-alice'`;
+  }
 }

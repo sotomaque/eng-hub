@@ -13,7 +13,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar";
-import { ArrowLeft, FileText, LayoutDashboard, NotebookPen, Share2, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  LayoutDashboard,
+  NotebookPen,
+  Share2,
+  Target,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -26,6 +34,7 @@ type MeSidebarProps = {
 const navItems = [
   { label: "Profile", icon: LayoutDashboard, path: "" },
   { label: "Direct Reports", icon: Users, path: "/direct-reports" },
+  { label: "Goals", icon: Target, path: "/goals" },
   { label: "1:1 Meetings", icon: NotebookPen, path: "/one-on-ones" },
   { label: "Templates", icon: FileText, path: "/templates" },
   { label: "Sharing", icon: Share2, path: "/sharing" },
