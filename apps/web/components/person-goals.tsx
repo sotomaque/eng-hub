@@ -68,23 +68,23 @@ export function PersonGoals({ personId }: PersonGoalsProps) {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-sm">{goal.title}</p>
-                    {goal.description && (
+                    {goal.description ? (
                       <p className="mt-0.5 truncate text-muted-foreground text-xs">
                         {goal.description}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {goal.quarter && (
+                    {goal.quarter ? (
                       <Badge variant="secondary" className="text-xs">
                         {goal.quarter}
                       </Badge>
-                    )}
-                    {goal.targetDate && (
+                    ) : null}
+                    {goal.targetDate ? (
                       <span className="hidden text-muted-foreground text-xs sm:inline">
                         {new Date(goal.targetDate).toLocaleDateString()}
                       </span>
-                    )}
+                    ) : null}
                     <Badge
                       className={STATUS_STYLES[goal.status as keyof typeof STATUS_STYLES] ?? ""}
                     >
@@ -118,17 +118,17 @@ export function PersonGoals({ personId }: PersonGoalsProps) {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-sm">{accomplishment.title}</p>
-                    {accomplishment.description && (
+                    {accomplishment.description ? (
                       <p className="mt-0.5 truncate text-muted-foreground text-xs">
                         {accomplishment.description}
                       </p>
-                    )}
+                    ) : null}
                   </div>
-                  {accomplishment.date && (
+                  {accomplishment.date ? (
                     <span className="shrink-0 text-muted-foreground text-xs">
                       {format(new Date(accomplishment.date), "MMM d, yyyy")}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               ))}
             </div>

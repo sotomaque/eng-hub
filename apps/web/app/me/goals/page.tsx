@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { format } from "date-fns";
 import { GripVertical, Pencil, Plus, Target, Trash2, Trophy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { PersonAccomplishmentSheet } from "@/components/person-accomplishment-sheet";
 import { PersonGoalSheet } from "@/components/person-goal-sheet";
@@ -41,6 +42,20 @@ import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
 import { useTRPC } from "@/lib/trpc/client";
 
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
+
+const GOALS_EMPTY_STATE = (
+  <div className="flex flex-col items-center justify-center py-8 text-center">
+    <Target className="text-muted-foreground mb-2 size-8" />
+    <p className="text-muted-foreground text-sm">No goals yet. Add your first goal.</p>
+  </div>
+);
+
+const ACCOMPLISHMENTS_EMPTY_STATE = (
+  <div className="flex flex-col items-center justify-center py-8 text-center">
+    <Trophy className="text-muted-foreground mb-2 size-8" />
+    <p className="text-muted-foreground text-sm">No accomplishments logged yet.</p>
+  </div>
+);
 
 type PersonGoal = {
   id: string;
@@ -96,22 +111,22 @@ function SortableGoalRow({
 
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-sm">{goal.title}</p>
-        {goal.description && (
+        {goal.description ? (
           <p className="mt-0.5 truncate text-muted-foreground text-xs">{goal.description}</p>
-        )}
+        ) : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {goal.quarter && (
+        {goal.quarter ? (
           <Badge variant="secondary" className="text-xs">
             {goal.quarter}
           </Badge>
-        )}
-        {goal.targetDate && (
+        ) : null}
+        {goal.targetDate ? (
           <span className="hidden text-muted-foreground text-xs sm:inline">
             {new Date(goal.targetDate).toLocaleDateString()}
           </span>
-        )}
+        ) : null}
         <Badge className={STATUS_STYLES[goal.status as keyof typeof STATUS_STYLES] ?? ""}>
           {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS] ?? goal.status}
         </Badge>
@@ -160,6 +175,7 @@ export default function GoalsPage() {
 
   const goals = (goalsQuery.data as PersonGoal[] | undefined) ?? [];
   const accomplishments = (accomplishmentsQuery.data as PersonAccomplishment[] | undefined) ?? [];
+  const goalIds = useMemo(() => goals.map((g) => g.id), [goals]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -261,20 +277,14 @@ export default function GoalsPage() {
         </CardHeader>
         <CardContent>
           {goals.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Target className="text-muted-foreground mb-2 size-8" />
-              <p className="text-muted-foreground text-sm">No goals yet. Add your first goal.</p>
-            </div>
+            GOALS_EMPTY_STATE
           ) : (
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleGoalDragEnd}
             >
-              <SortableContext
-                items={goals.map((g) => g.id)}
-                strategy={verticalListSortingStrategy}
-              >
+              <SortableContext items={goalIds} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
                   {goals.map((goal) => (
                     <SortableGoalRow
@@ -313,10 +323,7 @@ export default function GoalsPage() {
         </CardHeader>
         <CardContent>
           {accomplishments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Trophy className="text-muted-foreground mb-2 size-8" />
-              <p className="text-muted-foreground text-sm">No accomplishments logged yet.</p>
-            </div>
+            ACCOMPLISHMENTS_EMPTY_STATE
           ) : (
             <div className="space-y-2">
               {accomplishments.map((accomplishment) => (
@@ -326,18 +333,18 @@ export default function GoalsPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-sm">{accomplishment.title}</p>
-                    {accomplishment.description && (
+                    {accomplishment.description ? (
                       <p className="mt-0.5 truncate text-muted-foreground text-xs">
                         {accomplishment.description}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {accomplishment.date && (
+                    {accomplishment.date ? (
                       <span className="hidden text-muted-foreground text-xs sm:inline">
                         {format(new Date(accomplishment.date), "MMM d, yyyy")}
                       </span>
-                    )}
+                    ) : null}
                     <Button
                       variant="ghost"
                       size="icon"

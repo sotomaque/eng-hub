@@ -13,8 +13,10 @@ test.describe("Goals & Accomplishments display", () => {
 
   test("status badges are visible on person profile", async ({ page }) => {
     await page.goto("/people/person-bob");
-    await expect(page.getByText("In Progress")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Not Started")).toBeVisible();
+    // Both the Roadmap card and the Goals card show "In Progress" on this page;
+    // use .first() to satisfy strict mode while confirming the badge is present.
+    await expect(page.getByText("In Progress").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Not Started").first()).toBeVisible();
   });
 
   test("seeded accomplishments appear on person profile", async ({ page }) => {
