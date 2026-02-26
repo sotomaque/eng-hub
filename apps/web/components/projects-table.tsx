@@ -1,7 +1,7 @@
 "use client";
 
 import type { HealthStatus } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   AlertDialog,
@@ -33,6 +33,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { ExportButton } from "@/components/export-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
 import { useTRPC } from "@/lib/trpc/client";
@@ -103,6 +104,7 @@ export function ProjectsTable({
 }: ProjectsTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [prevSearch, setPrevSearch] = useState(search);
@@ -483,6 +485,19 @@ export function ProjectsTable({
                 options={HEALTH_FILTER_OPTIONS}
                 value={status ?? []}
                 onValueChange={handleStatusChange}
+              />
+              <ExportButton
+                filename="projects"
+                fetchData={() =>
+                  queryClient.fetchQuery(
+                    trpc.project.listExport.queryOptions({
+                      search: searchInput || undefined,
+                      status: status as ("GREEN" | "YELLOW" | "RED" | "NONE")[] | undefined,
+                      type: type as ("toplevel" | "subproject")[] | undefined,
+                      favorite,
+                    }),
+                  )
+                }
               />
             </DataTableToolbar>
           )}

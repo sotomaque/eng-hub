@@ -1,7 +1,7 @@
 "use client";
 
 import type { Team, TeamMembership } from "@prisma/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { ExportButton } from "@/components/export-button";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MembershipWithRelations = {
@@ -80,6 +81,7 @@ export function PeopleTable({
 }: PeopleTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [prevSearch, setPrevSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -431,6 +433,19 @@ export function PeopleTable({
                 <Layers className="mr-2 size-4" />
                 Multi-project
               </Button>
+              <ExportButton
+                filename="people"
+                fetchData={() =>
+                  queryClient.fetchQuery(
+                    trpc.person.listExport.queryOptions({
+                      search: searchInput || undefined,
+                      departments,
+                      projects,
+                      multiProject,
+                    }),
+                  )
+                }
+              />
             </DataTableToolbar>
           )}
         />
