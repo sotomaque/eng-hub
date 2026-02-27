@@ -150,8 +150,11 @@ export async function resetAndSeed(): Promise<void> {
   // ── Meeting templates ──────────────────────────────────────────
   await db.$executeRawUnsafe(`
     INSERT INTO meeting_templates (id, name, description, content, author_id, created_at, updated_at) VALUES
-      ('mt-1on1', '1:1 Template', 'Standard one-on-one meeting template',
+      ('mt-1on1', 'Weekly 1:1', 'Quick weekly check-in template',
        '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Updates"}]},{"type":"paragraph","content":[{"type":"text","text":"What happened since last time?"}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Blockers"}]},{"type":"paragraph","content":[{"type":"text","text":"Anything blocking progress?"}]}]}',
+       'person-alice', NOW(), NOW()),
+      ('mt-monthly', 'Monthly 1:1', 'In-depth monthly one-on-one template',
+       '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Wins this month"}]},{"type":"paragraph","content":[{"type":"text","text":"What went well? Key accomplishments?"}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Challenges"}]},{"type":"paragraph","content":[{"type":"text","text":"What was difficult or frustrating?"}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Goals for next month"}]},{"type":"paragraph","content":[{"type":"text","text":"What are you focusing on?"}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Growth & development"}]},{"type":"paragraph","content":[{"type":"text","text":"Skills, career, learning opportunities?"}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Feedback"}]},{"type":"paragraph","content":[{"type":"text","text":"Anything I can do differently to support you?"}]}]}',
        'person-alice', NOW(), NOW())
     ON CONFLICT (id) DO NOTHING
   `);
