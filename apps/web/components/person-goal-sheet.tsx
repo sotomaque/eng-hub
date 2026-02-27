@@ -55,9 +55,11 @@ type PersonGoalData = {
 
 type PersonGoalSheetProps = {
   goal?: PersonGoalData;
+  personId?: string;
+  onClose?: () => void;
 };
 
-export function PersonGoalSheet({ goal }: PersonGoalSheetProps) {
+export function PersonGoalSheet({ goal, personId, onClose }: PersonGoalSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!goal;
@@ -104,8 +106,12 @@ export function PersonGoalSheet({ goal }: PersonGoalSheetProps) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    const basePath = window.location.pathname;
-    router.push(basePath, { scroll: false });
+    if (onClose) {
+      onClose();
+    } else {
+      const basePath = window.location.pathname;
+      router.push(basePath, { scroll: false });
+    }
     reset();
   }
 
@@ -121,7 +127,7 @@ export function PersonGoalSheet({ goal }: PersonGoalSheetProps) {
     if (isEditing && goal) {
       updateMutation.mutate({ ...payload, id: goal.id });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate({ ...payload, personId });
     }
   }
 

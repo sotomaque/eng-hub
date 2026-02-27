@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { resolveClerkPerson } from "../lib/hierarchy";
+import { isDirectManager, resolveClerkPerson } from "../lib/hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
@@ -33,19 +33,28 @@ export const personGoalRouter = createTRPCRouter({
         status: roadmapStatusEnum.optional(),
         targetDate: z.coerce.date().nullable().optional(),
         quarter: z.string().optional(),
+        personId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) {
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "You must claim a Person record first.",
         });
       }
+
+      const targetPersonId = input.personId ?? myPersonId;
+
+      if (targetPersonId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, targetPersonId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
       return db.personGoal.create({
         data: {
-          personId,
+          personId: targetPersonId,
           title: input.title,
           description: input.description,
           status: input.status ?? "NOT_STARTED",
@@ -67,15 +76,18 @@ export const personGoalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) throw new TRPCError({ code: "FORBIDDEN" });
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
 
       const goal = await db.personGoal.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
-      if (!goal || goal.personId !== personId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+      if (!goal) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (goal.personId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, goal.personId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personGoal.update({
@@ -93,30 +105,40 @@ export const personGoalRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) throw new TRPCError({ code: "FORBIDDEN" });
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
 
       const goal = await db.personGoal.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
-      if (!goal || goal.personId !== personId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+      if (!goal) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (goal.personId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, goal.personId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personGoal.delete({ where: { id: input.id } });
     }),
 
   reorder: protectedProcedure
-    .input(z.object({ ids: z.array(z.string()) }))
+    .input(z.object({ ids: z.array(z.string()), personId: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) throw new TRPCError({ code: "FORBIDDEN" });
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const targetPersonId = input.personId ?? myPersonId;
+
+      if (targetPersonId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, targetPersonId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      }
 
       return db.$transaction(
         input.ids.map((id, index) =>
           db.personGoal.update({
-            where: { id, personId },
+            where: { id, personId: targetPersonId },
             data: { sortOrder: index },
           }),
         ),

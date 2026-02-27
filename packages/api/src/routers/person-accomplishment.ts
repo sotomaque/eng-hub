@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { resolveClerkPerson } from "../lib/hierarchy";
+import { isDirectManager, resolveClerkPerson } from "../lib/hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const personAccomplishmentRouter = createTRPCRouter({
@@ -29,19 +29,28 @@ export const personAccomplishmentRouter = createTRPCRouter({
         title: z.string().min(1),
         description: z.string().optional(),
         date: z.coerce.date().nullable().optional(),
+        personId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) {
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "You must claim a Person record first.",
         });
       }
+
+      const targetPersonId = input.personId ?? myPersonId;
+
+      if (targetPersonId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, targetPersonId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
       return db.personAccomplishment.create({
         data: {
-          personId,
+          personId: targetPersonId,
           title: input.title,
           description: input.description,
           date: input.date ?? null,
@@ -59,15 +68,18 @@ export const personAccomplishmentRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) throw new TRPCError({ code: "FORBIDDEN" });
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
 
       const accomplishment = await db.personAccomplishment.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
-      if (!accomplishment || accomplishment.personId !== personId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+      if (!accomplishment) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (accomplishment.personId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, accomplishment.personId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personAccomplishment.update({
@@ -83,15 +95,18 @@ export const personAccomplishmentRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
-      if (!personId) throw new TRPCError({ code: "FORBIDDEN" });
+      const myPersonId = await resolveClerkPerson(ctx.userId);
+      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
 
       const accomplishment = await db.personAccomplishment.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
-      if (!accomplishment || accomplishment.personId !== personId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+      if (!accomplishment) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (accomplishment.personId !== myPersonId) {
+        const isManager = await isDirectManager(ctx.userId, accomplishment.personId);
+        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personAccomplishment.delete({ where: { id: input.id } });

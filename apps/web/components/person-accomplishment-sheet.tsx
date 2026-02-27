@@ -42,9 +42,15 @@ type PersonAccomplishmentData = {
 
 type PersonAccomplishmentSheetProps = {
   accomplishment?: PersonAccomplishmentData;
+  personId?: string;
+  onClose?: () => void;
 };
 
-export function PersonAccomplishmentSheet({ accomplishment }: PersonAccomplishmentSheetProps) {
+export function PersonAccomplishmentSheet({
+  accomplishment,
+  personId,
+  onClose,
+}: PersonAccomplishmentSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!accomplishment;
@@ -89,8 +95,12 @@ export function PersonAccomplishmentSheet({ accomplishment }: PersonAccomplishme
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    const basePath = window.location.pathname;
-    router.push(basePath, { scroll: false });
+    if (onClose) {
+      onClose();
+    } else {
+      const basePath = window.location.pathname;
+      router.push(basePath, { scroll: false });
+    }
     reset();
   }
 
@@ -104,7 +114,7 @@ export function PersonAccomplishmentSheet({ accomplishment }: PersonAccomplishme
     if (isEditing && accomplishment) {
       updateMutation.mutate({ ...payload, id: accomplishment.id });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate({ ...payload, personId });
     }
   }
 

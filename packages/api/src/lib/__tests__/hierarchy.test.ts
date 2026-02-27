@@ -17,7 +17,7 @@ mock.module("@workspace/db", () => ({
   },
 }));
 
-const { isInManagementChain, canViewMeetings } = await import("../hierarchy");
+const { isDirectManager, isInManagementChain, canViewMeetings } = await import("../hierarchy");
 
 describe("isInManagementChain", () => {
   beforeEach(() => {
@@ -141,5 +141,52 @@ describe("canViewMeetings", () => {
     const result = await canViewMeetings("clerk-unknown", "person-1");
     expect(result).toBe(false);
     expect(mockGrantFindUnique).not.toHaveBeenCalled();
+  });
+});
+
+describe("isDirectManager", () => {
+  beforeEach(() => {
+    mockFindUnique.mockReset();
+  });
+
+  test("returns false when clerk user has no person record", async () => {
+    mockFindUnique.mockResolvedValueOnce(null);
+
+    const result = await isDirectManager("clerk-unknown", "person-1");
+    expect(result).toBe(false);
+  });
+
+  test("returns true when clerk user is the direct manager", async () => {
+    // resolveClerkPerson → manager-id
+    mockFindUnique.mockResolvedValueOnce({ id: "manager-id" });
+    // person lookup → managerId matches
+    mockFindUnique.mockResolvedValueOnce({ managerId: "manager-id" });
+
+    const result = await isDirectManager("clerk-abc", "person-1");
+    expect(result).toBe(true);
+  });
+
+  test("returns false when clerk user is NOT the direct manager", async () => {
+    mockFindUnique.mockResolvedValueOnce({ id: "someone-else" });
+    mockFindUnique.mockResolvedValueOnce({ managerId: "actual-manager" });
+
+    const result = await isDirectManager("clerk-abc", "person-1");
+    expect(result).toBe(false);
+  });
+
+  test("returns false when person has no manager", async () => {
+    mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
+    mockFindUnique.mockResolvedValueOnce({ managerId: null });
+
+    const result = await isDirectManager("clerk-abc", "person-1");
+    expect(result).toBe(false);
+  });
+
+  test("returns false when person does not exist", async () => {
+    mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
+    mockFindUnique.mockResolvedValueOnce(null);
+
+    const result = await isDirectManager("clerk-abc", "person-nonexistent");
+    expect(result).toBe(false);
   });
 });
