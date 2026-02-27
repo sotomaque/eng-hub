@@ -158,3 +158,125 @@ test.describe("Accomplishments CRUD", () => {
     await expect(page.getByText(title)).toBeHidden({ timeout: 15_000 });
   });
 });
+
+// ── Manager editing direct report's goals ──────────────────────────────────
+// These tests verify that a manager (person-alice) can add/edit/delete goals
+// and accomplishments on a direct report's profile (person-bob).
+// Requires E2E_CLERK_USER_ID so person-alice is linked to the test user.
+
+test.describe("Manager edits direct report goals", () => {
+  test("manager sees Add Goal and Log Win buttons on direct report profile", async ({ page }) => {
+    test.skip(!E2E_CLERK_USER_ID, "Requires E2E_CLERK_USER_ID to link person record");
+
+    await page.goto("/people/person-bob");
+    await expect(page.getByRole("button", { name: "Add Goal" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "Log Win" })).toBeVisible();
+  });
+
+  test("manager does NOT see edit controls on non-managed person", async ({ page }) => {
+    test.skip(!E2E_CLERK_USER_ID, "Requires E2E_CLERK_USER_ID to link person record");
+
+    // person-diana is not managed by person-alice
+    await page.goto("/people/person-diana");
+    // Wait for page to load — check that a known element is visible
+    await expect(page.getByText("Diana Park")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "Add Goal" })).toBeHidden();
+  });
+
+  test("manager can create a goal for direct report", async ({ page }) => {
+    test.skip(!E2E_CLERK_USER_ID, "Requires E2E_CLERK_USER_ID to link person record");
+
+    const title = `E2E Manager Goal ${Date.now()}`;
+
+    await page.goto("/people/person-bob");
+    await expect(page.getByRole("button", { name: "Add Goal" })).toBeVisible({ timeout: 15_000 });
+
+    await page.getByRole("button", { name: "Add Goal" }).click();
+    await expect(page.getByRole("heading", { name: "Add Goal" })).toBeVisible({ timeout: 5_000 });
+
+    await page.locator("#title").fill(title);
+    await page.getByRole("button", { name: "Add Goal" }).click();
+    await expect(page.getByRole("heading", { name: "Add Goal" })).toBeHidden({ timeout: 15_000 });
+
+    await page.reload();
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("manager can edit a goal on direct report profile", async ({ page }) => {
+    test.skip(!E2E_CLERK_USER_ID, "Requires E2E_CLERK_USER_ID to link person record");
+
+    const originalTitle = `E2E Manager Edit ${Date.now()}`;
+    const updatedTitle = `${originalTitle} (updated)`;
+
+    // Create a goal first
+    await page.goto("/people/person-bob");
+    await expect(page.getByRole("button", { name: "Add Goal" })).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Add Goal" }).click();
+    await expect(page.getByRole("heading", { name: "Add Goal" })).toBeVisible({ timeout: 5_000 });
+    await page.locator("#title").fill(originalTitle);
+    await page.getByRole("button", { name: "Add Goal" }).click();
+    await expect(page.getByRole("heading", { name: "Add Goal" })).toBeHidden({ timeout: 15_000 });
+
+    await page.reload();
+    await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 15_000 });
+
+    // Edit it
+    const goalRow = page.locator("div").filter({ hasText: originalTitle }).first();
+    await goalRow.getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("heading", { name: "Edit Goal" })).toBeVisible({ timeout: 5_000 });
+
+    await page.locator("#title").clear();
+    await page.locator("#title").fill(updatedTitle);
+    await page.getByRole("button", { name: "Save Changes" }).click();
+    await expect(page.getByRole("heading", { name: "Edit Goal" })).toBeHidden({ timeout: 15_000 });
+
+    await page.reload();
+    await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(originalTitle)).toBeHidden();
+  });
+
+  test("manager can delete a goal on direct report profile", async ({ page }) => {
+    test.skip(!E2E_CLERK_USER_ID, "Requires E2E_CLERK_USER_ID to link person record");
+
+    const title = `E2E Manager Delete ${Date.now()}`;
+
+    // Create a goal to delete
+    await page.goto("/people/person-bob");
+    await expect(page.getByRole("button", { name: "Add Goal" })).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Add Goal" }).click();
+    await expect(page.getByRole("heading", { name: "Add Goal" })).toBeVisible({ timeout: 5_000 });
+    await page.locator("#title").fill(title);
+    await page.getByRole("button", { name: "Add Goal" }).click();
+    await expect(page.getByRole("heading", { name: "Add Goal" })).toBeHidden({ timeout: 15_000 });
+
+    await page.reload();
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
+
+    // Delete it
+    const goalRow = page.locator("div").filter({ hasText: title }).first();
+    await goalRow.getByRole("button", { name: "Delete" }).click();
+    await expect(page.getByRole("alertdialog")).toBeVisible({ timeout: 5_000 });
+    await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
+
+    await expect(page.getByText(title)).toBeHidden({ timeout: 15_000 });
+  });
+
+  test("manager can log a win for direct report", async ({ page }) => {
+    test.skip(!E2E_CLERK_USER_ID, "Requires E2E_CLERK_USER_ID to link person record");
+
+    const title = `E2E Manager Win ${Date.now()}`;
+
+    await page.goto("/people/person-bob");
+    await expect(page.getByRole("button", { name: "Log Win" })).toBeVisible({ timeout: 15_000 });
+
+    await page.getByRole("button", { name: "Log Win" }).click();
+    await expect(page.getByRole("heading", { name: "Log a Win" })).toBeVisible({ timeout: 5_000 });
+
+    await page.locator("#title").fill(title);
+    await page.getByRole("button", { name: "Log Win" }).click();
+    await expect(page.getByRole("heading", { name: "Log a Win" })).toBeHidden({ timeout: 15_000 });
+
+    await page.reload();
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
+  });
+});

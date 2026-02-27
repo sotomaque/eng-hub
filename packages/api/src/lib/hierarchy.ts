@@ -45,6 +45,19 @@ async function getManagementChain(personId: string): Promise<string[]> {
 }
 
 /**
+ * Check if a Clerk user is the direct manager of a given person.
+ */
+export async function isDirectManager(clerkUserId: string, personId: string): Promise<boolean> {
+  const managerId = await resolveClerkPerson(clerkUserId);
+  if (!managerId) return false;
+  const person = await db.person.findUnique({
+    where: { id: personId },
+    select: { managerId: true },
+  });
+  return person?.managerId === managerId;
+}
+
+/**
  * Check if a Clerk userId is in the management chain above a given person.
  */
 export async function isInManagementChain(clerkUserId: string, personId: string): Promise<boolean> {

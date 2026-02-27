@@ -43,6 +43,12 @@ async function PersonContent({ id }: { id: string }) {
   );
 }
 
+async function PersonGoalsSection({ id }: { id: string }) {
+  const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
+  const canEdit = !!me && !!person && me.id === person.managerId;
+  return <PersonGoals personId={id} canEdit={canEdit} />;
+}
+
 export default async function PersonPage({ params }: PageProps) {
   const { id } = await params;
 
@@ -54,7 +60,9 @@ export default async function PersonPage({ params }: PageProps) {
           <PersonContent id={id} />
         </Suspense>
         <PersonMeetings personId={id} />
-        <PersonGoals personId={id} />
+        <Suspense>
+          <PersonGoalsSection id={id} />
+        </Suspense>
         <PersonComments personId={id} />
       </main>
     </div>
