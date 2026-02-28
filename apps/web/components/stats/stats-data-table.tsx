@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
+import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import {
   Table,
@@ -24,6 +25,7 @@ type StatsDataTableProps = {
       lastName: string;
       callsign: string | null;
       imageUrl: string | null;
+      leftAt: string | null;
     }
   >;
 };
@@ -90,6 +92,11 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
                             ? s.githubUsername
                             : `@${s.githubUsername}`}
                         </span>
+                      )}
+                      {member?.leftAt && (
+                        <Badge variant="secondary" className="ml-1 text-[10px]">
+                          Rolled Off
+                        </Badge>
                       )}
                     </div>
                   </TableCell>

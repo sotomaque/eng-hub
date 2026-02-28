@@ -35,6 +35,7 @@ type PersonData = {
   projectMemberships: Array<{
     id: string;
     projectId: string;
+    leftAt: Date | null;
     project: { id: string; name: string };
     teamMemberships: Array<{ team: { name: string } }>;
   }>;
@@ -73,6 +74,13 @@ type PersonProfileProps = {
 export function PersonProfile({ person, hideBackLink }: PersonProfileProps) {
   const fullName = `${person.firstName} ${person.lastName}`;
   const initials = `${person.firstName[0]}${person.lastName[0]}`;
+  const sortedMemberships = [...person.projectMemberships].sort((a, b) => {
+    if (!a.leftAt && b.leftAt) return -1;
+    if (a.leftAt && !b.leftAt) return 1;
+    return 0;
+  });
+  const activeCount = sortedMemberships.filter((m) => !m.leftAt).length;
+  const rolledOffCount = sortedMemberships.length - activeCount;
 
   return (
     <div className="space-y-6">
@@ -109,27 +117,36 @@ export function PersonProfile({ person, hideBackLink }: PersonProfileProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Projects
-              {person.projectMemberships.length > 0 && (
+              {sortedMemberships.length > 0 && (
                 <span className="text-muted-foreground rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
-                  {person.projectMemberships.length}
+                  {rolledOffCount > 0
+                    ? `${activeCount} active · ${rolledOffCount} previous`
+                    : `${activeCount}`}
                 </span>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {person.projectMemberships.length === 0 ? (
+            {sortedMemberships.length === 0 ? (
               <p className="text-muted-foreground text-sm">Not assigned to any projects</p>
             ) : (
               <ul className="space-y-3">
-                {person.projectMemberships.map((membership) => (
-                  <li key={membership.id}>
-                    <Link
-                      href={`/projects/${membership.project.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {membership.project.name}
-                    </Link>
-                    {membership.teamMemberships.length > 0 && (
+                {sortedMemberships.map((membership) => (
+                  <li key={membership.id} className={membership.leftAt ? "opacity-60" : ""}>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/projects/${membership.project.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {membership.project.name}
+                      </Link>
+                      {membership.leftAt && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Rolled Off
+                        </Badge>
+                      )}
+                    </div>
+                    {!membership.leftAt && membership.teamMemberships.length > 0 && (
                       <div className="mt-0.5 flex flex-wrap gap-1">
                         {membership.teamMemberships.map((tm) => (
                           <Badge key={tm.team.name} variant="outline" className="text-xs">

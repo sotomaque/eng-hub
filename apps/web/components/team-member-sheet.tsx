@@ -165,7 +165,7 @@ export function TeamMemberSheet({ projectId, member }: TeamMemberSheetProps) {
   const allPeople = peopleQuery.data ?? [];
   const people = allPeople.filter((p) => !member || p.id !== member.personId);
   const availablePeople = allPeople.filter(
-    (p) => !p.projectMemberships.some((m) => m.projectId === projectId),
+    (p) => !p.projectMemberships.some((m) => m.projectId === projectId && !m.leftAt),
   );
 
   function handlePersonSelect(personId: string) {

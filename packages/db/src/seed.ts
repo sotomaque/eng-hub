@@ -35,13 +35,31 @@ export async function resetAndSeed(): Promise<void> {
       ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe', NOW()),
       ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe', NOW()),
       ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer', NOW()),
-      ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW())
+      ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW()),
+      ('person-frank', 'Frank', 'Wu', 'frank@test.com', 'dept-eng', 'title-swe', NOW())
     ON CONFLICT (id) DO NOTHING
+  `);
+
+  // ── GitHub usernames ──────────────────────────────────────────
+  await db.$executeRawUnsafe(`
+    UPDATE people SET github_username = 'alicesmith' WHERE id = 'person-alice'
+  `);
+  await db.$executeRawUnsafe(`
+    UPDATE people SET github_username = 'bobjones' WHERE id = 'person-bob'
+  `);
+  await db.$executeRawUnsafe(`
+    UPDATE people SET github_username = 'carollee' WHERE id = 'person-carol'
+  `);
+  await db.$executeRawUnsafe(`
+    UPDATE people SET github_username = 'dianapark' WHERE id = 'person-diana'
+  `);
+  await db.$executeRawUnsafe(`
+    UPDATE people SET github_username = 'frankwu' WHERE id = 'person-frank'
   `);
 
   // ── Manager relationships ──────────────────────────────────────
   await db.$executeRawUnsafe(`
-    UPDATE people SET manager_id = 'person-alice' WHERE id IN ('person-bob', 'person-carol')
+    UPDATE people SET manager_id = 'person-alice' WHERE id IN ('person-bob', 'person-carol', 'person-frank')
   `);
 
   // ── Projects ───────────────────────────────────────────────────
@@ -74,7 +92,41 @@ export async function resetAndSeed(): Promise<void> {
       ('tm-bob-alpha', 'person-bob', 'proj-alpha'),
       ('tm-carol-alpha', 'person-carol', 'proj-alpha'),
       ('tm-diana-alpha', 'person-diana', 'proj-alpha'),
-      ('tm-evan-gamma', 'person-evan', 'proj-gamma')
+      ('tm-evan-gamma', 'person-evan', 'proj-gamma'),
+      ('tm-frank-alpha', 'person-frank', 'proj-alpha'),
+      ('tm-bob-gamma', 'person-bob', 'proj-gamma')
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  // ── Rolled-off team members ──────────────────────────────────
+  await db.$executeRawUnsafe(`
+    UPDATE team_members SET left_at = NOW() - INTERVAL '30 days' WHERE id = 'tm-frank-alpha'
+  `);
+  await db.$executeRawUnsafe(`
+    UPDATE team_members SET left_at = NOW() - INTERVAL '90 days' WHERE id = 'tm-bob-gamma'
+  `);
+
+  // ── GitHub stats (for stats page E2E tests) ──────────────────
+  await db.$executeRawUnsafe(`
+    UPDATE projects SET github_url = 'https://github.com/acme/alpha' WHERE id = 'proj-alpha'
+  `);
+  await db.$executeRawUnsafe(`
+    INSERT INTO github_syncs (id, project_id, last_sync_at, sync_status, created_at, updated_at) VALUES
+      ('gs-alpha', 'proj-alpha', NOW(), 'idle', NOW(), NOW())
+    ON CONFLICT (id) DO NOTHING
+  `);
+  await db.$executeRawUnsafe(`
+    INSERT INTO contributor_stats (id, project_id, github_username, period, commits, prs_opened, prs_merged, reviews_done, additions, deletions, avg_weekly_commits, recent_weekly_commits, trend, avg_weekly_reviews, recent_weekly_reviews, review_trend, created_at, updated_at) VALUES
+      ('cs-bob-all',   'proj-alpha', 'bobjones',   'all_time', 312, 85, 78, 64, 18400, 7200, 8.2, 10.5, 'up',     3.1, 4.0, 'up',     NOW(), NOW()),
+      ('cs-bob-ytd',   'proj-alpha', 'bobjones',   'ytd',       48, 14, 12, 11,  3200, 1100, 8.0, 10.5, 'up',     2.8, 4.0, 'up',     NOW(), NOW()),
+      ('cs-carol-all', 'proj-alpha', 'carollee',   'all_time', 287, 72, 65, 93, 15200, 5800, 7.5,  7.8, 'stable', 4.5, 5.2, 'up',     NOW(), NOW()),
+      ('cs-carol-ytd', 'proj-alpha', 'carollee',   'ytd',       41, 11, 10, 16,  2800,  900, 7.0,  7.8, 'stable', 4.0, 5.2, 'up',     NOW(), NOW()),
+      ('cs-alice-all', 'proj-alpha', 'alicesmith', 'all_time', 156, 42, 38, 128, 8900, 3100, 4.1,  3.2, 'down',   6.2, 5.0, 'down',   NOW(), NOW()),
+      ('cs-alice-ytd', 'proj-alpha', 'alicesmith', 'ytd',       18,  5,  4, 22,  1100,  400, 3.0,  3.2, 'stable', 5.5, 5.0, 'stable', NOW(), NOW()),
+      ('cs-diana-all', 'proj-alpha', 'dianapark',  'all_time',  74, 20, 18,  8,  4200, 1500, 1.9,  2.8, 'up',     0.4, 0.6, 'up',     NOW(), NOW()),
+      ('cs-diana-ytd', 'proj-alpha', 'dianapark',  'ytd',       12,  4,  3,  2,   800,  200, 2.0,  2.8, 'up',     0.5, 0.6, 'stable', NOW(), NOW()),
+      ('cs-frank-all', 'proj-alpha', 'frankwu',    'all_time',  42, 10,  8,  5,  1200,  300, 3.5,  0,   'down',   0.8, 0,   'down',   NOW(), NOW()),
+      ('cs-frank-ytd', 'proj-alpha', 'frankwu',    'ytd',        0,  0,  0,  0,     0,    0, 0,    0,   'stable', 0,   0,   'stable', NOW(), NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 

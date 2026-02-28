@@ -29,3 +29,69 @@ test.describe("Project team", () => {
     await expect(page.getByText("Carol Lee")).toBeHidden();
   });
 });
+
+test.describe("Roll off team members", () => {
+  test("rolled-off member does not appear on team page", async ({ page }) => {
+    await page.goto("/projects/proj-alpha/team");
+    const main = page.locator("main");
+    // Frank was seeded as rolled off — should NOT appear
+    await expect(main.getByText("Frank Wu")).toBeHidden();
+    // Active members should still be visible
+    await expect(main.getByText("Alice Smith")).toBeVisible();
+  });
+
+  test("rolled-off member profile shows project with badge", async ({ page }) => {
+    await page.goto("/people/person-frank");
+    // Frank's profile should show Alpha project with "Rolled Off" badge
+    await expect(page.getByRole("link", { name: "Alpha" })).toBeVisible();
+    await expect(page.getByText("Rolled Off")).toBeVisible();
+    // Project count should show "0 active · 1 previous"
+    await expect(page.getByText("0 active · 1 previous")).toBeVisible();
+  });
+
+  test("rolled-off member shows badge in stats table", async ({ page }) => {
+    await page.goto("/projects/proj-alpha/stats");
+    // Wait for the stats table to load (Contributor Rankings card)
+    await expect(page.getByRole("heading", { name: "Contributor Rankings" })).toBeVisible();
+    // Frank should appear with "Rolled Off" badge
+    const frankRow = page.getByRole("row").filter({ hasText: "frankwu" });
+    await expect(frankRow).toBeVisible();
+    await expect(frankRow.getByText("Rolled Off")).toBeVisible();
+  });
+
+  test("roll off a member and verify removal from team page", async ({ page }) => {
+    await page.goto("/projects/proj-alpha/team");
+    // Diana is on the Design team — find her row and click the delete button
+    const dianaRow = page.getByRole("row").filter({ hasText: "Diana Park" });
+    await expect(dianaRow).toBeVisible();
+    await dianaRow.getByRole("button", { name: /delete/i }).click();
+
+    // Confirm the roll-off dialog
+    await expect(page.getByRole("heading", { name: /roll off team member/i })).toBeVisible();
+    await page.getByRole("button", { name: "Roll Off" }).click();
+
+    // Wait for the success toast
+    await expect(page.getByText("Team member rolled off")).toBeVisible();
+
+    // Diana should no longer appear on the team page
+    await expect(page.locator("main").getByText("Diana Park")).toBeHidden();
+  });
+
+  test("rolled-off member can be re-added to the project", async ({ page }) => {
+    // Diana was rolled off in the previous test — re-add her
+    await page.goto("/projects/proj-alpha/team");
+    await expect(page.locator("main").getByText("Diana Park")).toBeHidden();
+
+    await page.getByRole("button", { name: /add member/i }).click();
+    // Search for Diana in the existing people dropdown
+    await page.getByPlaceholder(/search existing people/i).fill("Diana");
+    await page.getByRole("option", { name: /Diana Park/i }).click();
+
+    // Submit the form
+    await page.getByRole("button", { name: "Add Member" }).click();
+
+    // Wait for the sheet to close and verify Diana reappears
+    await page.waitForURL("**/team");
+    await expect(page.locator("main").getByText("Diana Park")).toBeVisible();
+  });
+});

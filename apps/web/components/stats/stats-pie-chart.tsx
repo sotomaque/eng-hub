@@ -17,6 +17,7 @@ type StatsPieChartProps = {
       lastName: string;
       callsign: string | null;
       imageUrl: string | null;
+      leftAt: string | null;
     }
   >;
 };
