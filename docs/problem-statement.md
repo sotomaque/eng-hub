@@ -146,7 +146,6 @@ Granular access control reflecting how different stakeholders use the platform:
 | UI Components | shadcn/ui (Radix UI), Lucide icons, Tiptap rich text editor |
 | API | tRPC v11 with Zod validation |
 | Database | PostgreSQL (Supabase) via Prisma ORM |
-| Cache | Upstash Redis (REST) with TTL-based invalidation |
 | Auth | Clerk with management chain-based visibility |
 | Rate Limiting | Upstash Ratelimit (100 reads/min, 30 writes/min) |
 | Integrations | GitHub REST + GraphQL APIs |

@@ -13,6 +13,7 @@ const createProjectSchema = z.object({
   imageUrl: z.string().url().optional().or(z.literal("")),
   parentId: z.string().optional().or(z.literal("")),
   fundedById: z.string().optional().or(z.literal("")),
+  status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]).optional(),
 });
 
 const updateProjectSchema = createProjectSchema.extend({
@@ -159,6 +160,7 @@ export const projectRouter = createTRPCRouter({
         pageSize: z.number().int().min(1).max(100).default(10),
         search: z.string().optional(),
         status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
+        projectStatus: z.array(z.enum(["ACTIVE", "PAUSED", "ARCHIVED"])).optional(),
         type: z.array(z.enum(["toplevel", "subproject"])).optional(),
         favorite: z.boolean().optional(),
         sortBy: z.enum(["name", "updatedAt", "favorite"]).optional().default("updatedAt"),
@@ -169,6 +171,9 @@ export const projectRouter = createTRPCRouter({
       const where: Record<string, unknown> = {};
       if (input.search) {
         where.name = { contains: input.search, mode: "insensitive" as const };
+      }
+      if (input.projectStatus?.length) {
+        where.status = { in: input.projectStatus };
       }
       if (input.status?.length) {
         const realStatuses = input.status.filter((s) => s !== "NONE");
@@ -283,6 +288,7 @@ export const projectRouter = createTRPCRouter({
       z.object({
         search: z.string().optional(),
         status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
+        projectStatus: z.array(z.enum(["ACTIVE", "PAUSED", "ARCHIVED"])).optional(),
         type: z.array(z.enum(["toplevel", "subproject"])).optional(),
         favorite: z.boolean().optional(),
       }),
@@ -291,6 +297,9 @@ export const projectRouter = createTRPCRouter({
       const where: Record<string, unknown> = {};
       if (input.search) {
         where.name = { contains: input.search, mode: "insensitive" as const };
+      }
+      if (input.projectStatus?.length) {
+        where.status = { in: input.projectStatus };
       }
       if (input.status?.length) {
         const realStatuses = input.status.filter((s) => s !== "NONE");
@@ -341,12 +350,19 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
+      const PROJECT_STATUS_LABEL: Record<string, string> = {
+        ACTIVE: "Active",
+        PAUSED: "Paused",
+        ARCHIVED: "Archived",
+      };
+
       return projects.map((p) => ({
         Name: p.name,
         Description: p.description ?? "",
-        Status: p.healthAssessments[0]?.overallStatus
+        "Health Status": p.healthAssessments[0]?.overallStatus
           ? (STATUS_LABEL[p.healthAssessments[0].overallStatus] ?? "No status")
           : "No status",
+        "Project Status": PROJECT_STATUS_LABEL[p.status] ?? p.status,
         Type: p.parentId ? "Sub-project" : "Top-level",
         Parent: p.parent?.name ?? "",
         "Updated At": p.updatedAt.toISOString(),
@@ -370,6 +386,7 @@ export const projectRouter = createTRPCRouter({
         imageUrl: input.imageUrl || null,
         parentId,
         fundedById,
+        status: input.status ?? "ACTIVE",
       },
     });
 
@@ -408,6 +425,7 @@ export const projectRouter = createTRPCRouter({
         imageUrl: data.imageUrl || null,
         parentId,
         fundedById,
+        status: data.status,
       },
     });
 
