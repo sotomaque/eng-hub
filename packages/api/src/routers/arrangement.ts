@@ -56,7 +56,7 @@ export const arrangementRouter = createTRPCRouter({
 
     // Get all project members to determine unassigned ones
     const allMembers = await db.teamMember.findMany({
-      where: { projectId: arrangement.projectId },
+      where: { projectId: arrangement.projectId, leftAt: null },
       include: {
         person: {
           include: {

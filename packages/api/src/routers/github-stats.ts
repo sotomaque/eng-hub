@@ -43,6 +43,7 @@ export const githubStatsRouter = createTRPCRouter({
           lastName: string;
           callsign: string | null;
           imageUrl: string | null;
+          leftAt: string | null;
         }
       > = {};
       for (const tm of teamMembers) {
@@ -52,6 +53,7 @@ export const githubStatsRouter = createTRPCRouter({
           lastName: tm.person.lastName,
           callsign: tm.person.callsign,
           imageUrl: tm.person.imageUrl,
+          leftAt: tm.leftAt?.toISOString() ?? null,
         };
         if (tm.person.githubUsername) {
           memberMap[tm.person.githubUsername] = info;

@@ -76,9 +76,11 @@ const personEditSelect = {
   department: { select: { id: true, name: true } },
   title: { select: { id: true, name: true } },
   projectMemberships: {
+    where: { leftAt: null },
     select: {
       id: true,
       projectId: true,
+      leftAt: true,
       project: { select: { id: true, name: true } },
     },
   },
@@ -154,6 +156,7 @@ export const personRouter = createTRPCRouter({
       if (input.multiProject) {
         const grouped = await db.teamMember.groupBy({
           by: ["personId"],
+          where: { leftAt: null },
           _count: { personId: true },
           having: { personId: { _count: { gt: 1 } } },
         });
@@ -194,7 +197,7 @@ export const personRouter = createTRPCRouter({
       }
       if (input.projects?.length) {
         where.projectMemberships = {
-          some: { project: { name: { in: input.projects } } },
+          some: { project: { name: { in: input.projects } }, leftAt: null },
         };
       }
       if (multiProjectIds) {
@@ -235,6 +238,7 @@ export const personRouter = createTRPCRouter({
       if (input.multiProject) {
         const grouped = await db.teamMember.groupBy({
           by: ["personId"],
+          where: { leftAt: null },
           _count: { personId: true },
           having: { personId: { _count: { gt: 1 } } },
         });
@@ -255,7 +259,7 @@ export const personRouter = createTRPCRouter({
       }
       if (input.projects?.length) {
         where.projectMemberships = {
-          some: { project: { name: { in: input.projects } } },
+          some: { project: { name: { in: input.projects } }, leftAt: null },
         };
       }
       if (multiProjectIds) {
@@ -280,7 +284,10 @@ export const personRouter = createTRPCRouter({
         Email: p.email,
         Department: p.department?.name ?? "",
         Title: p.title?.name ?? "",
-        Projects: p.projectMemberships.map((m) => m.project.name).join(", "),
+        Projects: p.projectMemberships
+          .filter((m) => !m.leftAt)
+          .map((m) => m.project.name)
+          .join(", "),
         GitHub: p.githubUsername ?? "",
         GitLab: p.gitlabUsername ?? "",
       }));
@@ -399,12 +406,15 @@ export const personRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
-        const member = await tx.teamMember.create({
-          data: {
-            personId: input.personId,
-            projectId: input.projectId,
-          },
+        // Reactivate rolled-off record if one exists, otherwise create new
+        const rolledOff = await tx.teamMember.findFirst({
+          where: { personId: input.personId, projectId: input.projectId, leftAt: { not: null } },
         });
+        const member = rolledOff
+          ? await tx.teamMember.update({ where: { id: rolledOff.id }, data: { leftAt: null } })
+          : await tx.teamMember.create({
+              data: { personId: input.personId, projectId: input.projectId },
+            });
 
         const teamIds = input.teamIds?.filter(Boolean) ?? [];
         if (teamIds.length > 0) {
@@ -433,22 +443,29 @@ export const personRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
-        await tx.teamMember.delete({
-          where: {
-            personId_projectId: {
-              personId: input.personId,
-              projectId: input.fromProjectId,
-            },
-          },
+        // Soft-delete from source project
+        const sourceRecord = await tx.teamMember.findFirst({
+          where: { personId: input.personId, projectId: input.fromProjectId, leftAt: null },
         });
+        if (sourceRecord) {
+          await tx.teamMember.update({
+            where: { id: sourceRecord.id },
+            data: { leftAt: new Date() },
+          });
+          await tx.teamMembership.deleteMany({ where: { teamMemberId: sourceRecord.id } });
+          await tx.arrangementAssignment.deleteMany({ where: { teamMemberId: sourceRecord.id } });
+        }
         await syncLiveToActiveArrangement(tx, input.fromProjectId);
 
-        const member = await tx.teamMember.create({
-          data: {
-            personId: input.personId,
-            projectId: input.toProjectId,
-          },
+        // Reactivate or create on destination project
+        const rolledOff = await tx.teamMember.findFirst({
+          where: { personId: input.personId, projectId: input.toProjectId, leftAt: { not: null } },
         });
+        const member = rolledOff
+          ? await tx.teamMember.update({ where: { id: rolledOff.id }, data: { leftAt: null } })
+          : await tx.teamMember.create({
+              data: { personId: input.personId, projectId: input.toProjectId },
+            });
 
         const teamIds = input.teamIds?.filter(Boolean) ?? [];
         if (teamIds.length > 0) {
@@ -475,14 +492,14 @@ export const personRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
-        await tx.teamMember.delete({
-          where: {
-            personId_projectId: {
-              personId: input.personId,
-              projectId: input.projectId,
-            },
-          },
+        const record = await tx.teamMember.findFirst({
+          where: { personId: input.personId, projectId: input.projectId, leftAt: null },
         });
+        if (record) {
+          await tx.teamMember.update({ where: { id: record.id }, data: { leftAt: new Date() } });
+          await tx.teamMembership.deleteMany({ where: { teamMemberId: record.id } });
+          await tx.arrangementAssignment.deleteMany({ where: { teamMemberId: record.id } });
+        }
         await syncLiveToActiveArrangement(tx, input.projectId);
       });
       return result;

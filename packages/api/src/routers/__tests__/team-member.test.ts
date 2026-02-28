@@ -29,10 +29,15 @@ const mockTeamMemberFindUniqueOrThrow = mock(() =>
     person: { managerId: null },
   }),
 );
+const mockTeamMemberFindFirst = mock(() => Promise.resolve(null));
+const mockTeamMemberUpdate = mock(() =>
+  Promise.resolve({ id: "tm-1", personId: "person-1", projectId: "proj-1" }),
+);
 const mockTeamMemberFindMany = mock(() => Promise.resolve([]));
 const mockTeamMemberFindUnique = mock(() => Promise.resolve(null));
 const mockTeamMembershipCreateMany = mock(() => Promise.resolve({ count: 0 }));
 const mockTeamMembershipDeleteMany = mock(() => Promise.resolve({ count: 0 }));
+const mockArrangementAssignmentDeleteMany = mock(() => Promise.resolve({ count: 0 }));
 const mockManagerChangeCreate = mock(() => Promise.resolve({}));
 
 const tx = {
@@ -44,12 +49,15 @@ const tx = {
   teamMember: {
     create: mockTeamMemberCreate,
     delete: mockTeamMemberDelete,
+    update: mockTeamMemberUpdate,
+    findFirst: mockTeamMemberFindFirst,
     findUniqueOrThrow: mockTeamMemberFindUniqueOrThrow,
   },
   teamMembership: {
     createMany: mockTeamMembershipCreateMany,
     deleteMany: mockTeamMembershipDeleteMany,
   },
+  arrangementAssignment: { deleteMany: mockArrangementAssignmentDeleteMany },
   managerChange: { create: mockManagerChangeCreate },
 };
 
@@ -84,6 +92,12 @@ describe("teamMember.create", () => {
       personId: "person-1",
       projectId: "proj-1",
     });
+    mockTeamMemberFindFirst.mockReset().mockResolvedValue(null);
+    mockTeamMemberUpdate.mockReset().mockResolvedValue({
+      id: "tm-reactivated",
+      personId: "person-1",
+      projectId: "proj-1",
+    });
     mockTeamMembershipCreateMany.mockReset();
     mockManagerChangeCreate.mockReset();
   });
@@ -104,6 +118,46 @@ describe("teamMember.create", () => {
         { teamId: "team-b", teamMemberId: "tm-1" },
       ],
     });
+  });
+
+  test("reactivates rolled-off member instead of creating new", async () => {
+    mockPersonFindUnique.mockResolvedValue({ id: "person-1", managerId: null });
+    mockTeamMemberFindFirst.mockResolvedValue({
+      id: "tm-old",
+      personId: "person-1",
+      projectId: "proj-1",
+      leftAt: new Date("2025-01-01"),
+    });
+
+    await caller.create({
+      projectId: "proj-1",
+      firstName: "Jane",
+      lastName: "Doe",
+      email: "jane@example.com",
+      departmentId: "dept-1",
+    });
+
+    // Should clear leftAt on the rolled-off record
+    expect(mockTeamMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "tm-old" },
+      data: { leftAt: null },
+    });
+    // Should NOT create a new team member
+    expect(mockTeamMemberCreate).not.toHaveBeenCalled();
+  });
+
+  test("creates new member when no rolled-off record exists", async () => {
+    mockTeamMemberFindFirst.mockResolvedValue(null);
+
+    await caller.create({
+      projectId: "proj-1",
+      firstName: "Jane",
+      lastName: "Doe",
+      email: "jane@example.com",
+      departmentId: "dept-1",
+    });
+
+    expect(mockTeamMemberCreate).toHaveBeenCalled();
   });
 
   test("logs manager change when creating new person with manager", async () => {
@@ -167,6 +221,45 @@ describe("teamMember.update", () => {
         newManagerId: "new-mgr",
         changedBy: "test-user-id",
       },
+    });
+  });
+});
+
+describe("teamMember.delete (soft-delete)", () => {
+  beforeEach(() => {
+    mockTeamMemberUpdate.mockReset().mockResolvedValue({
+      id: "tm-1",
+      personId: "person-1",
+      projectId: "proj-1",
+      leftAt: new Date(),
+    });
+    mockTeamMembershipDeleteMany.mockReset();
+    mockArrangementAssignmentDeleteMany.mockReset();
+  });
+
+  test("sets leftAt instead of hard-deleting", async () => {
+    await caller.delete({ id: "tm-1" });
+
+    const call = mockTeamMemberUpdate.mock.calls[0] as [
+      { where: { id: string }; data: { leftAt: unknown } },
+    ];
+    expect(call[0].where).toEqual({ id: "tm-1" });
+    expect(call[0].data.leftAt).toBeInstanceOf(Date);
+  });
+
+  test("removes team memberships on soft-delete", async () => {
+    await caller.delete({ id: "tm-1" });
+
+    expect(mockTeamMembershipDeleteMany).toHaveBeenCalledWith({
+      where: { teamMemberId: "tm-1" },
+    });
+  });
+
+  test("removes arrangement assignments on soft-delete", async () => {
+    await caller.delete({ id: "tm-1" });
+
+    expect(mockArrangementAssignmentDeleteMany).toHaveBeenCalledWith({
+      where: { teamMemberId: "tm-1" },
     });
   });
 });

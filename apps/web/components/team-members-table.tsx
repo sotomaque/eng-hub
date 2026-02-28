@@ -82,7 +82,7 @@ export function TeamMembersTable({
   const deleteMutation = useMutation(
     trpc.teamMember.delete.mutationOptions({
       onSuccess: () => {
-        toast.success("Team member removed");
+        toast.success("Team member rolled off");
         router.refresh();
       },
       onError: (error) => toast.error(error.message),
@@ -236,10 +236,11 @@ export function TeamMembersTable({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                    <AlertDialogTitle>Roll off team member?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will remove &quot;{member.person.firstName} {member.person.lastName}
-                      &quot; from the project team.
+                      &quot;{member.person.firstName} {member.person.lastName}&quot; will be removed
+                      from the active team but will still appear in stats if they have
+                      contributions.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -249,7 +250,7 @@ export function TeamMembersTable({
                       disabled={deletingId === member.id}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      {deletingId === member.id ? "Removing…" : "Remove"}
+                      {deletingId === member.id ? "Rolling off…" : "Roll Off"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

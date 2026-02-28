@@ -100,7 +100,9 @@ async function AddToProjectContent({ personId }: { personId: string }) {
     <AddToProjectDialog
       personId={person.id}
       personName={`${person.firstName}${person.callsign ? ` ${person.callsign}` : ""} ${person.lastName}`}
-      existingProjectIds={person.projectMemberships.map((m) => m.projectId)}
+      existingProjectIds={person.projectMemberships
+        .filter((m) => !m.leftAt)
+        .map((m) => m.projectId)}
     />
   );
 }

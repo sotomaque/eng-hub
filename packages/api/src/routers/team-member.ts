@@ -57,7 +57,7 @@ export const teamMemberRouter = createTRPCRouter({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.teamMember.findMany({
-        where: { projectId: input.projectId },
+        where: { projectId: input.projectId, leftAt: null },
         include: memberInclude,
         orderBy: { person: { lastName: "asc" } },
       });
@@ -74,7 +74,7 @@ export const teamMemberRouter = createTRPCRouter({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       return db.teamMember.findMany({
-        where: { projectId: input.projectId },
+        where: { projectId: input.projectId, leftAt: null },
         include: {
           person: {
             include: {
@@ -141,12 +141,15 @@ export const teamMemberRouter = createTRPCRouter({
         });
       }
 
-      const member = await tx.teamMember.create({
-        data: {
-          personId: person.id,
-          projectId: input.projectId,
-        },
+      // Reactivate rolled-off record if one exists, otherwise create new
+      const rolledOff = await tx.teamMember.findFirst({
+        where: { personId: person.id, projectId: input.projectId, leftAt: { not: null } },
       });
+      const member = rolledOff
+        ? await tx.teamMember.update({ where: { id: rolledOff.id }, data: { leftAt: null } })
+        : await tx.teamMember.create({
+            data: { personId: person.id, projectId: input.projectId },
+          });
 
       if (teamIds.length > 0) {
         await tx.teamMembership.createMany({
@@ -243,9 +246,12 @@ export const teamMemberRouter = createTRPCRouter({
 
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
     const result = await db.$transaction(async (tx) => {
-      const member = await tx.teamMember.delete({
+      const member = await tx.teamMember.update({
         where: { id: input.id },
+        data: { leftAt: new Date() },
       });
+      await tx.teamMembership.deleteMany({ where: { teamMemberId: input.id } });
+      await tx.arrangementAssignment.deleteMany({ where: { teamMemberId: input.id } });
       await syncLiveToActiveArrangement(tx, member.projectId);
       return member;
     });

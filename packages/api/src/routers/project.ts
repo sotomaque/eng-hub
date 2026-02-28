@@ -27,6 +27,7 @@ function fetchProject(id: string) {
       healthAssessments: { orderBy: { createdAt: "desc" } },
       teams: { orderBy: { name: "asc" } },
       teamMembers: {
+        where: { leftAt: null },
         include: {
           person: {
             include: {
