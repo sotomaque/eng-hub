@@ -184,7 +184,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value ?? "ACTIVE"}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label="Project status">
                       <SelectValue placeholder="Select status…" />
                     </SelectTrigger>
                     <SelectContent>

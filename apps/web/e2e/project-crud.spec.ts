@@ -38,12 +38,8 @@ test.describe("Project CRUD", () => {
     await page.goto("/projects?create=true");
     await expect(page.getByRole("heading", { name: "New Project" })).toBeVisible();
 
-    // Locate the Status field section, then click its trigger
-    const statusField = page
-      .locator("div")
-      .filter({ hasText: /^Status$/ })
-      .first();
-    await statusField.getByRole("combobox").click();
+    // Change status to Paused via the accessible Select trigger
+    await page.getByRole("combobox", { name: "Project status" }).click();
     await page.getByRole("option", { name: "Paused" }).click();
 
     await page.locator("#name").fill(name);
@@ -64,11 +60,7 @@ test.describe("Project CRUD", () => {
     await expect(page.locator("#name")).toHaveValue("Alpha");
 
     // Change status to Archived
-    const statusField = page
-      .locator("div")
-      .filter({ hasText: /^Status$/ })
-      .first();
-    await statusField.getByRole("combobox").click();
+    await page.getByRole("combobox", { name: "Project status" }).click();
     await page.getByRole("option", { name: "Archived" }).click();
     await page.getByRole("button", { name: "Save Changes" }).click();
 
@@ -82,11 +74,7 @@ test.describe("Project CRUD", () => {
     // Revert Alpha back to Active for other tests
     await page.goto("/projects?edit=proj-alpha");
     await expect(page.getByRole("heading", { name: "Edit Project" })).toBeVisible();
-    const statusField2 = page
-      .locator("div")
-      .filter({ hasText: /^Status$/ })
-      .first();
-    await statusField2.getByRole("combobox").click();
+    await page.getByRole("combobox", { name: "Project status" }).click();
     await page.getByRole("option", { name: "Active" }).click();
     await page.getByRole("button", { name: "Save Changes" }).click();
     await expect(page.getByRole("heading", { name: "Edit Project" })).toBeHidden();
