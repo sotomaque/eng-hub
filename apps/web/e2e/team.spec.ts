@@ -52,7 +52,7 @@ test.describe("Roll off team members", () => {
   test("rolled-off member shows badge in stats table", async ({ page }) => {
     await page.goto("/projects/proj-alpha/stats");
     // Wait for the stats table to load (Contributor Rankings card)
-    await expect(page.getByRole("heading", { name: "Contributor Rankings" })).toBeVisible();
+    await expect(page.getByText("Contributor Rankings")).toBeVisible();
     // Frank should appear with "Rolled Off" badge
     const frankRow = page.getByRole("row").filter({ hasText: "frankwu" });
     await expect(frankRow).toBeVisible();
@@ -83,8 +83,9 @@ test.describe("Roll off team members", () => {
     await expect(page.locator("main").getByText("Diana Park")).toBeHidden();
 
     await page.getByRole("button", { name: /add member/i }).click();
-    // Search for Diana in the existing people dropdown
-    await page.getByPlaceholder(/search existing people/i).fill("Diana");
+    // Open the existing people combobox, then search
+    await page.getByRole("button", { name: /search existing people/i }).click();
+    await page.getByPlaceholder(/search by name/i).fill("Diana");
     await page.getByRole("option", { name: /Diana Park/i }).click();
 
     // Submit the form
