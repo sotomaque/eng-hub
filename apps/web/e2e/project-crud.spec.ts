@@ -51,7 +51,7 @@ test.describe("Project CRUD", () => {
     // New project appears in the list with Paused lifecycle badge
     await expect(page.getByRole("link", { name })).toBeVisible();
     const row = page.getByRole("row").filter({ hasText: name });
-    await expect(row.getByText("Paused")).toBeVisible();
+    await expect(row.getByText("Paused", { exact: true })).toBeVisible();
   });
 
   test("edit project status from Active to Archived and back", async ({ page }) => {
