@@ -22,6 +22,7 @@ type PageProps = {
     sortOrder?: string;
     parentId?: string;
     status?: string;
+    projectStatus?: string;
     type?: string;
     favorite?: string;
   }>;
@@ -32,6 +33,7 @@ async function ProjectsContent({
   pageSize,
   search,
   status,
+  projectStatus,
   type,
   favorite,
   sortBy,
@@ -41,6 +43,7 @@ async function ProjectsContent({
   pageSize: number;
   search?: string;
   status?: ("GREEN" | "YELLOW" | "RED" | "NONE")[];
+  projectStatus?: ("ACTIVE" | "PAUSED" | "ARCHIVED")[];
   type?: ("toplevel" | "subproject")[];
   favorite?: boolean;
   sortBy?: "name" | "updatedAt" | "favorite";
@@ -53,6 +56,7 @@ async function ProjectsContent({
       pageSize,
       search: search || undefined,
       status,
+      projectStatus,
       type,
       favorite,
       sortBy,
@@ -70,6 +74,7 @@ async function ProjectsContent({
         description: p.description,
         updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : p.updatedAt.toISOString(),
         healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
+        projectStatus: p.status,
         parentId: p.parentId,
         parentName: p.parent?.name ?? null,
         isFavorited: favoriteSet.has(p.id),
@@ -79,6 +84,7 @@ async function ProjectsContent({
       pageSize={pageSize}
       search={search}
       status={status}
+      projectStatus={projectStatus}
       type={type}
       favorite={favorite}
       sortBy={sortBy}
@@ -110,6 +116,12 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
     .filter((s): s is (typeof validStatuses)[number] =>
       (validStatuses as readonly string[]).includes(s),
     );
+  const validProjectStatuses = ["ACTIVE", "PAUSED", "ARCHIVED"] as const;
+  const projectStatus = params.projectStatus
+    ?.split(",")
+    .filter((s): s is (typeof validProjectStatuses)[number] =>
+      (validProjectStatuses as readonly string[]).includes(s),
+    );
   const validTypes = ["toplevel", "subproject"] as const;
   const type = params.type
     ?.split(",")
@@ -127,6 +139,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             pageSize={pageSize}
             search={params.search}
             status={status}
+            projectStatus={projectStatus}
             type={type}
             favorite={favorite}
             sortBy={sortBy}

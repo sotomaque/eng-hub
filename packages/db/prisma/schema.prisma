@@ -38,6 +38,12 @@ enum Trend {
   stable
 }
 
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
 model Project {
   id          String   @id @default(cuid())
   name        String
@@ -51,6 +57,7 @@ model Project {
   fundedById  String?  @map("funded_by_id")
   fundedBy    Project? @relation("ProjectFunding", fields: [fundedById], references: [id])
   fundedProjects Project[] @relation("ProjectFunding")
+  status      ProjectStatus @default(ACTIVE)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

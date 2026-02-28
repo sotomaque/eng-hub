@@ -1,6 +1,6 @@
 "use client";
 
-import type { HealthStatus } from "@prisma/client";
+import type { HealthStatus, ProjectStatus } from "@prisma/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -24,6 +24,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@workspace/ui/components/empty";
+import { TableRow } from "@workspace/ui/components/table";
 import { FolderOpen, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { ExportButton } from "@/components/export-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
+import { PROJECT_STATUS_DOT, PROJECT_STATUS_LABEL } from "@/lib/project-status";
 import { useTRPC } from "@/lib/trpc/client";
 
 const HEALTH_FILTER_OPTIONS = [
@@ -50,6 +52,12 @@ const TYPE_FILTER_OPTIONS = [
   { label: "Sub-project", value: "subproject" },
 ];
 
+const PROJECT_STATUS_FILTER_OPTIONS = [
+  { label: "Active", value: "ACTIVE" },
+  { label: "Paused", value: "PAUSED" },
+  { label: "Archived", value: "ARCHIVED" },
+];
+
 type ProjectItem = {
   id: string;
   name: string;
@@ -57,6 +65,7 @@ type ProjectItem = {
   description: string | null;
   updatedAt: string;
   healthStatus: HealthStatus | null;
+  projectStatus: ProjectStatus;
   parentId: string | null;
   parentName: string | null;
   isFavorited: boolean;
@@ -69,6 +78,7 @@ type ProjectsTableProps = {
   pageSize: number;
   search?: string;
   status?: string[];
+  projectStatus?: string[];
   type?: string[];
   favorite?: boolean;
   sortBy?: string;
@@ -97,6 +107,7 @@ export function ProjectsTable({
   pageSize,
   search,
   status,
+  projectStatus,
   type,
   favorite,
   sortBy,
@@ -125,6 +136,7 @@ export function ProjectsTable({
       sort?: string;
       order?: string;
       status?: string[];
+      projectStatus?: string[];
       type?: string[];
       favorite?: boolean;
     }) => {
@@ -139,13 +151,15 @@ export function ProjectsTable({
       if (so) params.set("sortOrder", so);
       const st = overrides.status ?? status;
       if (st?.length) params.set("status", st.join(","));
+      const ps = overrides.projectStatus ?? projectStatus;
+      if (ps?.length) params.set("projectStatus", ps.join(","));
       const tp = overrides.type ?? type;
       if (tp?.length) params.set("type", tp.join(","));
       const fav = overrides.favorite ?? favorite;
       if (fav) params.set("favorite", "true");
       return params.toString();
     },
-    [pageSize, searchInput, sortBy, sortOrder, status, type, favorite],
+    [pageSize, searchInput, sortBy, sortOrder, status, projectStatus, type, favorite],
   );
 
   const handleSearchChange = useCallback(
@@ -182,6 +196,16 @@ export function ProjectsTable({
     [buildParams, router],
   );
 
+  const handleProjectStatusChange = useCallback(
+    (values: string[]) => {
+      const qs = buildParams({ page: "1", projectStatus: values });
+      startSearchTransition(() => {
+        router.replace(`/projects?${qs}`, { scroll: false });
+      });
+    },
+    [buildParams, router],
+  );
+
   const handleFavoriteToggle = useCallback(() => {
     const qs = buildParams({ page: "1", favorite: !favorite });
     startSearchTransition(() => {
@@ -196,6 +220,7 @@ export function ProjectsTable({
       page: "1",
       search: "",
       status: [],
+      projectStatus: [],
       type: [],
       favorite: false,
     });
@@ -204,7 +229,8 @@ export function ProjectsTable({
     });
   }, [buildParams, router]);
 
-  const filterCount = (status?.length ?? 0) + (type?.length ?? 0) + (favorite ? 1 : 0);
+  const filterCount =
+    (status?.length ?? 0) + (projectStatus?.length ?? 0) + (type?.length ?? 0) + (favorite ? 1 : 0);
 
   const deleteMutation = useMutation(
     trpc.project.delete.mutationOptions({
@@ -312,6 +338,23 @@ export function ProjectsTable({
         enableSorting: false,
       },
       {
+        id: "projectStatus",
+        accessorFn: (row) => row.projectStatus,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Lifecycle" className="hidden sm:flex" />
+        ),
+        cell: ({ row }) => {
+          const value = row.getValue("projectStatus") as ProjectStatus;
+          return (
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <span className={`inline-block size-2.5 rounded-full ${PROJECT_STATUS_DOT[value]}`} />
+              <span className="text-muted-foreground text-xs">{PROJECT_STATUS_LABEL[value]}</span>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+      {
         id: "description",
         accessorFn: (row) => row.description ?? "",
         header: ({ column }) => (
@@ -387,7 +430,19 @@ export function ProjectsTable({
     [handleEdit, handleDelete, deletingId],
   );
 
-  if (projects.length === 0 && !search && !status?.length && !type?.length && !favorite) {
+  const archivedIds = useMemo(
+    () => new Set(projects.filter((p) => p.projectStatus === "ARCHIVED").map((p) => p.id)),
+    [projects],
+  );
+
+  if (
+    projects.length === 0 &&
+    !search &&
+    !status?.length &&
+    !projectStatus?.length &&
+    !type?.length &&
+    !favorite
+  ) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -433,6 +488,12 @@ export function ProjectsTable({
         <DataTable
           columns={columns}
           data={projects}
+          getRowId={(row) => row.id}
+          renderRow={({ rowId, children }) => (
+            <TableRow className={archivedIds.has(rowId) ? "opacity-50" : undefined}>
+              {children}
+            </TableRow>
+          )}
           pageCount={Math.ceil(totalCount / pageSize)}
           pageIndex={page - 1}
           pageSize={pageSize}
@@ -481,10 +542,16 @@ export function ProjectsTable({
                 onValueChange={handleTypeChange}
               />
               <DataTableFacetedFilter
-                title="Status"
+                title="Health"
                 options={HEALTH_FILTER_OPTIONS}
                 value={status ?? []}
                 onValueChange={handleStatusChange}
+              />
+              <DataTableFacetedFilter
+                title="Lifecycle"
+                options={PROJECT_STATUS_FILTER_OPTIONS}
+                value={projectStatus ?? []}
+                onValueChange={handleProjectStatusChange}
               />
               <ExportButton
                 filename="projects"
@@ -493,6 +560,9 @@ export function ProjectsTable({
                     trpc.project.listExport.queryOptions({
                       search: searchInput || undefined,
                       status: status as ("GREEN" | "YELLOW" | "RED" | "NONE")[] | undefined,
+                      projectStatus: projectStatus as
+                        | ("ACTIVE" | "PAUSED" | "ARCHIVED")[]
+                        | undefined,
                       type: type as ("toplevel" | "subproject")[] | undefined,
                       favorite,
                     }),

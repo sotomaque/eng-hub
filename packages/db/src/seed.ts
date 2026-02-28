@@ -46,10 +46,10 @@ export async function resetAndSeed(): Promise<void> {
 
   // ── Projects ───────────────────────────────────────────────────
   await db.$executeRawUnsafe(`
-    INSERT INTO projects (id, name, description, updated_at) VALUES
-      ('proj-alpha', 'Alpha', 'Main test project for E2E tests', NOW()),
-      ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', NOW()),
-      ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', NOW())
+    INSERT INTO projects (id, name, description, status, updated_at) VALUES
+      ('proj-alpha', 'Alpha', 'Main test project for E2E tests', 'ACTIVE', NOW()),
+      ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', 'PAUSED', NOW()),
+      ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', 'ARCHIVED', NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 

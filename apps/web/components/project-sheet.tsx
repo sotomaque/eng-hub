@@ -7,6 +7,13 @@ import { Combobox } from "@workspace/ui/components/combobox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -35,6 +42,7 @@ type ProjectSheetProps = {
     imageUrl: string | null;
     parentId: string | null;
     fundedById: string | null;
+    status?: string;
     owners?: { person: { id: string } }[];
   };
   defaultParentId?: string;
@@ -71,6 +79,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
       gitlabUrl: project?.gitlabUrl ?? "",
       parentId: initialParentId,
       fundedById: project?.fundedById ?? initialParentId,
+      status: (project?.status as "ACTIVE" | "PAUSED" | "ARCHIVED") ?? "ACTIVE",
     },
   });
 
@@ -167,6 +176,26 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
               fallbackText={project?.name?.[0] ?? ""}
               shape="square"
             />
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? "ACTIVE"}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="PAUSED">Paused</SelectItem>
+                      <SelectItem value="ARCHIVED">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
