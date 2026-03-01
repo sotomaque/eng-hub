@@ -23,6 +23,7 @@ const mockPersonFindUnique = mock(() =>
 const mockPersonUpdate = mock(() => Promise.resolve({ id: "person-1" }));
 const mockManagerChangeCreate = mock(() => Promise.resolve({}));
 const mockPersonFindMany = mock(() => Promise.resolve([]));
+const mockQueryRaw = mock(() => Promise.resolve([{ found: false }]));
 
 mock.module("@workspace/db", () => ({
   db: {
@@ -49,6 +50,7 @@ mock.module("@workspace/db", () => ({
       createMany: mock(() => Promise.resolve({ count: 0 })),
     },
     $transaction: mock((fn: (tx: unknown) => unknown) => fn({})),
+    $queryRaw: mockQueryRaw,
   },
 }));
 
@@ -78,6 +80,7 @@ describe("person.update", () => {
     mockPersonUpdate.mockReset().mockResolvedValue({ id: "person-1" });
     mockManagerChangeCreate.mockReset();
     mockPersonFindMany.mockReset().mockResolvedValue([]);
+    mockQueryRaw.mockReset().mockResolvedValue([{ found: false }]);
   });
 
   test("succeeds when no manager change", async () => {
@@ -117,8 +120,8 @@ describe("person.update", () => {
     mockFindUniqueOrThrow.mockResolvedValue({
       managerId: null,
     });
-    // person-1 wants new-mgr, but new-mgr's manager is person-1 → cycle
-    mockPersonFindUnique.mockResolvedValueOnce({ managerId: "person-1" });
+    // cycle detected by recursive CTE
+    mockQueryRaw.mockResolvedValueOnce([{ found: true }]);
 
     await expect(caller.update({ ...validInput, managerId: "new-mgr" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
@@ -130,8 +133,6 @@ describe("person.update", () => {
     mockFindUniqueOrThrow.mockResolvedValue({
       managerId: null,
     });
-    // new-mgr has no manager → chain ends, no cycle
-    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null });
 
     const result = await caller.update({
       ...validInput,

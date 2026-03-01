@@ -103,6 +103,7 @@ describe("person.list", () => {
 
     expect(mockTeamMemberGroupBy).toHaveBeenCalledWith({
       by: ["personId"],
+      where: { leftAt: null },
       _count: { personId: true },
       having: { personId: { _count: { gt: 1 } } },
     });
@@ -179,7 +180,7 @@ describe("person.list", () => {
       };
     };
     expect(callArgs.where?.projectMemberships).toEqual({
-      some: { project: { name: { in: ["Alpha", "Beta"] } } },
+      some: { project: { name: { in: ["Alpha", "Beta"] } }, leftAt: null },
     });
   });
 
@@ -204,7 +205,7 @@ describe("person.list", () => {
       name: { in: ["Engineering"] },
     });
     expect(callArgs.where?.projectMemberships).toEqual({
-      some: { project: { name: { in: ["Alpha"] } } },
+      some: { project: { name: { in: ["Alpha"] } }, leftAt: null },
     });
   });
 
