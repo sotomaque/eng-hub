@@ -73,7 +73,7 @@ test.describe("Goals CRUD", () => {
     await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 15_000 });
 
     // Click the edit button for that goal row
-    const goalRow = page.locator("div").filter({ hasText: originalTitle }).first();
+    const goalRow = page.locator("div.rounded-md.border").filter({ hasText: originalTitle });
     await goalRow.getByRole("button", { name: "Edit" }).click();
 
     await expect(page.getByRole("heading", { name: "Edit Goal" })).toBeVisible({ timeout: 15_000 });
@@ -85,7 +85,7 @@ test.describe("Goals CRUD", () => {
 
     await page.reload();
     await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(originalTitle)).toBeHidden();
+    await expect(page.getByText(originalTitle, { exact: true })).toBeHidden();
   });
 
   test("delete a goal", async ({ page }) => {
@@ -104,14 +104,14 @@ test.describe("Goals CRUD", () => {
     await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
 
     // Open the delete dialog
-    const goalRow = page.locator("div").filter({ hasText: title }).first();
+    const goalRow = page.locator("div.rounded-md.border").filter({ hasText: title });
     await goalRow.getByRole("button", { name: "Delete" }).click();
 
     // Confirm in the AlertDialog
     await expect(page.getByRole("alertdialog")).toBeVisible({ timeout: 5_000 });
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
 
-    await expect(page.getByText(title)).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByText(title, { exact: true })).toBeHidden({ timeout: 15_000 });
   });
 });
 
@@ -122,12 +122,12 @@ test.describe("Accomplishments CRUD", () => {
     const title = `E2E Accomplishment ${Date.now()}`;
 
     await page.goto("/me/goals?addAccomplishment=true");
-    await expect(page.getByRole("heading", { name: "Log Win" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Log a Win" })).toBeVisible({ timeout: 15_000 });
 
     await page.locator("#title").fill(title);
     await page.getByRole("button", { name: "Log Win" }).click();
 
-    await expect(page.getByRole("heading", { name: "Log Win" })).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Log a Win" })).toBeHidden({ timeout: 15_000 });
 
     await page.reload();
     await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
@@ -140,22 +140,22 @@ test.describe("Accomplishments CRUD", () => {
 
     // Create one to delete
     await page.goto("/me/goals?addAccomplishment=true");
-    await expect(page.getByRole("heading", { name: "Log Win" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Log a Win" })).toBeVisible({ timeout: 15_000 });
     await page.locator("#title").fill(title);
     await page.getByRole("button", { name: "Log Win" }).click();
-    await expect(page.getByRole("heading", { name: "Log Win" })).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Log a Win" })).toBeHidden({ timeout: 15_000 });
 
     await page.reload();
     await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
 
     // Open the delete dialog
-    const row = page.locator("div").filter({ hasText: title }).first();
+    const row = page.locator("div.rounded-md.border").filter({ hasText: title });
     await row.getByRole("button", { name: "Delete" }).click();
 
     await expect(page.getByRole("alertdialog")).toBeVisible({ timeout: 5_000 });
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
 
-    await expect(page.getByText(title)).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByText(title, { exact: true })).toBeHidden({ timeout: 15_000 });
   });
 });
 
@@ -221,7 +221,7 @@ test.describe("Manager edits direct report goals", () => {
     await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 15_000 });
 
     // Edit it
-    const goalRow = page.locator("div").filter({ hasText: originalTitle }).first();
+    const goalRow = page.locator("div.rounded-md.border").filter({ hasText: originalTitle });
     await goalRow.getByRole("button", { name: "Edit" }).click();
     await expect(page.getByRole("heading", { name: "Edit Goal" })).toBeVisible({ timeout: 5_000 });
 
@@ -232,7 +232,7 @@ test.describe("Manager edits direct report goals", () => {
 
     await page.reload();
     await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(originalTitle)).toBeHidden();
+    await expect(page.getByText(originalTitle, { exact: true })).toBeHidden();
   });
 
   test("manager can delete a goal on direct report profile", async ({ page }) => {
@@ -253,12 +253,12 @@ test.describe("Manager edits direct report goals", () => {
     await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
 
     // Delete it
-    const goalRow = page.locator("div").filter({ hasText: title }).first();
+    const goalRow = page.locator("div.rounded-md.border").filter({ hasText: title });
     await goalRow.getByRole("button", { name: "Delete" }).click();
     await expect(page.getByRole("alertdialog")).toBeVisible({ timeout: 5_000 });
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
 
-    await expect(page.getByText(title)).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByText(title, { exact: true })).toBeHidden({ timeout: 15_000 });
   });
 
   test("manager can log a win for direct report", async ({ page }) => {

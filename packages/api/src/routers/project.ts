@@ -13,6 +13,7 @@ const createProjectSchema = z.object({
   imageUrl: z.string().url().optional().or(z.literal("")),
   parentId: z.string().optional().or(z.literal("")),
   fundedById: z.string().optional().or(z.literal("")),
+  budget: z.number().positive().nullable().optional(),
   status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]).optional(),
 });
 
@@ -387,6 +388,7 @@ export const projectRouter = createTRPCRouter({
         imageUrl: input.imageUrl || null,
         parentId,
         fundedById,
+        budget: input.budget ?? null,
         status: input.status ?? "ACTIVE",
       },
     });
@@ -426,6 +428,7 @@ export const projectRouter = createTRPCRouter({
         imageUrl: data.imageUrl || null,
         parentId,
         fundedById,
+        budget: data.budget ?? null,
         status: data.status,
       },
     });

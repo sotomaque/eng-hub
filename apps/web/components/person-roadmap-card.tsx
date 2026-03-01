@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Flag, Target } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
+import { groupRoadmapByProject } from "@/lib/roadmap-grouping";
 
 type RoadmapAssignment = {
   id: string;
@@ -13,24 +14,11 @@ type RoadmapAssignment = {
   project: { id: string; name: string };
 };
 
-type MilestoneAssignment = {
-  milestone: RoadmapAssignment;
-};
-
-type GoalAssignment = {
-  quarterlyGoal: RoadmapAssignment & { quarter: string | null };
-};
-
 type PersonRoadmapCardProps = {
-  milestoneAssignments: MilestoneAssignment[];
-  quarterlyGoalAssignments: GoalAssignment[];
-};
-
-type GroupedItems = {
-  projectName: string;
-  projectId: string;
-  milestones: RoadmapAssignment[];
-  goals: (RoadmapAssignment & { quarter: string | null })[];
+  milestoneAssignments: { milestone: RoadmapAssignment }[];
+  quarterlyGoalAssignments: {
+    quarterlyGoal: RoadmapAssignment & { quarter: string | null };
+  }[];
 };
 
 export function PersonRoadmapCard({
@@ -38,36 +26,7 @@ export function PersonRoadmapCard({
   quarterlyGoalAssignments,
 }: PersonRoadmapCardProps) {
   const totalCount = milestoneAssignments.length + quarterlyGoalAssignments.length;
-
-  const grouped = new Map<string, GroupedItems>();
-
-  for (const a of milestoneAssignments) {
-    const key = a.milestone.projectId;
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        projectName: a.milestone.project.name,
-        projectId: key,
-        milestones: [],
-        goals: [],
-      });
-    }
-    grouped.get(key)?.milestones.push(a.milestone);
-  }
-
-  for (const a of quarterlyGoalAssignments) {
-    const key = a.quarterlyGoal.projectId;
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        projectName: a.quarterlyGoal.project.name,
-        projectId: key,
-        milestones: [],
-        goals: [],
-      });
-    }
-    grouped.get(key)?.goals.push(a.quarterlyGoal);
-  }
-
-  const projects = [...grouped.values()].sort((a, b) => a.projectName.localeCompare(b.projectName));
+  const projects = groupRoadmapByProject(milestoneAssignments, quarterlyGoalAssignments);
 
   return (
     <Card>
