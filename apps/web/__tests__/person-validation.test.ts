@@ -90,10 +90,18 @@ describe("createPersonSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  test("rejects invalid email in emailAliases", () => {
+  test("accepts non-email git identifiers in emailAliases", () => {
     const result = createPersonSchema.safeParse({
       ...validInput,
-      emailAliases: ["not-an-email"],
+      emailAliases: ["r.drennan", "a.nosbian"],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects empty string in emailAliases", () => {
+    const result = createPersonSchema.safeParse({
+      ...validInput,
+      emailAliases: [""],
     });
     expect(result.success).toBe(false);
   });

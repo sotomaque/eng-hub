@@ -104,7 +104,7 @@ const createPersonSchema = z.object({
   lastName: z.string().min(1),
   callsign: z.string().optional().or(z.literal("")),
   email: z.string().email(),
-  emailAliases: z.array(z.string().email()).optional().default([]),
+  emailAliases: z.array(z.string().trim().min(1)).optional().default([]),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),

@@ -86,6 +86,8 @@ export function PeopleTable({
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [prevSearch, setPrevSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const searchInputRef = useRef(searchInput);
+  searchInputRef.current = searchInput;
   const [isSearchPending, startSearchTransition] = useTransition();
 
   // Render-time prop sync (no useEffect) — handles browser back/forward
@@ -108,7 +110,7 @@ export function PeopleTable({
       const params = new URLSearchParams();
       params.set("page", overrides.page ?? "1");
       params.set("pageSize", overrides.pageSize ?? String(pageSize));
-      const s = overrides.search ?? searchInput;
+      const s = overrides.search ?? searchInputRef.current;
       if (s) params.set("search", s);
       const sb = overrides.sort ?? sortBy;
       const so = overrides.order ?? sortOrder;
@@ -122,7 +124,7 @@ export function PeopleTable({
       if (p?.length) params.set("project", p.join(","));
       return params.toString();
     },
-    [pageSize, searchInput, sortBy, sortOrder, multiProject, departments, projects],
+    [pageSize, sortBy, sortOrder, multiProject, departments, projects],
   );
 
   const handleSearchChange = useCallback(

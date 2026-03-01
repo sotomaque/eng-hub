@@ -49,9 +49,10 @@ type PersonWithMemberships = {
 type PersonSheetProps = {
   person?: PersonWithMemberships;
   onClose?: () => void;
+  onAddToProject?: () => void;
 };
 
-export function PersonSheet({ person, onClose }: PersonSheetProps) {
+export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();
@@ -167,7 +168,11 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
   }
 
   function onSubmit(data: CreatePersonInput) {
-    const withImage = { ...data, imageUrl: imageUrl || "" };
+    const withImage = {
+      ...data,
+      imageUrl: imageUrl || "",
+      emailAliases: data.emailAliases.map((a) => a.trim()).filter(Boolean),
+    };
     if (isEditing && person) {
       updateMutation.mutate({ ...withImage, id: person.id });
     } else {
@@ -403,11 +408,15 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
                   variant="outline"
                   size="sm"
                   className="gap-1"
-                  onClick={() =>
-                    router.push(`/people?addToProject=${person.id}`, {
-                      scroll: false,
-                    })
-                  }
+                  onClick={() => {
+                    if (onAddToProject) {
+                      onAddToProject();
+                    } else {
+                      router.push(`/people?addToProject=${person.id}`, {
+                        scroll: false,
+                      });
+                    }
+                  }}
                 >
                   <Plus className="size-3" />
                   Add to project
