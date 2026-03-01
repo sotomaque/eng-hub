@@ -13,6 +13,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { RollOffDialog } from "@/components/roll-off-dialog";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
@@ -94,6 +95,7 @@ export function TeamMembersTable({
         accessorFn: (row) =>
           `${row.person.firstName}${row.person.callsign ? ` ${row.person.callsign}` : ""} ${row.person.lastName}`,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+        enableHiding: false,
         cell: ({ row }) => {
           const member = row.original;
           return (
@@ -214,6 +216,7 @@ export function TeamMembersTable({
           );
         },
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     [titleColorMap, projectId, router.push],
@@ -256,6 +259,16 @@ export function TeamMembersTable({
                   : { column: table.getColumn("departmentName") })}
               />
             )}
+            <DataTableViewOptions
+              table={table}
+              columnLabels={{
+                email: "Email",
+                titleName: "Title",
+                departmentName: "Department",
+                githubUsername: "GitHub",
+                gitlabUsername: "GitLab",
+              }}
+            />
           </DataTableToolbar>
         )}
       />

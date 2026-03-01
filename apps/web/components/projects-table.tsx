@@ -34,6 +34,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { ExportButton } from "@/components/export-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
@@ -280,10 +281,12 @@ export function ProjectsTable({
           <FavoriteButton projectId={row.original.id} isFavorited={row.original.isFavorited} />
         ),
         size: 40,
+        enableHiding: false,
       },
       {
         id: "name",
         accessorFn: (row) => row.name,
+        enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
         cell: ({ row }) => {
           const project = row.original;
@@ -425,6 +428,7 @@ export function ProjectsTable({
           );
         },
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     [handleEdit, handleDelete, deletingId],
@@ -568,6 +572,15 @@ export function ProjectsTable({
                     }),
                   )
                 }
+              />
+              <DataTableViewOptions
+                table={table}
+                columnLabels={{
+                  status: "Health",
+                  projectStatus: "Lifecycle",
+                  description: "Description",
+                  updatedAt: "Last Updated",
+                }}
               />
             </DataTableToolbar>
           )}
