@@ -20,7 +20,7 @@ import { Button } from "@workspace/ui/components/button";
 import { FolderPlus, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -86,6 +86,8 @@ export function PeopleTable({
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [prevSearch, setPrevSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const searchInputRef = useRef(searchInput);
+  searchInputRef.current = searchInput;
   const [isSearchPending, startSearchTransition] = useTransition();
 
   // Render-time prop sync (no useEffect) — handles browser back/forward
@@ -94,50 +96,44 @@ export function PeopleTable({
     setSearchInput(search ?? "");
   }
 
-  const buildParams = useCallback(
-    (overrides: {
-      page?: string;
-      pageSize?: string;
-      search?: string;
-      sort?: string;
-      order?: string;
-      multiProject?: boolean;
-      departments?: string[];
-      projects?: string[];
-    }) => {
-      const params = new URLSearchParams();
-      params.set("page", overrides.page ?? "1");
-      params.set("pageSize", overrides.pageSize ?? String(pageSize));
-      const s = overrides.search ?? searchInput;
-      if (s) params.set("search", s);
-      const sb = overrides.sort ?? sortBy;
-      const so = overrides.order ?? sortOrder;
-      if (sb) params.set("sortBy", sb);
-      if (so) params.set("sortOrder", so);
-      const mp = overrides.multiProject !== undefined ? overrides.multiProject : multiProject;
-      if (mp) params.set("multiProject", "true");
-      const d = overrides.departments ?? departments;
-      if (d?.length) params.set("department", d.join(","));
-      const p = overrides.projects ?? projects;
-      if (p?.length) params.set("project", p.join(","));
-      return params.toString();
-    },
-    [pageSize, searchInput, sortBy, sortOrder, multiProject, departments, projects],
-  );
+  function buildParams(overrides: {
+    page?: string;
+    pageSize?: string;
+    search?: string;
+    sort?: string;
+    order?: string;
+    multiProject?: boolean;
+    departments?: string[];
+    projects?: string[];
+  }) {
+    const params = new URLSearchParams();
+    params.set("page", overrides.page ?? "1");
+    params.set("pageSize", overrides.pageSize ?? String(pageSize));
+    const s = overrides.search ?? searchInputRef.current;
+    if (s) params.set("search", s);
+    const sb = overrides.sort ?? sortBy;
+    const so = overrides.order ?? sortOrder;
+    if (sb) params.set("sortBy", sb);
+    if (so) params.set("sortOrder", so);
+    const mp = overrides.multiProject !== undefined ? overrides.multiProject : multiProject;
+    if (mp) params.set("multiProject", "true");
+    const d = overrides.departments ?? departments;
+    if (d?.length) params.set("department", d.join(","));
+    const p = overrides.projects ?? projects;
+    if (p?.length) params.set("project", p.join(","));
+    return params.toString();
+  }
 
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearchInput(value);
-      clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        const qs = buildParams({ page: "1", search: value });
-        startSearchTransition(() => {
-          router.replace(`/people?${qs}`, { scroll: false });
-        });
-      }, 300);
-    },
-    [buildParams, router],
-  );
+  function handleSearchChange(value: string) {
+    setSearchInput(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const qs = buildParams({ page: "1", search: value });
+      startSearchTransition(() => {
+        router.replace(`/people?${qs}`, { scroll: false });
+      });
+    }, 300);
+  }
 
   const meQuery = useQuery(trpc.person.me.queryOptions());
   const myPersonId = meQuery.data?.id ?? null;
@@ -154,17 +150,14 @@ export function PeopleTable({
 
   const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
 
-  const handleFilterChange = useCallback(
-    (key: "departments" | "projects", values: string[]) => {
-      const qs = buildParams({ page: "1", [key]: values });
-      startSearchTransition(() => {
-        router.replace(`/people?${qs}`, { scroll: false });
-      });
-    },
-    [buildParams, router],
-  );
+  function handleFilterChange(key: "departments" | "projects", values: string[]) {
+    const qs = buildParams({ page: "1", [key]: values });
+    startSearchTransition(() => {
+      router.replace(`/people?${qs}`, { scroll: false });
+    });
+  }
 
-  const handleResetFilters = useCallback(() => {
+  function handleResetFilters() {
     clearTimeout(debounceRef.current);
     setSearchInput("");
     const qs = buildParams({
@@ -177,181 +170,165 @@ export function PeopleTable({
     startSearchTransition(() => {
       router.replace(`/people?${qs}`, { scroll: false });
     });
-  }, [buildParams, router]);
+  }
 
-  const handleEdit = useCallback(
-    (id: string) => {
-      const params = new URLSearchParams(buildParams({ page: String(page) }));
-      params.set("edit", id);
-      router.push(`/people?${params.toString()}`, { scroll: false });
-    },
-    [router, buildParams, page],
-  );
+  function handleEdit(id: string) {
+    const params = new URLSearchParams(buildParams({ page: String(page) }));
+    params.set("edit", id);
+    router.push(`/people?${params.toString()}`, { scroll: false });
+  }
 
-  const handleAddToProject = useCallback(
-    (id: string) => {
-      const params = new URLSearchParams(buildParams({ page: String(page) }));
-      params.set("addToProject", id);
-      router.push(`/people?${params.toString()}`, { scroll: false });
-    },
-    [router, buildParams, page],
-  );
+  function handleAddToProject(id: string) {
+    const params = new URLSearchParams(buildParams({ page: String(page) }));
+    params.set("addToProject", id);
+    router.push(`/people?${params.toString()}`, { scroll: false });
+  }
 
   const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0) + (multiProject ? 1 : 0);
 
-  const projectOptions = useMemo(
-    () => projectNames.map((n) => ({ label: n, value: n })),
-    [projectNames],
-  );
+  const projectOptions = projectNames.map((n) => ({ label: n, value: n }));
+  const departmentOptions = departmentNames.map((d) => ({ label: d, value: d }));
 
-  const departmentOptions = useMemo(
-    () => departmentNames.map((d) => ({ label: d, value: d })),
-    [departmentNames],
-  );
-
-  const columns: ColumnDef<PersonWithMemberships>[] = useMemo(
-    () => [
-      {
-        id: "name",
-        accessorFn: (row) =>
-          `${row.firstName}${row.callsign ? ` ${row.callsign}` : ""} ${row.lastName}`,
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-        enableHiding: false,
-        cell: ({ row }) => {
-          const person = row.original;
-          const isMe = person.id === myPersonId;
-          return (
-            <Link
-              href={`/people/${person.id}`}
-              className="flex items-center gap-2 hover:underline"
-              onMouseEnter={() => router.prefetch(`/people/${person.id}`)}
-            >
-              <Avatar className="size-7 shrink-0">
-                <AvatarImage src={person.imageUrl ?? undefined} />
-                <AvatarFallback className="text-xs">
-                  {person.firstName[0]}
-                  {person.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-medium">{row.getValue("name")}</span>
-              {isMe && (
-                <Badge variant="outline" className="text-xs font-normal">
-                  You
-                </Badge>
-              )}
-            </Link>
-          );
-        },
-      },
-      {
-        id: "email",
-        accessorFn: (row) => row.email,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Email" className="hidden sm:flex" />
-        ),
-        cell: ({ row }) => (
-          <span className="text-muted-foreground hidden sm:inline">{row.getValue("email")}</span>
-        ),
-      },
-      {
-        id: "projects",
-        accessorFn: (row) => row.projectMemberships.map((m) => m.project.name).join(", "),
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Projects" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const memberships = row.original.projectMemberships;
-          if (memberships.length === 0) {
-            return <span className="text-muted-foreground">{"\u2014"}</span>;
-          }
-          return (
-            <div className="flex flex-wrap gap-1">
-              {memberships.map((m) => (
-                <Badge key={m.id} variant="secondary" className="text-xs">
-                  {m.project.name}
-                </Badge>
-              ))}
-            </div>
-          );
-        },
-      },
-      {
-        id: "departments",
-        accessorFn: (row) => row.department?.name ?? "",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
-        cell: ({ row }) => {
-          const val = row.getValue("departments") as string;
-          if (!val) {
-            return <span className="text-muted-foreground">{"\u2014"}</span>;
-          }
-          return <span>{val}</span>;
-        },
-      },
-      {
-        id: "githubUsername",
-        accessorFn: (row) => row.githubUsername ?? "",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="GitHub" className="hidden md:flex" />
-        ),
-        cell: ({ row }) => (
-          <span className="hidden md:inline">
-            {(row.getValue("githubUsername") as string) || (
-              <span className="text-muted-foreground">{"\u2014"}</span>
+  const columns: ColumnDef<PersonWithMemberships>[] = [
+    {
+      id: "name",
+      accessorFn: (row) =>
+        `${row.firstName}${row.callsign ? ` ${row.callsign}` : ""} ${row.lastName}`,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+      enableHiding: false,
+      cell: ({ row }) => {
+        const person = row.original;
+        const isMe = person.id === myPersonId;
+        return (
+          <Link
+            href={`/people/${person.id}`}
+            className="flex items-center gap-2 hover:underline"
+            onMouseEnter={() => router.prefetch(`/people/${person.id}`)}
+          >
+            <Avatar className="size-7 shrink-0">
+              <AvatarImage src={person.imageUrl ?? undefined} />
+              <AvatarFallback className="text-xs">
+                {person.firstName[0]}
+                {person.lastName[0]}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-medium">{row.getValue("name")}</span>
+            {isMe && (
+              <Badge variant="outline" className="text-xs font-normal">
+                You
+              </Badge>
             )}
-          </span>
-        ),
-        enableSorting: false,
+          </Link>
+        );
       },
-      {
-        id: "actions",
-        header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => {
-          const person = row.original;
-          return (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => handleEdit(person.id)}>
-                <Pencil className="size-4" />
-                <span className="sr-only">Edit</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleAddToProject(person.id)}>
-                <FolderPlus className="size-4" />
-                <span className="sr-only">Add to project</span>
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Trash2 className="size-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete person?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete &quot;{person.firstName} {person.lastName}&quot;
-                      and remove them from all projects.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteMutation.mutate({ id: person.id })}
-                      disabled={deletingId === person.id}
-                      className="bg-destructive text-white hover:bg-destructive/90"
-                    >
-                      {deletingId === person.id ? "Deleting\u2026" : "Delete"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          );
-        },
-        enableSorting: false,
-        enableHiding: false,
+    },
+    {
+      id: "email",
+      accessorFn: (row) => row.email,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Email" className="hidden sm:flex" />
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground hidden sm:inline">{row.getValue("email")}</span>
+      ),
+    },
+    {
+      id: "projects",
+      accessorFn: (row) => row.projectMemberships.map((m) => m.project.name).join(", "),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Projects" />,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const memberships = row.original.projectMemberships;
+        if (memberships.length === 0) {
+          return <span className="text-muted-foreground">{"\u2014"}</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {memberships.map((m) => (
+              <Badge key={m.id} variant="secondary" className="text-xs">
+                {m.project.name}
+              </Badge>
+            ))}
+          </div>
+        );
       },
-    ],
-    [myPersonId, deleteMutation, deletingId, handleEdit, handleAddToProject, router],
-  );
+    },
+    {
+      id: "departments",
+      accessorFn: (row) => row.department?.name ?? "",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
+      cell: ({ row }) => {
+        const val = row.getValue("departments") as string;
+        if (!val) {
+          return <span className="text-muted-foreground">{"\u2014"}</span>;
+        }
+        return <span>{val}</span>;
+      },
+    },
+    {
+      id: "githubUsername",
+      accessorFn: (row) => row.githubUsername ?? "",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="GitHub" className="hidden md:flex" />
+      ),
+      cell: ({ row }) => (
+        <span className="hidden md:inline">
+          {(row.getValue("githubUsername") as string) || (
+            <span className="text-muted-foreground">{"\u2014"}</span>
+          )}
+        </span>
+      ),
+      enableSorting: false,
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      cell: ({ row }) => {
+        const person = row.original;
+        return (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => handleEdit(person.id)}>
+              <Pencil className="size-4" />
+              <span className="sr-only">Edit</span>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => handleAddToProject(person.id)}>
+              <FolderPlus className="size-4" />
+              <span className="sr-only">Add to project</span>
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="size-4" />
+                  <span className="sr-only">Delete</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete person?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete &quot;{person.firstName} {person.lastName}&quot;
+                    and remove them from all projects.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteMutation.mutate({ id: person.id })}
+                    disabled={deletingId === person.id}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    {deletingId === person.id ? "Deleting\u2026" : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
 
   return (
     <div className="space-y-4">

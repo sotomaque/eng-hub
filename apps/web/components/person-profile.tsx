@@ -5,7 +5,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
-import { ArrowLeft, Building2, Github, Pencil } from "lucide-react";
+import { ArrowLeft, Building2, Github, Mail, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PersonRoadmapCard } from "@/components/person-roadmap-card";
@@ -16,6 +16,7 @@ export type PersonData = {
   lastName: string;
   callsign: string | null;
   email: string;
+  emailAliases: string[];
   imageUrl: string | null;
   githubUsername: string | null;
   gitlabUsername: string | null;
@@ -289,7 +290,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
           </CardContent>
         </Card>
 
-        {(person.githubUsername || person.gitlabUsername) && (
+        {(person.githubUsername || person.gitlabUsername || person.emailAliases.length > 0) && (
           <Card>
             <CardHeader>
               <CardTitle>Identifiers</CardTitle>
@@ -305,6 +306,16 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
                 <div className="flex items-center gap-2">
                   <Building2 className="text-muted-foreground size-4" />
                   <span className="text-sm">{person.gitlabUsername}</span>
+                </div>
+              )}
+              {person.emailAliases.length > 0 && (
+                <div className="space-y-1">
+                  {person.emailAliases.map((alias) => (
+                    <div key={alias} className="flex items-center gap-2">
+                      <Mail className="text-muted-foreground size-4" />
+                      <span className="text-sm">{alias}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>

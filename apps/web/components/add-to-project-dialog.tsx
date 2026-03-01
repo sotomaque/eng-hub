@@ -37,12 +37,14 @@ type AddToProjectDialogProps = {
   personId: string;
   personName: string;
   existingProjectIds: string[];
+  onClose?: () => void;
 };
 
 export function AddToProjectDialog({
   personId,
   personName,
   existingProjectIds,
+  onClose,
 }: AddToProjectDialogProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -87,9 +89,13 @@ export function AddToProjectDialog({
   const isSubmitting = joinMutation.isPending;
 
   function handleClose() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("addToProject");
-    router.push(`/people?${params.toString()}`, { scroll: false });
+    if (onClose) {
+      onClose();
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("addToProject");
+      router.push(`/people?${params.toString()}`, { scroll: false });
+    }
   }
 
   function onSubmit(data: AddToProjectInput) {

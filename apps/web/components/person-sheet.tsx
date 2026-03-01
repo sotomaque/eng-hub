@@ -16,13 +16,15 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { TagInput } from "@/components/tag-input";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreatePersonInput, createPersonSchema } from "@/lib/validations/person";
+
+const EMPTY_SUGGESTIONS: string[] = [];
 
 type PersonWithMemberships = {
   id: string;
@@ -49,9 +51,10 @@ type PersonWithMemberships = {
 type PersonSheetProps = {
   person?: PersonWithMemberships;
   onClose?: () => void;
+  onAddToProject?: () => void;
 };
 
-export function PersonSheet({ person, onClose }: PersonSheetProps) {
+export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();
@@ -93,13 +96,9 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
   });
 
   const selectedDepartmentId = watch("departmentId");
-  const titles = useMemo(
-    () =>
-      selectedDepartmentId
-        ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
-        : allTitles,
-    [allTitles, selectedDepartmentId],
-  );
+  const titles = selectedDepartmentId
+    ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
+    : allTitles;
 
   function handleTitleChange(titleId: string) {
     setValue("titleId", titleId, { shouldDirty: true });
@@ -167,7 +166,11 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
   }
 
   function onSubmit(data: CreatePersonInput) {
-    const withImage = { ...data, imageUrl: imageUrl || "" };
+    const withImage = {
+      ...data,
+      imageUrl: imageUrl || "",
+      emailAliases: data.emailAliases.map((a) => a.trim()).filter(Boolean),
+    };
     if (isEditing && person) {
       updateMutation.mutate({ ...withImage, id: person.id });
     } else {
@@ -252,9 +255,9 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
                 control={control}
                 render={({ field }) => (
                   <TagInput
-                    value={field.value ?? []}
+                    value={field.value ?? EMPTY_SUGGESTIONS}
                     onChange={field.onChange}
-                    suggestions={[]}
+                    suggestions={EMPTY_SUGGESTIONS}
                     placeholder="Add email alias..."
                   />
                 )}
@@ -403,11 +406,15 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
                   variant="outline"
                   size="sm"
                   className="gap-1"
-                  onClick={() =>
-                    router.push(`/people?addToProject=${person.id}`, {
-                      scroll: false,
-                    })
-                  }
+                  onClick={() => {
+                    if (onAddToProject) {
+                      onAddToProject();
+                    } else {
+                      router.push(`/people?addToProject=${person.id}`, {
+                        scroll: false,
+                      });
+                    }
+                  }}
                 >
                   <Plus className="size-3" />
                   Add to project
