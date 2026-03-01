@@ -1,6 +1,8 @@
 import { expect, test } from "./helpers";
 
 test.describe("Project Billets", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("navigate to billets page and see seeded billets", async ({ page }) => {
     await page.goto("/projects/proj-alpha");
 
@@ -15,26 +17,26 @@ test.describe("Project Billets", () => {
     await expect(page.getByText("6 positions")).toBeVisible();
 
     // Verify seeded billet rows are visible
-    await expect(page.getByText("Engineering")).toBeVisible();
+    await expect(page.getByText("Engineering").first()).toBeVisible();
     await expect(page.getByText("Design")).toBeVisible();
   });
 
   test("create a new billet", async ({ page }) => {
     await page.goto("/projects/proj-alpha/billets");
-    await expect(page.locator('[data-slot="card-title"]')).toContainText("Billets");
+    await expect(page.getByText(/\d+ positions/)).toBeVisible();
 
     // Click Add Billet
     await page.getByRole("link", { name: "Add Billet" }).click();
 
-    // Sheet title renders as a Radix Dialog heading
+    // Sheet opens
     await expect(page.locator('[data-slot="sheet-title"]')).toContainText("Add Billet");
 
-    // Select department via Combobox
-    await page.getByRole("combobox", { name: /department/i }).click();
+    // Select department — custom Combobox renders as a <Button> with placeholder text
+    await page.getByRole("button", { name: "Select department..." }).click();
     await page.getByRole("option", { name: "Product" }).click();
 
-    // Change level via Select (default is "Mid")
-    await page.locator('[data-slot="sheet-content"]').getByRole("combobox").nth(2).click();
+    // Change level — Radix Select renders as role="combobox", default is "Mid"
+    await page.locator('[data-slot="sheet-content"]').getByRole("combobox").click();
     await page.getByRole("option", { name: "Lead" }).click();
 
     // Set count
@@ -51,16 +53,16 @@ test.describe("Project Billets", () => {
 
   test("delete a billet", async ({ page }) => {
     await page.goto("/projects/proj-alpha/billets");
-    await expect(page.locator('[data-slot="card-title"]')).toContainText("Billets");
+    await expect(page.getByText(/\d+ positions/)).toBeVisible();
 
-    // Get initial position count text
+    // Get initial position count
     const positionsText = page.getByText(/\d+ positions/);
     const initialText = await positionsText.textContent();
 
     // Click the first delete button
     await page.getByRole("button", { name: "Delete" }).first().click();
 
-    // Confirm in the alert dialog (AlertDialogTitle renders as heading)
+    // Confirm in the alert dialog (AlertDialogTitle is a heading)
     await expect(page.getByRole("heading", { name: "Delete billet?" })).toBeVisible();
     await page.getByRole("button", { name: "Delete" }).last().click();
 
@@ -80,7 +82,7 @@ test.describe("Project Billets", () => {
   test("budget is displayed on project overview", async ({ page }) => {
     await page.goto("/projects/proj-alpha");
 
-    // Alpha has a $2,500,000 budget from seed data
-    await expect(page.getByText("$2,500,000.00")).toBeVisible();
+    // Alpha has a $2,500,000 budget (maximumFractionDigits: 0)
+    await expect(page.getByText("$2,500,000")).toBeVisible();
   });
 });
