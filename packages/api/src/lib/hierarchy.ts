@@ -1,7 +1,5 @@
 import { db } from "@workspace/db";
 
-const MAX_DEPTH = 50;
-
 /**
  * Resolve a Clerk userId to a Person ID.
  */
@@ -15,33 +13,24 @@ export async function resolveClerkPerson(clerkUserId: string): Promise<string | 
 
 /**
  * Build the full management chain (list of manager IDs) for a person.
+ * Uses a recursive CTE to fetch the entire chain in a single query.
  */
 async function getManagementChain(personId: string): Promise<string[]> {
-  const person = await db.person.findUnique({
-    where: { id: personId },
-    select: { managerId: true },
-  });
-  if (!person?.managerId) return [];
-
-  const chain: string[] = [];
-  let currentId: string | null = person.managerId;
-  const visited = new Set<string>();
-  let depth = 0;
-
-  while (currentId && depth < MAX_DEPTH) {
-    chain.push(currentId);
-    if (visited.has(currentId)) break;
-    visited.add(currentId);
-    depth++;
-
-    const row: { managerId: string | null } | null = await db.person.findUnique({
-      where: { id: currentId },
-      select: { managerId: true },
-    });
-    currentId = row?.managerId ?? null;
-  }
-
-  return chain;
+  const chain = await db.$queryRaw<{ id: string }[]>`
+    WITH RECURSIVE chain AS (
+      SELECT manager_id AS id
+      FROM people
+      WHERE id = ${personId} AND manager_id IS NOT NULL
+      UNION ALL
+      SELECT p.manager_id
+      FROM people p
+      JOIN chain c ON p.id = c.id
+      WHERE p.manager_id IS NOT NULL
+    )
+    SELECT id FROM chain
+    LIMIT 50
+  `;
+  return chain.map((r) => r.id);
 }
 
 /**
