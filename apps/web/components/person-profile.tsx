@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Separator } from "@workspace/ui/components/separator";
 import { ArrowLeft, Building2, Github, Pencil } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PersonRoadmapCard } from "@/components/person-roadmap-card";
 
 export type PersonData = {
@@ -76,6 +77,7 @@ type PersonProfileProps = {
 };
 
 export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfileProps) {
+  const router = useRouter();
   const fullName = `${person.firstName} ${person.lastName}`;
   const initials = `${person.firstName[0]}${person.lastName[0]}`;
   const sortedMemberships = [...person.projectMemberships].sort((a, b) => {
@@ -149,6 +151,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
                       <Link
                         href={`/projects/${membership.project.id}`}
                         className="font-medium hover:underline"
+                        onMouseEnter={() => router.prefetch(`/projects/${membership.project.id}`)}
                       >
                         {membership.project.name}
                       </Link>
@@ -200,6 +203,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
                     <Link
                       href={`/projects/${op.project.id}`}
                       className="font-medium hover:underline"
+                      onMouseEnter={() => router.prefetch(`/projects/${op.project.id}`)}
                     >
                       {op.project.name}
                     </Link>
@@ -219,6 +223,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
               <Link
                 href={`/people/${person.manager.id}`}
                 className="flex items-center gap-2 hover:underline"
+                onMouseEnter={() => router.prefetch(`/people/${person.manager.id}`)}
               >
                 <Avatar className="size-8">
                   <AvatarImage
@@ -261,6 +266,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
                     <Link
                       href={`/people/${report.id}`}
                       className="flex items-center gap-2 hover:underline"
+                      onMouseEnter={() => router.prefetch(`/people/${report.id}`)}
                     >
                       <Avatar className="size-6">
                         <AvatarImage

@@ -5,6 +5,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { ChevronDown, ChevronRight, Network, Users } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 type ManagerInfo = {
@@ -90,6 +91,7 @@ function buildTree(members: OrgMember[]): {
 }
 
 function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
   const m = node.member;
@@ -120,6 +122,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
         <Link
           href={`/people/${m.personId}`}
           className="flex min-w-0 flex-1 items-center gap-3 hover:underline"
+          onMouseEnter={() => router.prefetch(`/people/${m.personId}`)}
         >
           <Avatar className="size-8 shrink-0">
             <AvatarImage src={m.imageUrl ?? undefined} />
@@ -160,6 +163,7 @@ function OrgNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 }
 
 function ExternalManagerGroup({ manager, reports }: { manager: ManagerInfo; reports: TreeNode[] }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(true);
   const displayName = `${manager.firstName}${manager.callsign ? ` ${manager.callsign}` : ""} ${manager.lastName}`;
   const sortedReports = useMemo(
@@ -185,6 +189,7 @@ function ExternalManagerGroup({ manager, reports }: { manager: ManagerInfo; repo
           href={`/people/${manager.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 hover:underline"
           onClick={(e) => e.stopPropagation()}
+          onMouseEnter={() => router.prefetch(`/people/${manager.id}`)}
         >
           <Avatar className="size-8 shrink-0 opacity-60">
             <AvatarImage src={manager.imageUrl ?? undefined} />

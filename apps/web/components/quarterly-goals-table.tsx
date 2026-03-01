@@ -334,6 +334,9 @@ export function QuarterlyGoalsTable({
               <Link
                 href={`/projects/${projectId}/roadmap/${row.original.id}`}
                 className={`font-medium hover:underline ${isChild ? "text-muted-foreground" : ""}`}
+                onMouseEnter={() =>
+                  router.prefetch(`/projects/${projectId}/roadmap/${row.original.id}`)
+                }
               >
                 {row.getValue("title")}
               </Link>
