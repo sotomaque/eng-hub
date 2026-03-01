@@ -57,9 +57,10 @@ type PersonGoalSheetProps = {
   goal?: PersonGoalData;
   personId?: string;
   onClose?: () => void;
+  onSaved?: () => void;
 };
 
-export function PersonGoalSheet({ goal, personId, onClose }: PersonGoalSheetProps) {
+export function PersonGoalSheet({ goal, personId, onClose, onSaved }: PersonGoalSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const isEditing = !!goal;
@@ -85,8 +86,8 @@ export function PersonGoalSheet({ goal, personId, onClose }: PersonGoalSheetProp
     trpc.personGoal.create.mutationOptions({
       onSuccess: () => {
         toast.success("Goal created");
+        onSaved?.();
         handleClose();
-        router.refresh();
       },
       onError: (error) => toast.error(error.message),
     }),
@@ -96,8 +97,8 @@ export function PersonGoalSheet({ goal, personId, onClose }: PersonGoalSheetProp
     trpc.personGoal.update.mutationOptions({
       onSuccess: () => {
         toast.success("Goal updated");
+        onSaved?.();
         handleClose();
-        router.refresh();
       },
       onError: (error) => toast.error(error.message),
     }),

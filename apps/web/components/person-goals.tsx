@@ -17,7 +17,6 @@ import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { format } from "date-fns";
 import { Pencil, Plus, Target, Trash2, Trophy } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PersonAccomplishmentSheet } from "@/components/person-accomplishment-sheet";
@@ -50,7 +49,6 @@ type PersonGoalsProps = {
 };
 
 export function PersonGoals({ personId, canEdit }: PersonGoalsProps) {
-  const router = useRouter();
   const trpc = useTRPC();
   const goalsQuery = useQuery(trpc.personGoal.getByPersonId.queryOptions({ personId }));
   const accomplishmentsQuery = useQuery(
@@ -68,7 +66,7 @@ export function PersonGoals({ personId, canEdit }: PersonGoalsProps) {
     trpc.personGoal.delete.mutationOptions({
       onSuccess: () => {
         toast.success("Goal deleted");
-        router.refresh();
+        goalsQuery.refetch();
       },
       onError: (error) => toast.error(error.message),
     }),
@@ -78,7 +76,7 @@ export function PersonGoals({ personId, canEdit }: PersonGoalsProps) {
     trpc.personAccomplishment.delete.mutationOptions({
       onSuccess: () => {
         toast.success("Accomplishment deleted");
-        router.refresh();
+        accomplishmentsQuery.refetch();
       },
       onError: (error) => toast.error(error.message),
     }),
@@ -316,6 +314,7 @@ export function PersonGoals({ personId, canEdit }: PersonGoalsProps) {
             setGoalSheetOpen(false);
             setEditingGoal(null);
           }}
+          onSaved={() => goalsQuery.refetch()}
         />
       )}
 
@@ -327,6 +326,7 @@ export function PersonGoals({ personId, canEdit }: PersonGoalsProps) {
             setAccomplishmentSheetOpen(false);
             setEditingAccomplishment(null);
           }}
+          onSaved={() => accomplishmentsQuery.refetch()}
         />
       )}
     </div>
