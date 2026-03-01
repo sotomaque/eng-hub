@@ -1,34 +1,21 @@
 "use client";
 
 import type { Team, TeamMembership } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
-import { toast } from "sonner";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { RollOffDialog } from "@/components/roll-off-dialog";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { TITLE_NO_TITLE_COLOR } from "@/lib/constants/team";
-import { useTRPC } from "@/lib/trpc/client";
 
 type MemberWithRelations = {
   id: string;
@@ -41,6 +28,7 @@ type MemberWithRelations = {
     imageUrl: string | null;
     githubUsername: string | null;
     gitlabUsername: string | null;
+    managerId: string | null;
     department: { name: string } | null;
     title: { name: string } | null;
   };
@@ -55,6 +43,7 @@ type FilterOption = {
 type TeamMembersTableProps = {
   projectId: string;
   members: MemberWithRelations[];
+  allMembers?: MemberWithRelations[];
   titleColorMap: TitleColorMap;
   titleOptions?: FilterOption[];
   departmentOptions?: FilterOption[];
@@ -68,6 +57,7 @@ type TeamMembersTableProps = {
 export function TeamMembersTable({
   projectId,
   members,
+  allMembers,
   titleColorMap,
   titleOptions: titleOptionsProp,
   departmentOptions: departmentOptionsProp,
@@ -78,18 +68,7 @@ export function TeamMembersTable({
   onResetFilters,
 }: TeamMembersTableProps) {
   const router = useRouter();
-  const trpc = useTRPC();
-  const deleteMutation = useMutation(
-    trpc.teamMember.delete.mutationOptions({
-      onSuccess: () => {
-        toast.success("Team member rolled off");
-        router.refresh();
-      },
-      onError: (error) => toast.error(error.message),
-    }),
-  );
-
-  const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
+  const [rollOffMember, setRollOffMember] = useState<MemberWithRelations | null>(null);
 
   // Use prop-provided options (from unfiltered data) or derive locally as fallback
   const titleOptions = useMemo(() => {
@@ -227,81 +206,73 @@ export function TeamMembersTable({
                 <Pencil className="size-4" />
                 <span className="sr-only">Edit</span>
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Trash2 className="size-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Roll off team member?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      &quot;{member.person.firstName} {member.person.lastName}&quot; will be removed
-                      from the active team but will still appear in stats if they have
-                      contributions.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteMutation.mutate({ id: member.id })}
-                      disabled={deletingId === member.id}
-                      className="bg-destructive text-white hover:bg-destructive/90"
-                    >
-                      {deletingId === member.id ? "Rolling off…" : "Roll Off"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button variant="ghost" size="icon" onClick={() => setRollOffMember(member)}>
+                <Trash2 className="size-4" />
+                <span className="sr-only">Roll off</span>
+              </Button>
             </div>
           );
         },
         enableSorting: false,
       },
     ],
-    [titleColorMap, projectId, deletingId, deleteMutation.mutate, router.push],
+    [titleColorMap, projectId, router.push],
   );
 
   return (
-    <DataTable
-      columns={columns}
-      data={members}
-      toolbar={(table) => (
-        <DataTableToolbar
-          table={table}
-          searchColumn="name"
-          searchPlaceholder="Filter members…"
-          filterCount={filterCount}
-          onResetFilters={onResetFilters}
-        >
-          {titleOptions.length > 0 && (
-            <DataTableFacetedFilter
-              title="Title"
-              options={titleOptions}
-              {...(onFilterChange
-                ? {
-                    value: filterTitle ?? [],
-                    onValueChange: (v) => onFilterChange("title", v),
-                  }
-                : { column: table.getColumn("titleName") })}
-            />
-          )}
-          {departmentOptions.length > 0 && (
-            <DataTableFacetedFilter
-              title="Department"
-              options={departmentOptions}
-              {...(onFilterChange
-                ? {
-                    value: filterDepartment ?? [],
-                    onValueChange: (v) => onFilterChange("department", v),
-                  }
-                : { column: table.getColumn("departmentName") })}
-            />
-          )}
-        </DataTableToolbar>
+    <>
+      <DataTable
+        columns={columns}
+        data={members}
+        toolbar={(table) => (
+          <DataTableToolbar
+            table={table}
+            searchColumn="name"
+            searchPlaceholder="Filter members…"
+            filterCount={filterCount}
+            onResetFilters={onResetFilters}
+          >
+            {titleOptions.length > 0 && (
+              <DataTableFacetedFilter
+                title="Title"
+                options={titleOptions}
+                {...(onFilterChange
+                  ? {
+                      value: filterTitle ?? [],
+                      onValueChange: (v) => onFilterChange("title", v),
+                    }
+                  : { column: table.getColumn("titleName") })}
+              />
+            )}
+            {departmentOptions.length > 0 && (
+              <DataTableFacetedFilter
+                title="Department"
+                options={departmentOptions}
+                {...(onFilterChange
+                  ? {
+                      value: filterDepartment ?? [],
+                      onValueChange: (v) => onFilterChange("department", v),
+                    }
+                  : { column: table.getColumn("departmentName") })}
+              />
+            )}
+          </DataTableToolbar>
+        )}
+      />
+      {rollOffMember && (
+        <RollOffDialog
+          open={!!rollOffMember}
+          onOpenChange={(open) => {
+            if (!open) setRollOffMember(null);
+          }}
+          member={rollOffMember}
+          allMembers={allMembers ?? members}
+          onSuccess={() => {
+            setRollOffMember(null);
+            router.refresh();
+          }}
+        />
       )}
-    />
+    </>
   );
 }
