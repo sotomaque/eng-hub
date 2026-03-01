@@ -206,6 +206,7 @@ async function main() {
       person: {
         select: {
           email: true,
+          emailAliases: true,
           gitlabUsername: true,
           githubUsername: true,
           firstName: true,
@@ -225,6 +226,9 @@ async function main() {
   for (const tm of teamMembers) {
     const username = tm.person.gitlabUsername ?? tm.person.githubUsername ?? tm.person.email;
     emailToUsername.set(tm.person.email.toLowerCase(), username);
+    for (const alias of tm.person.emailAliases) {
+      emailToUsername.set(alias.toLowerCase(), username);
+    }
     teamUsernames.add(username);
   }
 

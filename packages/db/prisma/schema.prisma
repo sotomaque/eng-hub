@@ -167,6 +167,7 @@ model Person {
   email          String   @unique
   githubUsername  String?  @map("github_username")
   gitlabUsername  String?  @map("gitlab_username")
+  emailAliases   String[] @default([]) @map("email_aliases")
   imageUrl       String?  @map("image_url")
   clerkUserId    String?  @unique @map("clerk_user_id")
   managerId      String?  @map("manager_id")

@@ -6,6 +6,7 @@ describe("createPersonSchema", () => {
     firstName: "Jane",
     lastName: "Doe",
     email: "jane.doe@example.com",
+    emailAliases: [],
   };
 
   test("accepts minimal valid input", () => {
@@ -80,6 +81,22 @@ describe("createPersonSchema", () => {
       expect(result.data.departmentId).toBeUndefined();
     }
   });
+
+  test("accepts valid emailAliases", () => {
+    const result = createPersonSchema.safeParse({
+      ...validInput,
+      emailAliases: ["alt@example.com", "old@work.org"],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects invalid email in emailAliases", () => {
+    const result = createPersonSchema.safeParse({
+      ...validInput,
+      emailAliases: ["not-an-email"],
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("updatePersonSchema", () => {
@@ -88,6 +105,7 @@ describe("updatePersonSchema", () => {
     firstName: "Jane",
     lastName: "Updated",
     email: "jane@example.com",
+    emailAliases: [],
   };
 
   test("requires id field", () => {

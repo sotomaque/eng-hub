@@ -20,6 +20,7 @@ import { useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
+import { TagInput } from "@/components/tag-input";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreatePersonInput, createPersonSchema } from "@/lib/validations/person";
 
@@ -29,6 +30,7 @@ type PersonWithMemberships = {
   lastName: string;
   callsign: string | null;
   email: string;
+  emailAliases: string[];
   imageUrl: string | null;
   githubUsername: string | null;
   gitlabUsername: string | null;
@@ -81,6 +83,7 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
       lastName: person?.lastName ?? "",
       callsign: person?.callsign ?? "",
       email: person?.email ?? "",
+      emailAliases: person?.emailAliases ?? [],
       githubUsername: person?.githubUsername ?? "",
       gitlabUsername: person?.gitlabUsername ?? "",
       managerId: person?.managerId ?? "",
@@ -240,6 +243,25 @@ export function PersonSheet({ person, onClose }: PersonSheetProps) {
                 aria-invalid={!!errors.email}
               />
               {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Email Aliases</Label>
+              <Controller
+                name="emailAliases"
+                control={control}
+                render={({ field }) => (
+                  <TagInput
+                    value={field.value ?? []}
+                    onChange={field.onChange}
+                    suggestions={[]}
+                    placeholder="Add email alias..."
+                  />
+                )}
+              />
+              <p className="text-muted-foreground text-xs">
+                Alternate emails used in git commits (e.g. personal, old work emails)
+              </p>
             </div>
 
             <div className="space-y-2">
