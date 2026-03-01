@@ -26,6 +26,7 @@ const mockFavCreate = mock(() =>
   Promise.resolve({ id: "fav-1", personId: "person-1", projectId: "proj-1" }),
 );
 const mockFavDelete = mock(() => Promise.resolve({}));
+const mockFavDeleteMany = mock(() => Promise.resolve({ count: 0 }));
 
 mock.module("@workspace/db", () => ({
   db: {
@@ -42,6 +43,7 @@ mock.module("@workspace/db", () => ({
       findUnique: mockFavFindUnique,
       create: mockFavCreate,
       delete: mockFavDelete,
+      deleteMany: mockFavDeleteMany,
     },
     $transaction: mock((fn: (tx: unknown) => unknown) => fn({})),
   },
@@ -122,36 +124,39 @@ describe("project.isFavorited", () => {
 describe("project.toggleFavorite", () => {
   beforeEach(() => {
     mockResolveClerkPerson.mockReset().mockResolvedValue("person-1");
-    mockFavFindUnique.mockReset().mockResolvedValue(null);
+    mockFavDeleteMany.mockReset().mockResolvedValue({ count: 0 });
     mockFavCreate.mockReset().mockResolvedValue({
       id: "fav-1",
       personId: "person-1",
       projectId: "proj-1",
     });
-    mockFavDelete.mockReset().mockResolvedValue({});
   });
 
   test("creates favorite when not existing", async () => {
+    // deleteMany returns 0 → nothing was deleted → create
+    mockFavDeleteMany.mockResolvedValue({ count: 0 });
+
     const result = await caller.toggleFavorite({ projectId: "proj-1" });
 
     expect(result).toEqual({ favorited: true });
+    expect(mockFavDeleteMany).toHaveBeenCalledWith({
+      where: { personId: "person-1", projectId: "proj-1" },
+    });
     expect(mockFavCreate).toHaveBeenCalledWith({
       data: { personId: "person-1", projectId: "proj-1" },
     });
-    expect(mockFavDelete).not.toHaveBeenCalled();
   });
 
   test("deletes favorite when already existing", async () => {
-    mockFavFindUnique.mockResolvedValue({
-      id: "fav-1",
-      personId: "person-1",
-      projectId: "proj-1",
-    });
+    // deleteMany returns 1 → was deleted → no create
+    mockFavDeleteMany.mockResolvedValue({ count: 1 });
 
     const result = await caller.toggleFavorite({ projectId: "proj-1" });
 
     expect(result).toEqual({ favorited: false });
-    expect(mockFavDelete).toHaveBeenCalledWith({ where: { id: "fav-1" } });
+    expect(mockFavDeleteMany).toHaveBeenCalledWith({
+      where: { personId: "person-1", projectId: "proj-1" },
+    });
     expect(mockFavCreate).not.toHaveBeenCalled();
   });
 

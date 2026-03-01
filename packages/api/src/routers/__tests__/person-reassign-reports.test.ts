@@ -18,6 +18,7 @@ const mockPersonFindUnique = mock(() =>
 const mockPersonFindUniqueOrThrow = mock(() => Promise.resolve({ managerId: "old-mgr" }));
 const mockPersonUpdate = mock(() => Promise.resolve({}));
 const mockManagerChangeCreate = mock(() => Promise.resolve({}));
+const mockQueryRaw = mock(() => Promise.resolve([{ found: false }]));
 
 const tx = {
   person: {
@@ -52,6 +53,7 @@ mock.module("@workspace/db", () => ({
       createMany: mock(() => Promise.resolve({ count: 0 })),
     },
     $transaction: mockTransaction,
+    $queryRaw: mockQueryRaw,
   },
 }));
 
@@ -71,6 +73,7 @@ describe("person.reassignReports", () => {
     mockPersonFindUniqueOrThrow.mockReset().mockResolvedValue({ managerId: "old-mgr" });
     mockPersonUpdate.mockReset().mockResolvedValue({});
     mockManagerChangeCreate.mockReset().mockResolvedValue({});
+    mockQueryRaw.mockReset().mockResolvedValue([{ found: false }]);
     mockTransaction
       .mockReset()
       .mockImplementation(async (fn: (arg: unknown) => Promise<unknown>) => fn(tx));
@@ -78,10 +81,7 @@ describe("person.reassignReports", () => {
 
   test("reassigns multiple reports and logs manager changes", async () => {
     // Existence check for newManagerId
-    mockPersonFindUnique
-      .mockResolvedValueOnce({ managerId: null }) // newManagerId exists
-      .mockResolvedValueOnce({ managerId: null }) // cycle check for person-a ends
-      .mockResolvedValueOnce({ managerId: null }); // cycle check for person-b ends
+    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null });
 
     const result = await caller.reassignReports({
       personIds: ["person-a", "person-b"],
@@ -110,10 +110,9 @@ describe("person.reassignReports", () => {
 
   test("throws BAD_REQUEST on cycle detection", async () => {
     // newManagerId exists
-    mockPersonFindUnique
-      .mockResolvedValueOnce({ managerId: null })
-      // cycle: new-mgr's manager is person-a
-      .mockResolvedValueOnce({ managerId: "person-a" });
+    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null });
+    // cycle detected by recursive CTE
+    mockQueryRaw.mockResolvedValueOnce([{ found: true }]);
 
     await expect(
       caller.reassignReports({
@@ -129,9 +128,7 @@ describe("person.reassignReports", () => {
   });
 
   test("logs correct old and new manager IDs in audit trail", async () => {
-    mockPersonFindUnique
-      .mockResolvedValueOnce({ managerId: null }) // existence
-      .mockResolvedValueOnce({ managerId: null }); // cycle check ends
+    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null }); // existence
     mockPersonFindUniqueOrThrow.mockResolvedValue({ managerId: "old-mgr-id" });
 
     await caller.reassignReports({
