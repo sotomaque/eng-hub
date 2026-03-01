@@ -155,6 +155,7 @@ model Title {
   people       Person[]
   billets      Billet[]
 
+  @@index([departmentId])
   @@map("titles")
 }
 
@@ -213,6 +214,8 @@ model ManagerChange {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([personId])
+  @@index([oldManagerId])
+  @@index([newManagerId])
   @@map("manager_changes")
 }
 
@@ -411,6 +414,7 @@ model Meeting {
 
   @@index([personId])
   @@index([authorId])
+  @@index([templateId])
   @@map("meetings")
 }
 
@@ -575,5 +579,7 @@ model Billet {
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
   @@index([projectId])
+  @@index([departmentId])
+  @@index([titleId])
   @@map("billets")
 }

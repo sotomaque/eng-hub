@@ -11,6 +11,7 @@ export const personAccomplishmentRouter = createTRPCRouter({
     return db.personAccomplishment.findMany({
       where: { personId },
       orderBy: [{ date: "desc" }, { sortOrder: "asc" }],
+      take: 200,
     });
   }),
 
@@ -20,6 +21,7 @@ export const personAccomplishmentRouter = createTRPCRouter({
       return db.personAccomplishment.findMany({
         where: { personId: input.personId },
         orderBy: [{ date: "desc" }, { sortOrder: "asc" }],
+        take: 200,
       });
     }),
 

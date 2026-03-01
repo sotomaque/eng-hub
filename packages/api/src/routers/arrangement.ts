@@ -113,23 +113,26 @@ export const arrangementRouter = createTRPCRouter({
           data: { projectId: source.projectId, name: input.name },
         });
 
-        for (const team of source.teams) {
-          const newTeam = await tx.arrangementTeam.create({
-            data: {
-              name: team.name,
-              arrangementId: newArrangement.id,
-              sortOrder: team.sortOrder,
-            },
-          });
+        // Batch-create all teams in one query
+        const newTeams = await tx.arrangementTeam.createManyAndReturn({
+          data: source.teams.map((team) => ({
+            name: team.name,
+            arrangementId: newArrangement.id,
+            sortOrder: team.sortOrder,
+          })),
+        });
 
-          if (team.assignments.length > 0) {
-            await tx.arrangementAssignment.createMany({
-              data: team.assignments.map((a) => ({
-                arrangementTeamId: newTeam.id,
-                teamMemberId: a.teamMemberId,
-              })),
-            });
-          }
+        // Batch-create all assignments in one query
+        const allAssignments = source.teams.flatMap((team, i) => {
+          const newTeamId = newTeams[i]?.id;
+          if (!newTeamId) return [];
+          return team.assignments.map((a) => ({
+            arrangementTeamId: newTeamId,
+            teamMemberId: a.teamMemberId,
+          }));
+        });
+        if (allAssignments.length > 0) {
+          await tx.arrangementAssignment.createMany({ data: allAssignments });
         }
 
         return newArrangement;
@@ -153,26 +156,32 @@ export const arrangementRouter = createTRPCRouter({
           data: { projectId: input.projectId, name: input.name },
         });
 
-        for (const [i, team] of teams.entries()) {
-          const newTeam = await tx.arrangementTeam.create({
-            data: {
-              name: team.name,
-              arrangementId: newArrangement.id,
-              sortOrder: i,
-            },
-          });
+        // Batch-create all teams in one query
+        const newTeams = await tx.arrangementTeam.createManyAndReturn({
+          data: teams.map((team, i) => ({
+            name: team.name,
+            arrangementId: newArrangement.id,
+            sortOrder: i,
+          })),
+        });
 
-          const teamMemberIds = memberships
-            .filter((m) => m.teamId === team.id)
-            .map((m) => m.teamMemberId);
-          if (teamMemberIds.length > 0) {
-            await tx.arrangementAssignment.createMany({
-              data: teamMemberIds.map((memberId) => ({
-                arrangementTeamId: newTeam.id,
-                teamMemberId: memberId,
-              })),
-            });
-          }
+        // Build a map from old team ID → new arrangement team ID
+        const teamIdMap = new Map(
+          teams.flatMap((team, i) => {
+            const newId = newTeams[i]?.id;
+            return newId ? [[team.id, newId] as const] : [];
+          }),
+        );
+
+        // Batch-create all assignments in one query
+        const allAssignments = memberships
+          .filter((m) => teamIdMap.has(m.teamId))
+          .map((m) => ({
+            arrangementTeamId: teamIdMap.get(m.teamId) as string,
+            teamMemberId: m.teamMemberId,
+          }));
+        if (allAssignments.length > 0) {
+          await tx.arrangementAssignment.createMany({ data: allAssignments });
         }
 
         return newArrangement;
@@ -188,42 +197,50 @@ export const arrangementRouter = createTRPCRouter({
         });
         if (existing) return existing;
 
-        const arrangement = await tx.teamArrangement.create({
-          data: {
-            projectId: input.projectId,
-            name: "Current Teams",
-            isActive: true,
-          },
-        });
-
-        const teams = await tx.team.findMany({
-          where: { projectId: input.projectId },
-          orderBy: { name: "asc" },
-        });
-        const memberships = await tx.teamMembership.findMany({
-          where: { team: { projectId: input.projectId } },
-        });
-
-        for (const [i, team] of teams.entries()) {
-          const arrTeam = await tx.arrangementTeam.create({
+        const [arrangement, teams, memberships] = await Promise.all([
+          tx.teamArrangement.create({
             data: {
-              name: team.name,
-              arrangementId: arrangement.id,
-              sortOrder: i,
-              liveTeamId: team.id,
+              projectId: input.projectId,
+              name: "Current Teams",
+              isActive: true,
             },
-          });
-          const teamMemberIds = memberships
-            .filter((m) => m.teamId === team.id)
-            .map((m) => m.teamMemberId);
-          if (teamMemberIds.length > 0) {
-            await tx.arrangementAssignment.createMany({
-              data: teamMemberIds.map((memberId) => ({
-                arrangementTeamId: arrTeam.id,
-                teamMemberId: memberId,
-              })),
-            });
-          }
+          }),
+          tx.team.findMany({
+            where: { projectId: input.projectId },
+            orderBy: { name: "asc" },
+          }),
+          tx.teamMembership.findMany({
+            where: { team: { projectId: input.projectId } },
+          }),
+        ]);
+
+        // Batch-create all arrangement teams in one query
+        const arrTeams = await tx.arrangementTeam.createManyAndReturn({
+          data: teams.map((team, i) => ({
+            name: team.name,
+            arrangementId: arrangement.id,
+            sortOrder: i,
+            liveTeamId: team.id,
+          })),
+        });
+
+        // Build a map from live team ID → arrangement team ID
+        const teamIdMap = new Map(
+          teams.flatMap((team, i) => {
+            const newId = arrTeams[i]?.id;
+            return newId ? [[team.id, newId] as const] : [];
+          }),
+        );
+
+        // Batch-create all assignments in one query
+        const allAssignments = memberships
+          .filter((m) => teamIdMap.has(m.teamId))
+          .map((m) => ({
+            arrangementTeamId: teamIdMap.get(m.teamId) as string,
+            teamMemberId: m.teamMemberId,
+          }));
+        if (allAssignments.length > 0) {
+          await tx.arrangementAssignment.createMany({ data: allAssignments });
         }
 
         return arrangement;
@@ -271,31 +288,39 @@ export const arrangementRouter = createTRPCRouter({
         where: { projectId: arrangement.projectId },
       });
 
-      // Create new live Team records from arrangement teams and set liveTeamId
-      for (const arrTeam of arrangement.teams) {
-        const newTeam = await tx.team.create({
-          data: {
-            name: arrTeam.name,
-            projectId: arrangement.projectId,
-          },
-        });
+      // Batch-create all new live Team records in one query
+      const newTeams = await tx.team.createManyAndReturn({
+        data: arrangement.teams.map((arrTeam) => ({
+          name: arrTeam.name,
+          projectId: arrangement.projectId,
+        })),
+      });
 
-        // Link the arrangement team to the new live team
-        await tx.arrangementTeam.update({
-          where: { id: arrTeam.id },
-          data: { liveTeamId: newTeam.id },
-        });
+      // Batch-update arrangement teams to link to new live teams
+      await Promise.all(
+        arrangement.teams.flatMap((arrTeam, i) => {
+          const newTeamId = newTeams[i]?.id;
+          if (!newTeamId) return [];
+          return [
+            tx.arrangementTeam.update({
+              where: { id: arrTeam.id },
+              data: { liveTeamId: newTeamId },
+            }),
+          ];
+        }),
+      );
 
-        // Create team memberships for assigned members
-        const memberIds = arrTeam.assignments.map((a) => a.teamMemberId);
-        if (memberIds.length > 0) {
-          await tx.teamMembership.createMany({
-            data: memberIds.map((memberId) => ({
-              teamId: newTeam.id,
-              teamMemberId: memberId,
-            })),
-          });
-        }
+      // Batch-create all team memberships in one query
+      const allMemberships = arrangement.teams.flatMap((arrTeam, i) => {
+        const newTeamId = newTeams[i]?.id;
+        if (!newTeamId) return [];
+        return arrTeam.assignments.map((a) => ({
+          teamId: newTeamId,
+          teamMemberId: a.teamMemberId,
+        }));
+      });
+      if (allMemberships.length > 0) {
+        await tx.teamMembership.createMany({ data: allMemberships });
       }
 
       return arrangement.projectId;

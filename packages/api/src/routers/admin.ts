@@ -118,6 +118,7 @@ export const adminRouter = createTRPCRouter({
         imageUrl: true,
       },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      take: 500,
     });
   }),
 
