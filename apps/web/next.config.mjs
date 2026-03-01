@@ -8,6 +8,7 @@ jiti("./env");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactCompiler: true,
   transpilePackages: ["@workspace/ui"],
   experimental: {
     optimizePackageImports: [
