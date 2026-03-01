@@ -19,7 +19,7 @@ const personInclude = {
   title: { include: { department: true } },
   projectMemberships: {
     include: {
-      project: true,
+      project: { select: { id: true, name: true } },
       teamMemberships: { include: { team: true } },
     },
   },
@@ -92,7 +92,7 @@ const personListInclude = {
   title: { include: { department: true } },
   projectMemberships: {
     include: {
-      project: true,
+      project: { select: { id: true, name: true } },
       teamMemberships: { include: { team: true } },
     },
   },

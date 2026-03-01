@@ -5,7 +5,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
+export const links = [
   { href: "/", label: "Home" },
   { href: "/projects", label: "Projects" },
   { href: "/people", label: "People" },
@@ -21,7 +21,7 @@ export function MainNav() {
   const visibleLinks = isAdmin ? [...links, { href: "/admin", label: "Admin" }] : links;
 
   return (
-    <nav className="flex items-center gap-4">
+    <nav className="hidden items-center gap-4 md:flex">
       {visibleLinks.map((link) => {
         const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
         return (

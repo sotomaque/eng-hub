@@ -11,19 +11,22 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-r
 
 type DataTablePaginationProps<TData> = {
   table: Table<TData>;
+  /** Authoritative page size from server — overrides table internal state when provided */
+  pageSize?: number;
 };
 
-export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
+export function DataTablePagination<TData>({ table, pageSize }: DataTablePaginationProps<TData>) {
+  const displayPageSize = pageSize ?? table.getState().pagination.pageSize;
   return (
     <div className="flex items-center justify-between px-2">
       <div className="flex items-center gap-2">
         <p className="text-sm text-muted-foreground">Rows per page</p>
         <Select
-          value={`${table.getState().pagination.pageSize}`}
+          value={`${displayPageSize}`}
           onValueChange={(value) => table.setPageSize(Number(value))}
         >
           <SelectTrigger className="h-8 w-[70px]">
-            <SelectValue placeholder={table.getState().pagination.pageSize} />
+            <SelectValue placeholder={displayPageSize} />
           </SelectTrigger>
           <SelectContent side="top">
             {[10, 20, 30, 50].map((pageSize) => (

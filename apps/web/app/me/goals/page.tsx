@@ -186,7 +186,6 @@ export default function GoalsPage() {
     trpc.personGoal.delete.mutationOptions({
       onSuccess: () => {
         toast.success("Goal deleted");
-        router.refresh();
         goalsQuery.refetch();
       },
       onError: (error) => toast.error(error.message),
@@ -203,7 +202,6 @@ export default function GoalsPage() {
     trpc.personAccomplishment.delete.mutationOptions({
       onSuccess: () => {
         toast.success("Accomplishment deleted");
-        router.refresh();
         accomplishmentsQuery.refetch();
       },
       onError: (error) => toast.error(error.message),
@@ -398,9 +396,14 @@ export default function GoalsPage() {
       </Card>
 
       {/* Sheets */}
-      {(addGoal || editGoalId) && <PersonGoalSheet goal={editingGoal} />}
+      {(addGoal || editGoalId) && (
+        <PersonGoalSheet goal={editingGoal} onSaved={() => goalsQuery.refetch()} />
+      )}
       {(addAccomplishment || editAccomplishmentId) && (
-        <PersonAccomplishmentSheet accomplishment={editingAccomplishment} />
+        <PersonAccomplishmentSheet
+          accomplishment={editingAccomplishment}
+          onSaved={() => accomplishmentsQuery.refetch()}
+        />
       )}
     </div>
   );

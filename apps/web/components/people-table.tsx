@@ -221,7 +221,11 @@ export function PeopleTable({
           const person = row.original;
           const isMe = person.id === myPersonId;
           return (
-            <Link href={`/people/${person.id}`} className="flex items-center gap-2 hover:underline">
+            <Link
+              href={`/people/${person.id}`}
+              className="flex items-center gap-2 hover:underline"
+              onMouseEnter={() => router.prefetch(`/people/${person.id}`)}
+            >
               <Avatar className="size-7 shrink-0">
                 <AvatarImage src={person.imageUrl ?? undefined} />
                 <AvatarFallback className="text-xs">
@@ -346,7 +350,7 @@ export function PeopleTable({
         enableHiding: false,
       },
     ],
-    [myPersonId, deleteMutation, deletingId, handleEdit, handleAddToProject],
+    [myPersonId, deleteMutation, deletingId, handleEdit, handleAddToProject, router],
   );
 
   return (

@@ -300,6 +300,7 @@ export function ProjectsTable({
                 <Link
                   href={`/projects/${project.id}`}
                   className="font-medium uppercase tracking-wide hover:underline"
+                  onMouseEnter={() => router.prefetch(`/projects/${project.id}`)}
                 >
                   {project.name}
                 </Link>
@@ -307,6 +308,7 @@ export function ProjectsTable({
                   <Link
                     href={`/projects/${project.parentId}`}
                     className="text-muted-foreground text-xs hover:underline"
+                    onMouseEnter={() => router.prefetch(`/projects/${project.parentId}`)}
                   >
                     Sub-project of {project.parentName}
                   </Link>
@@ -431,7 +433,7 @@ export function ProjectsTable({
         enableHiding: false,
       },
     ],
-    [handleEdit, handleDelete, deletingId],
+    [handleEdit, handleDelete, deletingId, router],
   );
 
   const archivedIds = useMemo(
