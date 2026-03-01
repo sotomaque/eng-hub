@@ -26,6 +26,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { ExportButton } from "@/components/export-button";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -215,6 +216,7 @@ export function PeopleTable({
         accessorFn: (row) =>
           `${row.firstName}${row.callsign ? ` ${row.callsign}` : ""} ${row.lastName}`,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+        enableHiding: false,
         cell: ({ row }) => {
           const person = row.original;
           const isMe = person.id === myPersonId;
@@ -341,6 +343,7 @@ export function PeopleTable({
           );
         },
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     [myPersonId, deleteMutation, deletingId, handleEdit, handleAddToProject],
@@ -445,6 +448,15 @@ export function PeopleTable({
                     }),
                   )
                 }
+              />
+              <DataTableViewOptions
+                table={table}
+                columnLabels={{
+                  email: "Email",
+                  projects: "Projects",
+                  departments: "Department",
+                  githubUsername: "GitHub",
+                }}
               />
             </DataTableToolbar>
           )}
