@@ -37,11 +37,11 @@ ON CONFLICT (id) DO NOTHING;
 -- Manager relationships (Alice manages Bob and Carol)
 UPDATE people SET manager_id = 'person-alice' WHERE id IN ('person-bob', 'person-carol');
 
--- Projects
-INSERT INTO projects (id, name, description, updated_at) VALUES
-  ('proj-alpha', 'Alpha', 'Main test project for E2E tests', NOW()),
-  ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', NOW()),
-  ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', NOW())
+-- Projects (Alpha has a budget for billet testing)
+INSERT INTO projects (id, name, description, budget, updated_at) VALUES
+  ('proj-alpha', 'Alpha', 'Main test project for E2E tests', 2500000.00, NOW()),
+  ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', NULL, NOW()),
+  ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', NULL, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Sub-project + funded-by relationships
@@ -112,6 +112,28 @@ UPDATE key_results SET quarterly_goal_id = 'qg-tests' WHERE id = 'kr-coverage';
 INSERT INTO project_links (id, label, url, project_id) VALUES
   ('pl-docs', 'Documentation', 'https://docs.example.com', 'proj-alpha'),
   ('pl-figma', 'Figma Designs', 'https://figma.com/example', 'proj-alpha')
+ON CONFLICT (id) DO NOTHING;
+
+-- Billets (contracted positions for Alpha)
+INSERT INTO billets (id, project_id, department_id, title_id, level, count, created_at, updated_at) VALUES
+  ('billet-eng-sr', 'proj-alpha', 'dept-eng', 'title-sr-swe', 'SENIOR', 3, NOW(), NOW()),
+  ('billet-eng-mid', 'proj-alpha', 'dept-eng', 'title-swe', 'MID', 2, NOW(), NOW()),
+  ('billet-design', 'proj-alpha', 'dept-design', NULL, 'SENIOR', 1, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Person goals (individual goals on person profiles)
+INSERT INTO person_goals (id, person_id, title, description, status, quarter, sort_order, created_at, updated_at) VALUES
+  ('pg-bob-1', 'person-bob', 'Refactor auth module', 'Improve security and performance of the authentication layer', 'IN_PROGRESS', 'Q1 2026', 1, NOW(), NOW()),
+  ('pg-bob-2', 'person-bob', 'Increase test coverage to 80%', NULL, 'NOT_STARTED', 'Q2 2026', 2, NOW(), NOW()),
+  ('pg-alice-1', 'person-alice', 'Launch new onboarding flow', 'Ship the redesigned onboarding experience to all new users', 'IN_PROGRESS', 'Q1 2026', 1, NOW(), NOW()),
+  ('pg-alice-2', 'person-alice', 'Hire two senior engineers', NULL, 'NOT_STARTED', 'Q2 2026', 2, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Person accomplishments
+INSERT INTO person_accomplishments (id, person_id, title, description, date, sort_order, created_at, updated_at) VALUES
+  ('pa-bob-1', 'person-bob', 'Shipped API v2', 'Successfully migrated all internal clients to the new API', NOW() - INTERVAL '30 days', 1, NOW(), NOW()),
+  ('pa-bob-2', 'person-bob', 'Reduced p99 latency by 40%', NULL, NOW() - INTERVAL '60 days', 2, NOW(), NOW()),
+  ('pa-alice-1', 'person-alice', 'Led Q4 planning', 'Coordinated roadmap planning across three teams', NOW() - INTERVAL '14 days', 1, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Meeting templates

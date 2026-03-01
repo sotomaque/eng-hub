@@ -42,6 +42,7 @@ type ProjectSheetProps = {
     imageUrl: string | null;
     parentId: string | null;
     fundedById: string | null;
+    budget: string | number | null;
     status?: string;
     owners?: { person: { id: string } }[];
   };
@@ -79,6 +80,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
       gitlabUrl: project?.gitlabUrl ?? "",
       parentId: initialParentId,
       fundedById: project?.fundedById ?? initialParentId,
+      budget: project?.budget ? Number(project.budget) : null,
       status: (project?.status as "ACTIVE" | "PAUSED" | "ARCHIVED") ?? "ACTIVE",
     },
   });
@@ -294,6 +296,32 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                     onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
                     placeholder="Select funding project…"
                     searchPlaceholder="Search projects…"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="budget">Budget</Label>
+              <Controller
+                name="budget"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="budget"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="e.g. 2500000"
+                    value={field.value != null ? String(field.value) : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9.]/g, "");
+                      if (raw === "") {
+                        field.onChange(null);
+                      } else {
+                        const num = Number.parseFloat(raw);
+                        if (!Number.isNaN(num)) field.onChange(num);
+                      }
+                    }}
                   />
                 )}
               />

@@ -64,10 +64,10 @@ export async function resetAndSeed(): Promise<void> {
 
   // ── Projects ───────────────────────────────────────────────────
   await db.$executeRawUnsafe(`
-    INSERT INTO projects (id, name, description, status, updated_at) VALUES
-      ('proj-alpha', 'Alpha', 'Main test project for E2E tests', 'ACTIVE', NOW()),
-      ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', 'PAUSED', NOW()),
-      ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', 'ARCHIVED', NOW())
+    INSERT INTO projects (id, name, description, status, budget, updated_at) VALUES
+      ('proj-alpha', 'Alpha', 'Main test project for E2E tests', 'ACTIVE', 2500000.00, NOW()),
+      ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', 'PAUSED', NULL, NOW()),
+      ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', 'ARCHIVED', NULL, NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 
@@ -196,6 +196,15 @@ export async function resetAndSeed(): Promise<void> {
     INSERT INTO project_links (id, label, url, project_id) VALUES
       ('pl-docs', 'Documentation', 'https://docs.example.com', 'proj-alpha'),
       ('pl-figma', 'Figma Designs', 'https://figma.com/example', 'proj-alpha')
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  // ── Billets (contracted positions for Alpha) ──────────────────
+  await db.$executeRawUnsafe(`
+    INSERT INTO billets (id, project_id, department_id, title_id, level, count, created_at, updated_at) VALUES
+      ('billet-eng-sr', 'proj-alpha', 'dept-eng', 'title-sr-swe', 'SENIOR', 3, NOW(), NOW()),
+      ('billet-eng-mid', 'proj-alpha', 'dept-eng', 'title-swe', 'MID', 2, NOW(), NOW()),
+      ('billet-design', 'proj-alpha', 'dept-design', NULL, 'SENIOR', 1, NOW(), NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 

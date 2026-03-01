@@ -17,6 +17,7 @@ import {
   Activity,
   ArrowLeft,
   BarChart3,
+  Briefcase,
   DollarSign,
   Flag,
   FolderUp,
@@ -54,6 +55,7 @@ const navItems = [
   { label: "Roadmap", icon: Flag, path: "/roadmap" },
   { label: "Links", icon: LinkIcon, path: "/links" },
   { label: "Teams", icon: Layers, path: "/arrangements" },
+  { label: "Billets", icon: Briefcase, path: "/billets" },
   { label: "Stats", icon: BarChart3, path: "/stats" },
 ];
 

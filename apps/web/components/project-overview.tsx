@@ -27,6 +27,7 @@ type ChildProject = {
 type ProjectOverviewProps = {
   projectId: string;
   description: string | null;
+  budget: string | number | null;
   latestStatus: { overallStatus: HealthStatus } | null;
   memberCount: number;
   teamCount: number;
@@ -95,9 +96,16 @@ function MetricCard({
   );
 }
 
+const budgetFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
 export function ProjectOverview({
   projectId,
   description,
+  budget,
   latestStatus,
   memberCount,
   teamCount,
@@ -114,7 +122,7 @@ export function ProjectOverview({
 
   return (
     <div className="space-y-8">
-      {(description || fundedBy || owners.length > 0) && (
+      {(description || fundedBy || budget || owners.length > 0) && (
         <div className="space-y-2">
           {fundedBy && (
             <Link
@@ -124,6 +132,12 @@ export function ProjectOverview({
               <DollarSign className="size-3.5" />
               Funded by {fundedBy.name}
             </Link>
+          )}
+          {budget != null && (
+            <div className="text-muted-foreground inline-flex items-center gap-1.5 text-sm">
+              <DollarSign className="size-3.5" />
+              Budget: {budgetFormatter.format(Number(budget))}
+            </div>
           )}
           {owners.length > 0 && (
             <div className="flex items-center gap-1.5 text-sm">
