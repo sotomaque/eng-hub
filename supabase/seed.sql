@@ -37,11 +37,11 @@ ON CONFLICT (id) DO NOTHING;
 -- Manager relationships (Alice manages Bob and Carol)
 UPDATE people SET manager_id = 'person-alice' WHERE id IN ('person-bob', 'person-carol');
 
--- Projects
-INSERT INTO projects (id, name, description, updated_at) VALUES
-  ('proj-alpha', 'Alpha', 'Main test project for E2E tests', NOW()),
-  ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', NOW()),
-  ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', NOW())
+-- Projects (Alpha has a budget for billet testing)
+INSERT INTO projects (id, name, description, budget, updated_at) VALUES
+  ('proj-alpha', 'Alpha', 'Main test project for E2E tests', 2500000.00, NOW()),
+  ('proj-beta', 'Beta', 'Sub-project of Alpha for hierarchy testing', NULL, NOW()),
+  ('proj-gamma', 'Gamma', 'Standalone project for isolation testing', NULL, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Sub-project + funded-by relationships
@@ -112,6 +112,13 @@ UPDATE key_results SET quarterly_goal_id = 'qg-tests' WHERE id = 'kr-coverage';
 INSERT INTO project_links (id, label, url, project_id) VALUES
   ('pl-docs', 'Documentation', 'https://docs.example.com', 'proj-alpha'),
   ('pl-figma', 'Figma Designs', 'https://figma.com/example', 'proj-alpha')
+ON CONFLICT (id) DO NOTHING;
+
+-- Billets (contracted positions for Alpha)
+INSERT INTO billets (id, project_id, department_id, title_id, level, count, created_at, updated_at) VALUES
+  ('billet-eng-sr', 'proj-alpha', 'dept-eng', 'title-sr-swe', 'SENIOR', 3, NOW(), NOW()),
+  ('billet-eng-mid', 'proj-alpha', 'dept-eng', 'title-swe', 'MID', 2, NOW(), NOW()),
+  ('billet-design', 'proj-alpha', 'dept-design', NULL, 'SENIOR', 1, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Meeting templates

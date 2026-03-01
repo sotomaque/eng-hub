@@ -97,7 +97,7 @@ async function EditProjectContent({ projectId }: { projectId: string }) {
   const trpc = await createServerCaller();
   const project = await trpc.project.getById({ id: projectId });
   if (!project) return null;
-  return <ProjectSheet project={project} />;
+  return <ProjectSheet project={{ ...project, budget: project.budget?.toString() ?? null }} />;
 }
 
 export default async function ProjectsPage({ searchParams }: PageProps) {

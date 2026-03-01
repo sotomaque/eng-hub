@@ -8,6 +8,7 @@ export const createProjectSchema = z.object({
   imageUrl: z.string().url().optional().or(z.literal("")),
   parentId: z.string().optional().or(z.literal("")),
   fundedById: z.string().optional().or(z.literal("")),
+  budget: z.number().positive().nullable().optional(),
   status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]).optional(),
 });
 
