@@ -44,12 +44,14 @@ type PersonAccomplishmentSheetProps = {
   accomplishment?: PersonAccomplishmentData;
   personId?: string;
   onClose?: () => void;
+  onSaved?: () => void;
 };
 
 export function PersonAccomplishmentSheet({
   accomplishment,
   personId,
   onClose,
+  onSaved,
 }: PersonAccomplishmentSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -74,8 +76,8 @@ export function PersonAccomplishmentSheet({
     trpc.personAccomplishment.create.mutationOptions({
       onSuccess: () => {
         toast.success("Accomplishment logged");
+        onSaved?.();
         handleClose();
-        router.refresh();
       },
       onError: (error) => toast.error(error.message),
     }),
@@ -85,8 +87,8 @@ export function PersonAccomplishmentSheet({
     trpc.personAccomplishment.update.mutationOptions({
       onSuccess: () => {
         toast.success("Accomplishment updated");
+        onSaved?.();
         handleClose();
-        router.refresh();
       },
       onError: (error) => toast.error(error.message),
     }),
