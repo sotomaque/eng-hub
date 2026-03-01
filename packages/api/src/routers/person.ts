@@ -410,14 +410,14 @@ export const personRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "New manager not found." });
       }
 
-      for (const personId of personIds) {
-        const hasCycle = await detectCycle(personId, newManagerId);
-        if (hasCycle) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Cannot reassign — it would create a circular reporting chain.",
-          });
-        }
+      const cycleResults = await Promise.all(
+        personIds.map((personId) => detectCycle(personId, newManagerId)),
+      );
+      if (cycleResults.some(Boolean)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot reassign — it would create a circular reporting chain.",
+        });
       }
 
       await db.$transaction(async (tx) => {

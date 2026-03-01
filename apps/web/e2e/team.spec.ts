@@ -105,7 +105,7 @@ test.describe("Manager transfer on roll off", () => {
     await aliceRow.getByRole("button", { name: /roll off/i }).click();
 
     // Enhanced dialog should appear with warning about direct reports
-    await expect(page.getByText(/direct report/i)).toBeVisible();
+    await expect(page.getByText(/has 2 direct report/i)).toBeVisible();
     await expect(page.getByText("Bob Jones")).toBeVisible();
     await expect(page.getByText("Carol Lee")).toBeVisible();
 
@@ -123,7 +123,7 @@ test.describe("Manager transfer on roll off", () => {
 
     // Should show simple confirmation, no mention of direct reports
     await expect(page.getByRole("heading", { name: /roll off team member/i })).toBeVisible();
-    await expect(page.getByText(/direct report/i)).toBeHidden();
+    await expect(page.getByText(/has \d+ direct report/i)).toBeHidden();
 
     await page.getByRole("button", { name: /cancel/i }).click();
   });
@@ -134,7 +134,7 @@ test.describe("Manager transfer on roll off", () => {
     await aliceRow.getByRole("button", { name: /roll off/i }).click();
 
     // Enhanced dialog should appear
-    await expect(page.getByText(/direct report/i)).toBeVisible();
+    await expect(page.getByText(/has 2 direct report/i)).toBeVisible();
 
     // Select Diana Park as the new manager
     await page.getByRole("button", { name: /select new manager/i }).click();
