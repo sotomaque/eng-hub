@@ -41,3 +41,22 @@ test.describe("People directory", () => {
     await expect(page).not.toHaveURL(/edit=/);
   });
 });
+
+test.describe("Person profile editing", () => {
+  test("edit button opens sheet on profile page", async ({ page }) => {
+    await page.goto("/people/person-bob");
+    await expect(page.getByRole("heading", { level: 1, name: "Bob Jones" })).toBeVisible();
+
+    // Click the edit pencil button
+    await page.getByRole("button", { name: /edit/i }).click();
+
+    // PersonSheet should open with Bob's data
+    await expect(page.getByRole("heading", { name: /edit person/i })).toBeVisible();
+    await expect(page.getByLabel(/first name/i)).toHaveValue("Bob");
+
+    // Cancel and verify we stay on the profile page
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page).toHaveURL(/\/people\/person-bob/);
+    await expect(page.getByRole("heading", { level: 1, name: "Bob Jones" })).toBeVisible();
+  });
+});
