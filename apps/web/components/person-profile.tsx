@@ -223,7 +223,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
               <Link
                 href={`/people/${person.manager.id}`}
                 className="flex items-center gap-2 hover:underline"
-                onMouseEnter={() => router.prefetch(`/people/${person.manager.id}`)}
+                onMouseEnter={() => router.prefetch(`/people/${person.manager?.id}`)}
               >
                 <Avatar className="size-8">
                   <AvatarImage
