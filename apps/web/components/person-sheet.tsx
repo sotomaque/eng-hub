@@ -16,13 +16,15 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { TagInput } from "@/components/tag-input";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreatePersonInput, createPersonSchema } from "@/lib/validations/person";
+
+const EMPTY_SUGGESTIONS: string[] = [];
 
 type PersonWithMemberships = {
   id: string;
@@ -94,13 +96,9 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
   });
 
   const selectedDepartmentId = watch("departmentId");
-  const titles = useMemo(
-    () =>
-      selectedDepartmentId
-        ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
-        : allTitles,
-    [allTitles, selectedDepartmentId],
-  );
+  const titles = selectedDepartmentId
+    ? allTitles.filter((t) => !t.departmentId || t.departmentId === selectedDepartmentId)
+    : allTitles;
 
   function handleTitleChange(titleId: string) {
     setValue("titleId", titleId, { shouldDirty: true });
@@ -257,9 +255,9 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
                 control={control}
                 render={({ field }) => (
                   <TagInput
-                    value={field.value ?? []}
+                    value={field.value ?? EMPTY_SUGGESTIONS}
                     onChange={field.onChange}
-                    suggestions={[]}
+                    suggestions={EMPTY_SUGGESTIONS}
                     placeholder="Add email alias..."
                   />
                 )}
