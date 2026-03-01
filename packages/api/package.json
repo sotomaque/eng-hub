@@ -7,7 +7,8 @@
     "lint": "biome check ./src --files-ignore-unknown=true",
     "lint:fix": "biome check --write ./src --files-ignore-unknown=true",
     "lint:types": "tsc --noEmit",
-    "test": "bun test src/lib/__tests__ && bun test src/routers/__tests__"
+    "test": "bun test src/lib/__tests__ && bun test src/routers/__tests__",
+    "sync-git-stats": "bun run src/scripts/sync-git-stats.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",

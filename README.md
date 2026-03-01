@@ -324,5 +324,45 @@ bun run --filter web dev           # start web app only
 | `cd apps/web && bun run env:local` | Switch local env to local Supabase |
 | `cd apps/web && bun run env:prod` | Switch local env to production DB |
 | `cd apps/web && bun run env:preview` | Switch local env to preview branch DB |
+| `cd packages/api && bun run sync-git-stats <projectId> <repoPath>` | Sync contributor stats from a local git clone |
 | `bun changeset` | Create a changeset for the current PR |
 | `bun changeset:version` | Apply changesets and bump versions |
+
+---
+
+## Syncing stats from local git repos
+
+For projects hosted on GitLab or other providers where the API isn't accessible, you can sync contributor stats from a local clone of the repository.
+
+### Usage
+
+```bash
+cd packages/api
+bun run sync-git-stats <projectId> <repoPath>
+```
+
+**Example (jeric2o):**
+
+```bash
+cd packages/api
+bun run sync-git-stats cmlsmp63g0000itbru5wvt294 ~/Desktop/hypergiant/jeric2o
+```
+
+### How it works
+
+1. Runs `git log --numstat` on the local repo to extract per-commit author email, date, additions, and deletions
+2. Queries the database for team members on the project and builds an email-to-username mapping
+3. Matches commit authors by email to team members (unmatched commits are logged and skipped)
+4. Aggregates into all-time and year-to-date stats with weekly trend data
+5. Writes results to `contributor_stats` (full replace) and updates the sync timestamp
+
+### Prerequisites
+
+- The repo must be cloned locally and the path passed as the second argument
+- Team members must exist on the project in the app
+- Each team member's **Person email** must match their git commit email, or they need a `gitlabUsername` set
+- Run while pointing at the correct database (local, preview, or prod via `bun run env:prod`)
+
+### Debugging author matching
+
+The script prints a detailed mapping table and lists unmatched commit emails with their commit counts. If contributors are missing from the output, update the Person's email in the app to match their git config email.

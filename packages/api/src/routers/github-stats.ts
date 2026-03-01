@@ -27,6 +27,7 @@ export const githubStatsRouter = createTRPCRouter({
                 lastName: true,
                 callsign: true,
                 githubUsername: true,
+                gitlabUsername: true,
                 email: true,
                 imageUrl: true,
               },
@@ -57,6 +58,9 @@ export const githubStatsRouter = createTRPCRouter({
         };
         if (tm.person.githubUsername) {
           memberMap[tm.person.githubUsername] = info;
+        }
+        if (tm.person.gitlabUsername) {
+          memberMap[tm.person.gitlabUsername] = info;
         }
         memberMap[tm.person.email] = info;
       }
