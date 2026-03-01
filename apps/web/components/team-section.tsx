@@ -23,6 +23,7 @@ type MemberWithRelations = {
     imageUrl: string | null;
     githubUsername: string | null;
     gitlabUsername: string | null;
+    managerId: string | null;
     department: { name: string } | null;
     title: { name: string; sortOrder: number } | null;
   };
@@ -252,6 +253,7 @@ export function TeamSection({
                 <TeamMembersTable
                   projectId={projectId}
                   members={group.members}
+                  allMembers={members}
                   titleColorMap={titleColorMap}
                   titleOptions={titleOptions}
                   departmentOptions={departmentOptions}
@@ -268,6 +270,7 @@ export function TeamSection({
           <TeamMembersTable
             projectId={projectId}
             members={filteredMembers}
+            allMembers={members}
             titleColorMap={titleColorMap}
             titleOptions={titleOptions}
             departmentOptions={departmentOptions}

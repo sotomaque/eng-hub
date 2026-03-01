@@ -392,6 +392,58 @@ export const personRouter = createTRPCRouter({
     return person;
   }),
 
+  reassignReports: protectedProcedure
+    .input(
+      z.object({
+        personIds: z.array(z.string()).min(1),
+        newManagerId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { personIds, newManagerId } = input;
+
+      const newManager = await db.person.findUnique({
+        where: { id: newManagerId },
+        select: { id: true },
+      });
+      if (!newManager) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "New manager not found." });
+      }
+
+      for (const personId of personIds) {
+        const hasCycle = await detectCycle(personId, newManagerId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot reassign — it would create a circular reporting chain.",
+          });
+        }
+      }
+
+      await db.$transaction(async (tx) => {
+        for (const personId of personIds) {
+          const current = await tx.person.findUniqueOrThrow({
+            where: { id: personId },
+            select: { managerId: true },
+          });
+          await tx.person.update({
+            where: { id: personId },
+            data: { managerId: newManagerId },
+          });
+          await tx.managerChange.create({
+            data: {
+              personId,
+              oldManagerId: current.managerId,
+              newManagerId,
+              changedBy: ctx.userId,
+            },
+          });
+        }
+      });
+
+      return { count: personIds.length };
+    }),
+
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
     return db.person.delete({ where: { id: input.id } });
   }),
