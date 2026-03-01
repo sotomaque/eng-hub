@@ -46,9 +46,10 @@ type PersonWithMemberships = {
 
 type PersonSheetProps = {
   person?: PersonWithMemberships;
+  onClose?: () => void;
 };
 
-export function PersonSheet({ person }: PersonSheetProps) {
+export function PersonSheet({ person, onClose }: PersonSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();
@@ -151,10 +152,14 @@ export function PersonSheet({ person }: PersonSheetProps) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   function handleClose() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("edit");
-    params.delete("create");
-    router.push(`/people?${params.toString()}`, { scroll: false });
+    if (onClose) {
+      onClose();
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("edit");
+      params.delete("create");
+      router.push(`/people?${params.toString()}`, { scroll: false });
+    }
     reset();
   }
 

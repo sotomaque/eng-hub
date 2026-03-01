@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { PersonProfile } from "@/components/person-profile";
+import { PersonProfileEditable } from "@/components/person-profile-editable";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { getMe } from "./_lib/queries";
 
@@ -20,7 +20,7 @@ async function MeContent() {
   }
 
   return (
-    <PersonProfile
+    <PersonProfileEditable
       hideBackLink
       person={{
         ...person,

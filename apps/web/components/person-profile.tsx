@@ -1,12 +1,15 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
-import { ArrowLeft, Building2, Github } from "lucide-react";
+import { ArrowLeft, Building2, Github, Pencil } from "lucide-react";
 import Link from "next/link";
 import { PersonRoadmapCard } from "@/components/person-roadmap-card";
 
-type PersonData = {
+export type PersonData = {
   id: string;
   firstName: string;
   lastName: string;
@@ -69,9 +72,10 @@ type PersonData = {
 type PersonProfileProps = {
   person: PersonData;
   hideBackLink?: boolean;
+  onEdit?: () => void;
 };
 
-export function PersonProfile({ person, hideBackLink }: PersonProfileProps) {
+export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfileProps) {
   const fullName = `${person.firstName} ${person.lastName}`;
   const initials = `${person.firstName[0]}${person.lastName[0]}`;
   const sortedMemberships = [...person.projectMemberships].sort((a, b) => {
@@ -100,7 +104,15 @@ export function PersonProfile({ person, hideBackLink }: PersonProfileProps) {
           <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
         </Avatar>
         <div className="space-y-1.5">
-          <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
+            {onEdit && (
+              <Button variant="ghost" size="icon" onClick={onEdit} className="size-8">
+                <Pencil className="size-4" />
+                <span className="sr-only">Edit</span>
+              </Button>
+            )}
+          </div>
           {person.callsign && <p className="text-muted-foreground text-lg">@{person.callsign}</p>}
           <p className="text-muted-foreground text-sm">{person.email}</p>
           <div className="flex flex-wrap gap-2 pt-1">
