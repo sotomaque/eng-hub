@@ -102,6 +102,7 @@ export function TeamMembersTable({
             <Link
               href={`/people/${member.personId}`}
               className="flex items-center gap-2 hover:underline"
+              onMouseEnter={() => router.prefetch(`/people/${member.personId}`)}
             >
               <Avatar className="size-7 shrink-0">
                 <AvatarImage src={member.person.imageUrl ?? undefined} />
@@ -219,7 +220,7 @@ export function TeamMembersTable({
         enableHiding: false,
       },
     ],
-    [titleColorMap, projectId, router.push],
+    [titleColorMap, projectId, router],
   );
 
   return (

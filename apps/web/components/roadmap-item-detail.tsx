@@ -183,6 +183,7 @@ export function RoadmapItemDetail({ projectId, type, item }: RoadmapItemDetailPr
       <Link
         href={backHref}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        onMouseEnter={() => router.prefetch(backHref)}
       >
         <ArrowLeft className="size-3.5" />
         {backLabel}
@@ -335,6 +336,7 @@ export function RoadmapItemDetail({ projectId, type, item }: RoadmapItemDetailPr
                           <Link
                             href={`${basePath}/${child.id}`}
                             className="font-medium hover:underline"
+                            onMouseEnter={() => router.prefetch(`${basePath}/${child.id}`)}
                           >
                             {child.title}
                           </Link>

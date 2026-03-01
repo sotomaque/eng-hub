@@ -1,7 +1,10 @@
+"use client";
+
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Flag, Target } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { STATUS_LABELS, STATUS_STYLES } from "@/lib/constants/roadmap";
 import { groupRoadmapByProject } from "@/lib/roadmap-grouping";
 
@@ -25,6 +28,7 @@ export function PersonRoadmapCard({
   milestoneAssignments,
   quarterlyGoalAssignments,
 }: PersonRoadmapCardProps) {
+  const router = useRouter();
   const totalCount = milestoneAssignments.length + quarterlyGoalAssignments.length;
   const projects = groupRoadmapByProject(milestoneAssignments, quarterlyGoalAssignments);
 
@@ -50,6 +54,7 @@ export function PersonRoadmapCard({
                 <Link
                   href={`/projects/${proj.projectId}/roadmap`}
                   className="text-sm font-semibold hover:underline"
+                  onMouseEnter={() => router.prefetch(`/projects/${proj.projectId}/roadmap`)}
                 >
                   {proj.projectName}
                 </Link>

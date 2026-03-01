@@ -28,7 +28,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -69,6 +69,7 @@ export function ProjectSidebar({
   isFavorited,
 }: ProjectSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const basePath = `/projects/${projectId}`;
 
   function isActive(itemPath: string) {
@@ -110,7 +111,10 @@ export function ProjectSidebar({
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={`/projects/${parentProject.id}`}>
+                    <Link
+                      href={`/projects/${parentProject.id}`}
+                      onMouseEnter={() => router.prefetch(`/projects/${parentProject.id}`)}
+                    >
                       <FolderUp />
                       <span>{parentProject.name}</span>
                     </Link>
@@ -127,7 +131,10 @@ export function ProjectSidebar({
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={`/projects/${fundedByProject.id}`}>
+                    <Link
+                      href={`/projects/${fundedByProject.id}`}
+                      onMouseEnter={() => router.prefetch(`/projects/${fundedByProject.id}`)}
+                    >
                       <DollarSign />
                       <span>{fundedByProject.name}</span>
                     </Link>
@@ -145,7 +152,10 @@ export function ProjectSidebar({
                 {owners.map((owner) => (
                   <SidebarMenuItem key={owner.id}>
                     <SidebarMenuButton asChild>
-                      <Link href={`/people/${owner.id}`}>
+                      <Link
+                        href={`/people/${owner.id}`}
+                        onMouseEnter={() => router.prefetch(`/people/${owner.id}`)}
+                      >
                         <Avatar className="size-5 shrink-0">
                           <AvatarImage src={owner.imageUrl ?? undefined} />
                           <AvatarFallback className="text-[8px]">
@@ -171,7 +181,10 @@ export function ProjectSidebar({
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                    <Link href={`${basePath}${item.path}`}>
+                    <Link
+                      href={`${basePath}${item.path}`}
+                      onMouseEnter={() => router.prefetch(`${basePath}${item.path}`)}
+                    >
                       <item.icon />
                       <span>{item.label}</span>
                     </Link>
