@@ -5,6 +5,7 @@ export const createPersonSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   callsign: z.string().optional().or(z.literal("")),
   email: z.string().email("Must be a valid email"),
+  emailAliases: z.array(z.string().email()),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
