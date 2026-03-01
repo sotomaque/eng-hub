@@ -473,19 +473,18 @@ export const projectRouter = createTRPCRouter({
           message: "No linked person record.",
         });
       }
-      const existing = await db.favoriteProject.findUnique({
-        where: {
-          personId_projectId: { personId, projectId: input.projectId },
-        },
+      // Atomic toggle: try to delete first, if nothing was deleted then create.
+      // Avoids SELECT-then-act race condition from concurrent requests.
+      const deleted = await db.favoriteProject.deleteMany({
+        where: { personId, projectId: input.projectId },
       });
-      if (existing) {
-        await db.favoriteProject.delete({ where: { id: existing.id } });
-      } else {
+      if (deleted.count === 0) {
         await db.favoriteProject.create({
           data: { personId, projectId: input.projectId },
         });
+        return { favorited: true };
       }
-      return { favorited: !existing };
+      return { favorited: false };
     }),
 
   setOwners: protectedProcedure

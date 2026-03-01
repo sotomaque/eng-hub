@@ -228,6 +228,7 @@ model TeamMembership {
   teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, teamMemberId])
+  @@index([teamMemberId])
   @@map("team_memberships")
 }
 
@@ -326,6 +327,8 @@ model ArrangementAssignment {
   teamMember        TeamMember      @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
 
   @@unique([arrangementTeamId, teamMemberId])
+  @@index([arrangementTeamId])
+  @@index([teamMemberId])
   @@map("arrangement_assignments")
 }
 
@@ -395,6 +398,7 @@ model Meeting {
   updatedAt  DateTime          @updatedAt @map("updated_at")
 
   @@index([personId])
+  @@index([authorId])
   @@map("meetings")
 }
 
@@ -407,6 +411,8 @@ model MeetingVisibilityGrant {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([granterId, granteeId])
+  @@index([granterId])
+  @@index([granteeId])
   @@map("meeting_visibility_grants")
 }
 
@@ -422,6 +428,7 @@ model PersonComment {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([personId])
+  @@index([authorPersonId])
   @@map("person_comments")
 }
 
@@ -466,6 +473,7 @@ model MilestoneAssignment {
   createdAt   DateTime  @default(now()) @map("created_at")
 
   @@unique([milestoneId, personId])
+  @@index([personId])
   @@map("milestone_assignments")
 }
 
@@ -478,6 +486,7 @@ model QuarterlyGoalAssignment {
   createdAt       DateTime      @default(now()) @map("created_at")
 
   @@unique([quarterlyGoalId, personId])
+  @@index([personId])
   @@map("quarterly_goal_assignments")
 }
 
@@ -496,6 +505,8 @@ model KeyResult {
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
 
+  @@index([milestoneId])
+  @@index([quarterlyGoalId])
   @@map("key_results")
 }
 
@@ -506,6 +517,7 @@ model PendingInvite {
   person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([personId])
   @@map("pending_invites")
 }
 

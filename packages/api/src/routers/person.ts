@@ -114,20 +114,25 @@ const updatePersonSchema = createPersonSchema.extend({
   id: z.string(),
 });
 
+/**
+ * Detect if setting newManagerId as the manager of personId would create a cycle.
+ * Uses a recursive CTE to walk the chain from newManagerId upward in a single query.
+ */
 async function detectCycle(personId: string, newManagerId: string): Promise<boolean> {
-  let currentId: string | null = newManagerId;
-  const visited = new Set<string>();
-  while (currentId) {
-    if (currentId === personId) return true;
-    if (visited.has(currentId)) break;
-    visited.add(currentId);
-    const row: { managerId: string | null } | null = await db.person.findUnique({
-      where: { id: currentId },
-      select: { managerId: true },
-    });
-    currentId = row?.managerId ?? null;
-  }
-  return false;
+  const result = await db.$queryRaw<{ found: boolean }[]>`
+    WITH RECURSIVE chain AS (
+      SELECT id, manager_id
+      FROM people
+      WHERE id = ${newManagerId}
+      UNION ALL
+      SELECT p.id, p.manager_id
+      FROM people p
+      JOIN chain c ON p.id = c.manager_id
+      WHERE c.manager_id IS NOT NULL AND c.manager_id != ${personId}
+    )
+    SELECT EXISTS (SELECT 1 FROM chain WHERE id = ${personId}) AS found
+  `;
+  return result[0]?.found ?? false;
 }
 
 export const personRouter = createTRPCRouter({
