@@ -141,6 +141,7 @@ export const projectRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
     return db.project.findMany({
       orderBy: { createdAt: "desc" },
+      take: 500,
       include: {
         healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
       },
@@ -216,22 +217,22 @@ export const projectRouter = createTRPCRouter({
       if (input.sortBy === "favorite") {
         if (!personId) return { items: [], totalCount: 0 };
 
-        // Fetch all matching IDs with secondary sort by updatedAt
-        const allIds = (
-          await db.project.findMany({
+        // Fetch matching IDs and user favorites in parallel
+        const [allProjects, favoriteRows] = await Promise.all([
+          db.project.findMany({
             where,
             select: { id: true },
             orderBy: { updatedAt: "desc" },
-          })
-        ).map((p) => p.id);
-
+          }),
+          db.favoriteProject.findMany({
+            where: { personId },
+            select: { projectId: true },
+          }),
+        ]);
+        const allIds = allProjects.map((p) => p.id);
+        const allIdSet = new Set(allIds);
         const favoritedSet = new Set(
-          (
-            await db.favoriteProject.findMany({
-              where: { personId, projectId: { in: allIds } },
-              select: { projectId: true },
-            })
-          ).map((f) => f.projectId),
+          favoriteRows.filter((f) => allIdSet.has(f.projectId)).map((f) => f.projectId),
         );
 
         const favIds = allIds.filter((id) => favoritedSet.has(id));
@@ -346,6 +347,7 @@ export const projectRouter = createTRPCRouter({
       const projects = await db.project.findMany({
         where,
         orderBy: { name: "asc" },
+        take: 1000,
         include: {
           healthAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
           parent: { select: { name: true } },

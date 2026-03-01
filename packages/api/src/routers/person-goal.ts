@@ -13,6 +13,7 @@ export const personGoalRouter = createTRPCRouter({
     return db.personGoal.findMany({
       where: { personId },
       orderBy: { sortOrder: "asc" },
+      take: 100,
     });
   }),
 
@@ -22,6 +23,7 @@ export const personGoalRouter = createTRPCRouter({
       return db.personGoal.findMany({
         where: { personId: input.personId },
         orderBy: { sortOrder: "asc" },
+        take: 100,
       });
     }),
 

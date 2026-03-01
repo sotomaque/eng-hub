@@ -33,14 +33,13 @@ export const managerChangeRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string(), limit: z.number().optional() }))
     .query(async ({ input }) => {
-      const members = await db.teamMember.findMany({
-        where: { projectId: input.projectId },
-        select: { personId: true },
-      });
-      const personIds = members.map((m) => m.personId);
-
+      // Single query using relation filter instead of two sequential queries
       return db.managerChange.findMany({
-        where: { personId: { in: personIds } },
+        where: {
+          person: {
+            projectMemberships: { some: { projectId: input.projectId } },
+          },
+        },
         orderBy: { createdAt: "desc" },
         take: input.limit ?? 20,
         include: {

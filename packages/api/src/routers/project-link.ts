@@ -24,6 +24,7 @@ export const projectLinkRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return db.projectLink.findMany({
         where: { projectId: input.projectId },
+        orderBy: { label: "asc" },
       });
     }),
 

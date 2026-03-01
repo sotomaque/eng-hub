@@ -6,6 +6,7 @@ export const departmentRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
     return db.department.findMany({
       orderBy: { name: "asc" },
+      take: 100,
       include: {
         titles: { orderBy: { sortOrder: "asc" } },
         _count: { select: { people: true } },

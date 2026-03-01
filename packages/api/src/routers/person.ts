@@ -87,6 +87,7 @@ const personEditSelect = {
 } as const;
 
 const personListInclude = {
+  manager: { select: managerSelect },
   department: true,
   title: { include: { department: true } },
   projectMemberships: {
@@ -139,7 +140,8 @@ export const personRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async () => {
     return db.person.findMany({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      include: personInclude,
+      include: personListInclude,
+      take: 1000,
     });
   }),
 
@@ -274,6 +276,7 @@ export const personRouter = createTRPCRouter({
       const people = await db.person.findMany({
         where,
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        take: 2000,
         include: {
           department: true,
           title: true,
@@ -426,24 +429,28 @@ export const personRouter = createTRPCRouter({
       }
 
       await db.$transaction(async (tx) => {
-        for (const personId of personIds) {
-          const current = await tx.person.findUniqueOrThrow({
-            where: { id: personId },
-            select: { managerId: true },
-          });
-          await tx.person.update({
-            where: { id: personId },
-            data: { managerId: newManagerId },
-          });
-          await tx.managerChange.create({
-            data: {
-              personId,
-              oldManagerId: current.managerId,
-              newManagerId,
-              changedBy: ctx.userId,
-            },
-          });
-        }
+        // Batch-fetch all current manager IDs in one query
+        const currentPeople = await tx.person.findMany({
+          where: { id: { in: personIds } },
+          select: { id: true, managerId: true },
+        });
+        const managerMap = new Map(currentPeople.map((p) => [p.id, p.managerId]));
+
+        // Batch-update all people in one query
+        await tx.person.updateMany({
+          where: { id: { in: personIds } },
+          data: { managerId: newManagerId },
+        });
+
+        // Batch-create all manager change records in one query
+        await tx.managerChange.createMany({
+          data: personIds.map((personId) => ({
+            personId,
+            oldManagerId: managerMap.get(personId) ?? null,
+            newManagerId,
+            changedBy: ctx.userId,
+          })),
+        });
       });
 
       return { count: personIds.length };
