@@ -20,6 +20,7 @@ Eng Hub puts it all in one place.
 | Health Tracking | 8-dimension assessments (Growth, Margin, Longevity, Client Sat, Eng/Product/Design Vibe) with notes, full history, and at-a-glance status |
 | 1:1 Meeting Notes | Rich text notes by direct report, reusable templates, management chain visibility, and handoff when reports change managers |
 | Goal Management | Hierarchical milestones and quarterly goals with key results, assignees, status, and target dates |
+| Budget & Billets | Per-project budget tracking and contracted headcount (billets) with department, title, seniority level, and count |
 | Team Arrangements | Drag-and-drop team editor, seniority composition bars, draft arrangements before committing, org chart per project |
 | Delivery Insights | GitHub stats (commits, PRs, reviews, trends) with visual dashboards and resilient sync with exponential backoff |
 | People Directory | Searchable directory with profiles, manager hierarchies, department/title taxonomy, and manager change audit trail |
@@ -36,7 +37,7 @@ Eng Hub puts it all in one place.
 | Database | PostgreSQL via [Supabase](https://supabase.com) + [Prisma](https://prisma.io) |
 | Auth | [Clerk](https://clerk.com) with management chain-based visibility |
 | UI | [Tailwind CSS 4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
-| Quality | Biome · Knip · Lefthook · Playwright E2E |
+| Quality | Biome · Knip · Lefthook · Playwright E2E · Changesets |
 
 ---
 
@@ -231,6 +232,8 @@ cd packages/api && bun test             # run API package tests directly
 
 E2E tests use [Playwright](https://playwright.dev) with [Clerk Testing Tokens](https://clerk.com/docs/testing/playwright) for authentication bypass. Tests run against seed data in `supabase/seed.sql`.
 
+> **Note:** Goals CRUD and manager-edit tests require `E2E_CLERK_USER_ID` to be set (the Clerk user ID of the E2E test account). This links `person-alice` in the seed to the test user, enabling `/me/goals` and manager permission tests. Without it, those tests are skipped. Set it in `.env`, as a GitHub Actions secret, and as a Vercel Preview environment variable.
+
 **Running locally against a preview branch** (recommended):
 
 1. Switch to the preview database: `cd apps/web && bun run env:preview`
@@ -321,3 +324,5 @@ bun run --filter web dev           # start web app only
 | `cd apps/web && bun run env:local` | Switch local env to local Supabase |
 | `cd apps/web && bun run env:prod` | Switch local env to production DB |
 | `cd apps/web && bun run env:preview` | Switch local env to preview branch DB |
+| `bun changeset` | Create a changeset for the current PR |
+| `bun changeset:version` | Apply changesets and bump versions |
