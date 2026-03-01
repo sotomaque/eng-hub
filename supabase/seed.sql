@@ -121,6 +121,21 @@ INSERT INTO billets (id, project_id, department_id, title_id, level, count, crea
   ('billet-design', 'proj-alpha', 'dept-design', NULL, 'SENIOR', 1, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
+-- Person goals (individual goals on person profiles)
+INSERT INTO person_goals (id, person_id, title, description, status, quarter, sort_order, created_at, updated_at) VALUES
+  ('pg-bob-1', 'person-bob', 'Refactor auth module', 'Improve security and performance of the authentication layer', 'IN_PROGRESS', 'Q1 2026', 1, NOW(), NOW()),
+  ('pg-bob-2', 'person-bob', 'Increase test coverage to 80%', NULL, 'NOT_STARTED', 'Q2 2026', 2, NOW(), NOW()),
+  ('pg-alice-1', 'person-alice', 'Launch new onboarding flow', 'Ship the redesigned onboarding experience to all new users', 'IN_PROGRESS', 'Q1 2026', 1, NOW(), NOW()),
+  ('pg-alice-2', 'person-alice', 'Hire two senior engineers', NULL, 'NOT_STARTED', 'Q2 2026', 2, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Person accomplishments
+INSERT INTO person_accomplishments (id, person_id, title, description, date, sort_order, created_at, updated_at) VALUES
+  ('pa-bob-1', 'person-bob', 'Shipped API v2', 'Successfully migrated all internal clients to the new API', NOW() - INTERVAL '30 days', 1, NOW(), NOW()),
+  ('pa-bob-2', 'person-bob', 'Reduced p99 latency by 40%', NULL, NOW() - INTERVAL '60 days', 2, NOW(), NOW()),
+  ('pa-alice-1', 'person-alice', 'Led Q4 planning', 'Coordinated roadmap planning across three teams', NOW() - INTERVAL '14 days', 1, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
 -- Meeting templates
 INSERT INTO meeting_templates (id, name, description, content, author_id, created_at, updated_at) VALUES
   ('mt-1on1', '1:1 Template', 'Standard one-on-one meeting template', '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Updates"}]},{"type":"paragraph","content":[{"type":"text","text":"What happened since last time?"}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Blockers"}]},{"type":"paragraph","content":[{"type":"text","text":"Anything blocking progress?"}]}]}', 'person-alice', NOW(), NOW())
