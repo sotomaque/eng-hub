@@ -105,12 +105,13 @@ test.describe("Manager transfer on roll off", () => {
     await aliceRow.getByRole("button", { name: /roll off/i }).click();
 
     // Enhanced dialog should appear with warning about direct reports
-    await expect(page.getByText(/has 2 direct report/i)).toBeVisible();
-    await expect(page.getByText("Bob Jones")).toBeVisible();
-    await expect(page.getByText("Carol Lee")).toBeVisible();
+    const dialog = page.getByLabel("Roll off team member?");
+    await expect(dialog.getByText(/has 2 direct report/i)).toBeVisible();
+    await expect(dialog.getByText("Bob Jones")).toBeVisible();
+    await expect(dialog.getByText("Carol Lee")).toBeVisible();
 
     // Cancel without making changes
-    await page.getByRole("button", { name: /cancel/i }).click();
+    await dialog.getByRole("button", { name: /cancel/i }).click();
     // Alice should still be on the team
     await expect(page.locator("main").getByText("Alice Smith")).toBeVisible();
   });
@@ -122,10 +123,11 @@ test.describe("Manager transfer on roll off", () => {
     await dianaRow.getByRole("button", { name: /roll off/i }).click();
 
     // Should show simple confirmation, no mention of direct reports
-    await expect(page.getByRole("heading", { name: /roll off team member/i })).toBeVisible();
-    await expect(page.getByText(/has \d+ direct report/i)).toBeHidden();
+    const dialog = page.getByLabel("Roll off team member?");
+    await expect(dialog.getByRole("heading", { name: /roll off team member/i })).toBeVisible();
+    await expect(dialog.getByText(/has \d+ direct report/i)).toBeHidden();
 
-    await page.getByRole("button", { name: /cancel/i }).click();
+    await dialog.getByRole("button", { name: /cancel/i }).click();
   });
 
   test("reassign reports and roll off a manager", async ({ page }) => {
@@ -134,15 +136,16 @@ test.describe("Manager transfer on roll off", () => {
     await aliceRow.getByRole("button", { name: /roll off/i }).click();
 
     // Enhanced dialog should appear
-    await expect(page.getByText(/has 2 direct report/i)).toBeVisible();
+    const dialog = page.getByLabel("Roll off team member?");
+    await expect(dialog.getByText(/has 2 direct report/i)).toBeVisible();
 
     // Select Diana Park as the new manager
-    await page.getByRole("button", { name: /select new manager/i }).click();
+    await dialog.getByRole("button", { name: /select new manager/i }).click();
     await page.getByPlaceholder(/search people/i).fill("Diana");
     await page.getByRole("option", { name: /Diana Park/i }).click();
 
     // Click "Reassign & Roll Off"
-    await page.getByRole("button", { name: /reassign.*roll off/i }).click();
+    await dialog.getByRole("button", { name: /reassign.*roll off/i }).click();
 
     // Wait for success toast
     await expect(page.getByText("Team member rolled off")).toBeVisible();
