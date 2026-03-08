@@ -121,7 +121,7 @@ export function TiptapEditor({
         horizontalRule: {
           HTMLAttributes: { class: "my-6 border-t border-border" },
         },
-        dropcursor: { color: "hsl(var(--primary))", width: 2 },
+        dropcursor: { color: "var(--primary)", width: 2 },
       }),
       Placeholder.configure({
         placeholder: "Start writing…",
