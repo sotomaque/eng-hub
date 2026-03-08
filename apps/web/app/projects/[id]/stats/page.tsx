@@ -31,7 +31,14 @@ async function StatsContent({ id }: { id: string }) {
     );
   }
 
-  return <StatsSection projectId={id} hasGithubUrl={!!project.githubUrl} />;
+  return (
+    <StatsSection
+      projectId={id}
+      hasGithubUrl={!!project.githubUrl}
+      isDev={process.env.NODE_ENV !== "production"}
+      hasAnthropicKey={!!process.env.ANTHROPIC_API_KEY}
+    />
+  );
 }
 
 export default async function StatsPage({ params }: PageProps) {

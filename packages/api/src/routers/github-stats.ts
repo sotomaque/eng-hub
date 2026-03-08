@@ -1,7 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+
+import { type ContributorInput, compareContributors } from "../lib/git-compare";
 import { parseGitHubUrl } from "../lib/github";
+import { compareContributorsViaGitHub } from "../lib/github-compare";
 import { syncGitHubStatsForProject } from "../lib/github-sync";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -107,6 +110,119 @@ export const githubStatsRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `GitHub sync failed: ${message}`,
+        });
+      }
+    }),
+
+  compareContributors: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        personIds: z.array(z.string()).min(2),
+        referencePersonId: z.string().optional(),
+        repoPath: z.string().optional(),
+        since: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      // Default since to 6 months ago
+      const since =
+        input.since ??
+        new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      // Fetch person data and project in parallel
+      const [people, project] = await Promise.all([
+        db.person.findMany({
+          where: { id: { in: input.personIds } },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            callsign: true,
+            email: true,
+            emailAliases: true,
+            githubUsername: true,
+            gitlabUsername: true,
+          },
+        }),
+        db.project.findUnique({
+          where: { id: input.projectId },
+          select: { githubUrl: true },
+        }),
+      ]);
+
+      if (people.length < 2) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "At least 2 valid people are required for comparison.",
+        });
+      }
+
+      const parsed = project?.githubUrl ? parseGitHubUrl(project.githubUrl) : null;
+
+      if (parsed) {
+        const githubContributors = people.flatMap((p) =>
+          p.githubUsername
+            ? [
+                {
+                  personId: p.id,
+                  name: p.callsign ?? `${p.firstName} ${p.lastName}`,
+                  githubUsername: p.githubUsername,
+                },
+              ]
+            : [],
+        );
+
+        if (githubContributors.length < 2) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "At least 2 selected people must have GitHub usernames set.",
+          });
+        }
+
+        try {
+          return await compareContributorsViaGitHub(
+            parsed.owner,
+            parsed.repo,
+            process.env.GITHUB_TOKEN,
+            githubContributors,
+            since,
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `GitHub comparison failed: ${message}`,
+          });
+        }
+      }
+
+      // Fallback: local git-compare for GitLab/local repos (dev only)
+      if (process.env.NODE_ENV === "production") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Local git comparison is not available in production.",
+        });
+      }
+
+      const contributors: ContributorInput[] = people.map((p) => {
+        const emails = [p.email.toLowerCase(), ...p.emailAliases.map((a) => a.toLowerCase())];
+        if (p.gitlabUsername) emails.push(p.gitlabUsername.toLowerCase());
+        if (p.githubUsername) emails.push(p.githubUsername.toLowerCase());
+        return {
+          personId: p.id,
+          name: p.callsign ?? `${p.firstName} ${p.lastName}`,
+          emails,
+        };
+      });
+
+      try {
+        return compareContributors(input.repoPath, contributors, since);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Comparison failed: ${message}`,
         });
       }
     }),

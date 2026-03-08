@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import {
   Table,
   TableBody,
@@ -15,22 +16,30 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { assignTiers, type ContributorStatsData, tierConfig } from "@/lib/tiers";
 
-type StatsDataTableProps = {
-  stats: ContributorStatsData[];
-  memberMap: Record<
-    string,
-    {
-      personId: string;
-      firstName: string;
-      lastName: string;
-      callsign: string | null;
-      imageUrl: string | null;
-      leftAt: string | null;
-    }
-  >;
+type MemberInfo = {
+  personId: string;
+  firstName: string;
+  lastName: string;
+  callsign: string | null;
+  imageUrl: string | null;
+  leftAt: string | null;
 };
 
-export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
+type StatsDataTableProps = {
+  stats: ContributorStatsData[];
+  memberMap: Record<string, MemberInfo>;
+  selectable?: boolean;
+  selectedUsernames?: Set<string>;
+  onSelectionChange?: (usernames: Set<string>) => void;
+};
+
+export function StatsDataTable({
+  stats,
+  memberMap,
+  selectable,
+  selectedUsernames,
+  onSelectionChange,
+}: StatsDataTableProps) {
   const tierMap = assignTiers(stats);
   const sorted = [...stats].sort((a, b) => b.commits - a.commits);
 
@@ -47,6 +56,21 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              {selectable && (
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={sorted.length > 0 && selectedUsernames?.size === sorted.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        onSelectionChange?.(new Set(sorted.map((s) => s.githubUsername)));
+                      } else {
+                        onSelectionChange?.(new Set());
+                      }
+                    }}
+                    aria-label="Select all"
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-12">#</TableHead>
               <TableHead>Contributor</TableHead>
               <TableHead className="w-16">Tier</TableHead>
@@ -67,8 +91,27 @@ export function StatsDataTable({ stats, memberMap }: StatsDataTableProps) {
               const tier = tierMap.get(s) ?? "C";
               const config = tierConfig[tier];
 
+              const isSelected = selectedUsernames?.has(s.githubUsername) ?? false;
+
               return (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={isSelected ? "bg-muted/50" : undefined}>
+                  {selectable && (
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          const next = new Set(selectedUsernames);
+                          if (checked) {
+                            next.add(s.githubUsername);
+                          } else {
+                            next.delete(s.githubUsername);
+                          }
+                          onSelectionChange?.(next);
+                        }}
+                        aria-label={`Select ${name}`}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="text-muted-foreground font-medium">{i + 1}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

@@ -23,6 +23,8 @@
     "env:preview": "cp .env.local.preview .env.local && cp ../../packages/db/.env.preview ../../packages/db/.env && echo 'Switched to PREVIEW database'"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/react": "^3.0.118",
     "@clerk/nextjs": "^6.36.5",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -49,6 +51,7 @@
     "@upstash/qstash": "^2.9.0",
     "@workspace/api": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "ai": "^6.0.116",
     "date-fns": "^4.1.0",
     "jiti": "^2.4.2",
     "lucide-react": "^0.511.0",

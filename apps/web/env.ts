@@ -13,6 +13,7 @@ export const env = createEnv({
     QSTASH_NEXT_SIGNING_KEY: z.string().optional(),
     E2E_RESET_SECRET: z.string().optional(),
     CLERK_WEBHOOK_SECRET: z.string().optional(),
+    ANTHROPIC_API_KEY: z.string().optional(),
   },
 
   client: {
@@ -31,6 +32,7 @@ export const env = createEnv({
     QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
     E2E_RESET_SECRET: process.env.E2E_RESET_SECRET,
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
