@@ -16,11 +16,6 @@ const PerformanceReviewChart = dynamic(
   () => import("@/components/performance-review-chart").then((m) => m.PerformanceReviewChart),
   { ssr: false },
 );
-const PerformanceReviewSparkline = dynamic(
-  () =>
-    import("@/components/performance-review-sparkline").then((m) => m.PerformanceReviewSparkline),
-  { ssr: false },
-);
 
 import { useTRPC } from "@/lib/trpc/client";
 import { computeAverage, type PerformanceReview } from "@/lib/types/performance-review";
@@ -117,7 +112,6 @@ export function PersonReviews({ personId, canEdit }: PersonReviewsProps) {
             <p className="text-muted-foreground text-sm">No performance reviews yet.</p>
           ) : (
             <div className="space-y-4">
-              <PerformanceReviewSparkline data={chartData} />
               {reviews.length >= 2 ? (
                 <PerformanceReviewChart data={chartData} onSelectReview={handleSelectReview} />
               ) : null}

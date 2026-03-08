@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PersonProfileEditable } from "@/components/person-profile-editable";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
+import { PersonReviews } from "@/components/person-reviews";
 import { getMe } from "./_lib/queries";
 
 export const metadata: Metadata = { title: "My Dashboard" };
@@ -38,10 +39,21 @@ async function MeContent() {
   );
 }
 
+async function MeReviewsSection() {
+  const person = await getMe();
+  if (!person) return null;
+  return <PersonReviews personId={person.id} canEdit />;
+}
+
 export default function MeProfilePage() {
   return (
-    <Suspense fallback={<PersonProfileSkeleton />}>
-      <MeContent />
-    </Suspense>
+    <>
+      <Suspense fallback={<PersonProfileSkeleton />}>
+        <MeContent />
+      </Suspense>
+      <Suspense>
+        <MeReviewsSection />
+      </Suspense>
+    </>
   );
 }

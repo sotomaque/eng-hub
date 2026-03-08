@@ -43,7 +43,7 @@ function ChartTooltipContent({ active, payload, label }: TooltipContentProps<num
 }
 
 const ALL_LINES = [
-  { key: "average", label: "Average", color: "hsl(var(--primary))" },
+  { key: "average", label: "Average", color: "var(--primary)" },
   { key: "coreCompetencyScore", label: "Core Competency", color: "var(--color-chart-1, #8884d8)" },
   { key: "teamworkScore", label: "Teamwork", color: "var(--color-chart-2, #82ca9d)" },
   { key: "innovationScore", label: "Innovation", color: "var(--color-chart-3, #ffc658)" },
