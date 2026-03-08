@@ -88,18 +88,28 @@ export function PerformanceReviewDetail({
             );
           })}
 
-          {review.pdfUrl ? (
+          {review.pdfUrl || review.reviewer ? (
             <>
               <Separator />
-              <a
-                href={review.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-primary text-sm hover:underline"
-              >
-                <ExternalLink className="size-3.5" />
-                View PDF
-              </a>
+              <div className="space-y-2">
+                {review.reviewer ? (
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Reviewer:</span>{" "}
+                    {review.reviewer.firstName} {review.reviewer.lastName}
+                  </p>
+                ) : null}
+                {review.pdfUrl ? (
+                  <a
+                    href={review.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-primary text-sm hover:underline"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    View PDF
+                  </a>
+                ) : null}
+              </div>
             </>
           ) : null}
 

@@ -23,6 +23,7 @@ import { CalendarIcon, FileText, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { type Control, Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { PersonSelect } from "@/components/person-select";
 import { useTRPC } from "@/lib/trpc/client";
 import type { PerformanceReview } from "@/lib/types/performance-review";
 import { useUploadThing } from "@/lib/uploadthing-components";
@@ -87,6 +88,7 @@ export function PerformanceReviewSheet({
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(review?.pdfUrl ?? null);
   const [pdfName, setPdfName] = useState<string | null>(review?.pdfUrl ? "Uploaded PDF" : null);
+  const [reviewerId, setReviewerId] = useState<string | null>(review?.reviewerId ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading } = useUploadThing("pdfUploader", {
@@ -170,9 +172,19 @@ export function PerformanceReviewSheet({
     };
 
     if (isEditing && review) {
-      updateMutation.mutate({ ...shared, id: review.id, pdfUrl: pdfUrl ?? null });
+      updateMutation.mutate({
+        ...shared,
+        id: review.id,
+        pdfUrl: pdfUrl ?? null,
+        reviewerId: reviewerId ?? null,
+      });
     } else {
-      createMutation.mutate({ ...shared, personId, pdfUrl: pdfUrl ?? undefined });
+      createMutation.mutate({
+        ...shared,
+        personId,
+        pdfUrl: pdfUrl ?? undefined,
+        reviewerId: reviewerId ?? undefined,
+      });
     }
   }
 
@@ -286,6 +298,16 @@ export function PerformanceReviewSheet({
                   </Button>
                 </>
               )}
+            </div>
+
+            {/* Reviewer */}
+            <div className="space-y-2">
+              <Label>Reviewer (optional)</Label>
+              <PersonSelect
+                value={reviewerId}
+                onChange={setReviewerId}
+                placeholder="Select reviewer…"
+              />
             </div>
 
             <Separator />

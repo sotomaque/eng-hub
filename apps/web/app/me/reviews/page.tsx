@@ -5,35 +5,57 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { format } from "date-fns";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, Loader2, Plus } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PerformanceReviewChart } from "@/components/performance-review-chart";
 import { PerformanceReviewDetail } from "@/components/performance-review-detail";
 import { PerformanceReviewSheet } from "@/components/performance-review-sheet";
+
+const PerformanceReviewChart = dynamic(
+  () => import("@/components/performance-review-chart").then((m) => m.PerformanceReviewChart),
+  { ssr: false },
+);
+const PerformanceReviewSparkline = dynamic(
+  () =>
+    import("@/components/performance-review-sparkline").then((m) => m.PerformanceReviewSparkline),
+  { ssr: false },
+);
+
 import { useTRPC } from "@/lib/trpc/client";
 import { computeAverage, type PerformanceReview } from "@/lib/types/performance-review";
+
+const EMPTY_REVIEWS: PerformanceReview[] = [];
 
 export default function MyReviewsPage() {
   const trpc = useTRPC();
   const reviewsQuery = useQuery(trpc.performanceReview.listMine.queryOptions());
 
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingReview, setEditingReview] = useState<PerformanceReview | null>(null);
-  const [detailReview, setDetailReview] = useState<PerformanceReview | null>(null);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [detailReviewId, setDetailReviewId] = useState<string | null>(null);
 
   const deleteMutation = useMutation(
     trpc.performanceReview.delete.mutationOptions({
       onSuccess: () => {
         toast.success("Review deleted");
         reviewsQuery.refetch();
-        setDetailReview(null);
+        setDetailReviewId(null);
       },
       onError: (error) => toast.error(error.message),
     }),
   );
 
-  const reviews = reviewsQuery.data ?? [];
+  const reviews = reviewsQuery.data ?? EMPTY_REVIEWS;
+
+  const editingReview = useMemo(
+    () => (editingReviewId ? reviews.find((r) => r.id === editingReviewId) : undefined),
+    [reviews, editingReviewId],
+  );
+  const detailReview = useMemo(
+    () => (detailReviewId ? reviews.find((r) => r.id === detailReviewId) : undefined),
+    [reviews, detailReviewId],
+  );
 
   const chartData = useMemo(
     () =>
@@ -50,13 +72,9 @@ export default function MyReviewsPage() {
     [reviews],
   );
 
-  const handleSelectReview = useCallback(
-    (reviewId: string) => {
-      const found = reviews.find((r) => r.id === reviewId);
-      if (found) setDetailReview(found);
-    },
-    [reviews],
-  );
+  const handleSelectReview = useCallback((reviewId: string) => {
+    setDetailReviewId(reviewId);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -65,7 +83,7 @@ export default function MyReviewsPage() {
         <Button
           size="sm"
           onClick={() => {
-            setEditingReview(null);
+            setEditingReviewId(null);
             setSheetOpen(true);
           }}
         >
@@ -87,7 +105,11 @@ export default function MyReviewsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {reviews.length === 0 ? (
+          {reviewsQuery.isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="text-muted-foreground size-6 animate-spin" />
+            </div>
+          ) : reviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <ClipboardList className="text-muted-foreground mb-2 size-8" />
               <p className="text-muted-foreground text-sm">
@@ -96,6 +118,7 @@ export default function MyReviewsPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              <PerformanceReviewSparkline data={chartData} />
               {reviews.length >= 2 ? (
                 <PerformanceReviewChart data={chartData} onSelectReview={handleSelectReview} />
               ) : null}
@@ -108,7 +131,7 @@ export default function MyReviewsPage() {
                       type="button"
                       key={review.id}
                       className="flex w-full items-center gap-3 rounded-md border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent"
-                      onClick={() => setDetailReview(review)}
+                      onClick={() => setDetailReviewId(review.id)}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-sm">{review.cycleLabel}</p>
@@ -128,10 +151,10 @@ export default function MyReviewsPage() {
 
       {sheetOpen ? (
         <PerformanceReviewSheet
-          review={editingReview ?? undefined}
+          review={editingReview}
           onClose={() => {
             setSheetOpen(false);
-            setEditingReview(null);
+            setEditingReviewId(null);
           }}
           onSaved={() => reviewsQuery.refetch()}
         />
@@ -141,10 +164,10 @@ export default function MyReviewsPage() {
         <PerformanceReviewDetail
           review={detailReview}
           canEdit
-          onClose={() => setDetailReview(null)}
+          onClose={() => setDetailReviewId(null)}
           onEdit={() => {
-            setEditingReview(detailReview);
-            setDetailReview(null);
+            setEditingReviewId(detailReview.id);
+            setDetailReviewId(null);
             setSheetOpen(true);
           }}
           onDelete={() => deleteMutation.mutate({ id: detailReview.id })}

@@ -294,8 +294,15 @@ describe("performanceReview.update", () => {
     });
   });
 
-  test("sets pdfUrl to null when not provided", async () => {
+  test("omits pdfUrl from update when not provided", async () => {
     await caller.update({ id: "review-1", ...validInput });
+
+    const callArgs = mockReviewUpdate.mock.calls[0]?.[0] as { data?: Record<string, unknown> };
+    expect(callArgs?.data).not.toHaveProperty("pdfUrl");
+  });
+
+  test("sets pdfUrl to null when explicitly passed as null", async () => {
+    await caller.update({ id: "review-1", ...validInput, pdfUrl: null });
 
     const callArgs = mockReviewUpdate.mock.calls[0]?.[0] as { data?: { pdfUrl?: string | null } };
     expect(callArgs?.data?.pdfUrl).toBeNull();

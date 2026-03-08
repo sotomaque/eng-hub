@@ -196,7 +196,8 @@ model Person {
   pendingInvites           PendingInvite[]
   goals                    PersonGoal[]
   accomplishments          PersonAccomplishment[]
-  performanceReviews       PerformanceReview[]
+  performanceReviews       PerformanceReview[] @relation("PersonReviews")
+  reviewedPerformanceReviews PerformanceReview[] @relation("ReviewerReviews")
 
   @@index([managerId])
   @@index([departmentId])
@@ -570,8 +571,10 @@ model ProjectOwner {
 model PerformanceReview {
   id        String   @id @default(cuid())
   personId  String   @map("person_id")
-  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  person    Person   @relation("PersonReviews", fields: [personId], references: [id], onDelete: Cascade)
   authorId  String   @map("author_id") // Clerk userId of who entered this review
+  reviewerId String? @map("reviewer_id")
+  reviewer   Person? @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   cycleLabel String  @map("cycle_label") // e.g. "H1 2025", "Q4 2024"
   reviewDate DateTime @map("review_date") // for chronological ordering
@@ -594,6 +597,7 @@ model PerformanceReview {
 
   @@unique([personId, cycleLabel])
   @@index([personId])
+  @@index([reviewerId])
   @@map("performance_reviews")
 }
 
