@@ -15,6 +15,7 @@ import {
 } from "@workspace/ui/components/sidebar";
 import {
   ArrowLeft,
+  ClipboardList,
   FileText,
   LayoutDashboard,
   NotebookPen,
@@ -35,6 +36,7 @@ const navItems = [
   { label: "Profile", icon: LayoutDashboard, path: "" },
   { label: "Direct Reports", icon: Users, path: "/direct-reports" },
   { label: "Goals", icon: Target, path: "/goals" },
+  { label: "Reviews", icon: ClipboardList, path: "/reviews" },
   { label: "1:1 Meetings", icon: NotebookPen, path: "/one-on-ones" },
   { label: "Templates", icon: FileText, path: "/templates" },
   { label: "Sharing", icon: Share2, path: "/sharing" },
