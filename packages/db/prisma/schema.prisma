@@ -196,6 +196,7 @@ model Person {
   pendingInvites           PendingInvite[]
   goals                    PersonGoal[]
   accomplishments          PersonAccomplishment[]
+  performanceReviews       PerformanceReview[]
 
   @@index([managerId])
   @@index([departmentId])
@@ -564,6 +565,36 @@ model ProjectOwner {
   @@index([personId])
   @@index([projectId])
   @@map("project_owners")
+}
+
+model PerformanceReview {
+  id        String   @id @default(cuid())
+  personId  String   @map("person_id")
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  authorId  String   @map("author_id") // Clerk userId of who entered this review
+
+  cycleLabel String  @map("cycle_label") // e.g. "H1 2025", "Q4 2024"
+  reviewDate DateTime @map("review_date") // for chronological ordering
+
+  // Numeric scores (1-5 scale, allow 0.5 increments via Float)
+  coreCompetencyScore Float @map("core_competency_score")
+  teamworkScore       Float @map("teamwork_score")
+  innovationScore     Float @map("innovation_score")
+  timeManagementScore Float @map("time_management_score")
+
+  // Optional narrative comments
+  coreCompetencyComments String? @map("core_competency_comments") @db.Text
+  teamworkComments       String? @map("teamwork_comments") @db.Text
+  innovationComments     String? @map("innovation_comments") @db.Text
+  timeManagementComments String? @map("time_management_comments") @db.Text
+
+  pdfUrl    String?  @map("pdf_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([personId, cycleLabel])
+  @@index([personId])
+  @@map("performance_reviews")
 }
 
 model Billet {

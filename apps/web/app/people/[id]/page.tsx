@@ -7,6 +7,7 @@ import { PersonGoals } from "@/components/person-goals";
 import { PersonMeetings } from "@/components/person-meetings";
 import { PersonProfileEditable } from "@/components/person-profile-editable";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
+import { PersonReviews } from "@/components/person-reviews";
 import { getCachedPerson } from "./_lib/queries";
 
 function serializeDate(date: Date | string | null | undefined): string | null {
@@ -49,6 +50,12 @@ async function PersonGoalsSection({ id }: { id: string }) {
   return <PersonGoals personId={id} canEdit={canEdit} />;
 }
 
+async function PersonReviewsSection({ id }: { id: string }) {
+  const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
+  const canEdit = !!me && !!person && me.id === person.managerId;
+  return <PersonReviews personId={id} canEdit={canEdit} />;
+}
+
 export default async function PersonPage({ params }: PageProps) {
   const { id } = await params;
 
@@ -62,6 +69,9 @@ export default async function PersonPage({ params }: PageProps) {
         <PersonMeetings personId={id} />
         <Suspense>
           <PersonGoalsSection id={id} />
+        </Suspense>
+        <Suspense>
+          <PersonReviewsSection id={id} />
         </Suspense>
         <PersonComments personId={id} />
       </main>
