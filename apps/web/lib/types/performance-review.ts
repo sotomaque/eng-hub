@@ -14,6 +14,8 @@ export type PerformanceReview = {
   innovationComments: string | null;
   timeManagementComments: string | null;
   pdfUrl: string | null;
+  reviewerId: string | null;
+  reviewer: { id: string; firstName: string; lastName: string } | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -4,12 +4,11 @@ import { z } from "zod";
 import { isDirectManager, isInManagementChain, resolveClerkPerson } from "../lib/hierarchy";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
-const scoreField = z.coerce.number().min(1).max(5);
+const scoreField = z.coerce.number().min(1).max(5).multipleOf(0.5);
 
 function isPrismaUniqueConstraintError(error: unknown): boolean {
-  return (
-    error instanceof Error && "code" in error && (error as Record<string, unknown>).code === "P2002"
-  );
+  if (!(error instanceof Error) || !("code" in error)) return false;
+  return (error as { code: string }).code === "P2002";
 }
 
 export const performanceReviewRouter = createTRPCRouter({
@@ -18,6 +17,7 @@ export const performanceReviewRouter = createTRPCRouter({
     if (!personId) return [];
     return db.performanceReview.findMany({
       where: { personId },
+      include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { reviewDate: "desc" },
       take: 100,
     });
@@ -33,6 +33,7 @@ export const performanceReviewRouter = createTRPCRouter({
       }
       return db.performanceReview.findMany({
         where: { personId: input.personId },
+        include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
         orderBy: { reviewDate: "desc" },
         take: 100,
       });
@@ -41,6 +42,7 @@ export const performanceReviewRouter = createTRPCRouter({
   getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const review = await db.performanceReview.findUnique({
       where: { id: input.id },
+      include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
     });
     if (!review) throw new TRPCError({ code: "NOT_FOUND" });
     const myPersonId = await resolveClerkPerson(ctx.userId);
@@ -66,6 +68,7 @@ export const performanceReviewRouter = createTRPCRouter({
         innovationComments: z.string().optional(),
         timeManagementComments: z.string().optional(),
         pdfUrl: z.string().url().optional(),
+        reviewerId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -100,6 +103,7 @@ export const performanceReviewRouter = createTRPCRouter({
             innovationComments: input.innovationComments,
             timeManagementComments: input.timeManagementComments,
             pdfUrl: input.pdfUrl,
+            reviewerId: input.reviewerId,
           },
         });
       } catch (error) {
@@ -128,6 +132,7 @@ export const performanceReviewRouter = createTRPCRouter({
         innovationComments: z.string().optional(),
         timeManagementComments: z.string().optional(),
         pdfUrl: z.string().url().optional().nullable(),
+        reviewerId: z.string().optional().nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -159,7 +164,8 @@ export const performanceReviewRouter = createTRPCRouter({
             teamworkComments: input.teamworkComments,
             innovationComments: input.innovationComments,
             timeManagementComments: input.timeManagementComments,
-            pdfUrl: input.pdfUrl ?? null,
+            ...(input.pdfUrl !== undefined && { pdfUrl: input.pdfUrl ?? null }),
+            ...(input.reviewerId !== undefined && { reviewerId: input.reviewerId ?? null }),
           },
         });
       } catch (error) {

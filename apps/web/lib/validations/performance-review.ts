@@ -3,7 +3,8 @@ import { z } from "zod";
 const scoreField = z.coerce
   .number()
   .min(1, "Score must be at least 1")
-  .max(5, "Score must be at most 5");
+  .max(5, "Score must be at most 5")
+  .multipleOf(0.5, "Score must be in 0.5 increments");
 
 export const performanceReviewSchema = z.object({
   cycleLabel: z.string().min(1, "Cycle label is required"),
