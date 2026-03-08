@@ -12,6 +12,12 @@ const mockParseGitHubUrl = mock(
 
 mock.module("../../lib/github", () => ({
   parseGitHubUrl: mockParseGitHubUrl,
+  fetchCommitStats: mock(() => Promise.resolve([])),
+  fetchPRStats: mock(() => Promise.resolve([])),
+}));
+
+mock.module("../../lib/github-compare", () => ({
+  compareContributorsViaGitHub: mock(() => Promise.resolve({ contributors: [], months: [] })),
 }));
 
 const mockSyncGitHubStatsForProject = mock(() => Promise.resolve());

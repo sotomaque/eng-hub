@@ -1,4 +1,9 @@
 export { db, resetAndSeed } from "@workspace/db";
+export type {
+  CompareResult,
+  ContributorCompareResult,
+  ContributorInput,
+} from "./lib/git-compare";
 export {
   syncAllGitHubStats,
   syncGitHubStatsForProject,

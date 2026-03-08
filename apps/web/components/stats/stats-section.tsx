@@ -5,11 +5,12 @@ import { Button } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { formatDistanceToNow } from "date-fns";
-import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, GitCompareArrows, Loader2, RefreshCw } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
+import { CompareContributorsSheet } from "./compare-contributors-sheet";
 import { StatsDataTable } from "./stats-data-table";
 import { StatsInsights } from "./stats-insights";
 import { StatsKPICards } from "./stats-kpi-cards";
@@ -24,13 +25,22 @@ const StatsPieChart = dynamic(() => import("./stats-pie-chart").then((m) => m.St
 type StatsSectionProps = {
   projectId: string;
   hasGithubUrl: boolean;
+  isDev?: boolean;
+  hasAnthropicKey?: boolean;
 };
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
+export function StatsSection({
+  projectId,
+  hasGithubUrl,
+  isDev,
+  hasAnthropicKey,
+}: StatsSectionProps) {
   const trpc = useTRPC();
   const autoSyncTriggered = useRef(false);
+  const [selectedUsernames, setSelectedUsernames] = useState<Set<string>>(new Set());
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
 
   const statsQuery = useQuery(trpc.githubStats.getByProjectId.queryOptions({ projectId }));
 
@@ -75,8 +85,13 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
 
   const isSyncing = sync?.syncStatus === "syncing" || syncMutation.isPending;
 
-  const allTimeStats = stats.filter((s) => s.period === "all_time");
-  const ytdStats = stats.filter((s) => s.period === "ytd");
+  const [allTimeStats, ytdStats] = stats.reduce<[typeof stats, typeof stats]>(
+    ([a, y], s) => {
+      (s.period === "all_time" ? a : y).push(s);
+      return [a, y];
+    },
+    [[], []],
+  );
 
   return (
     <div className="space-y-6">
@@ -136,7 +151,13 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
               </div>
               <StatsPieChart stats={allTimeStats} memberMap={memberMap} />
             </div>
-            <StatsDataTable stats={allTimeStats} memberMap={memberMap} />
+            <StatsDataTable
+              stats={allTimeStats}
+              memberMap={memberMap}
+              selectable={isDev || hasGithubUrl}
+              selectedUsernames={selectedUsernames}
+              onSelectionChange={setSelectedUsernames}
+            />
             <StatsInsights stats={allTimeStats} memberMap={memberMap} />
           </TabsContent>
 
@@ -148,10 +169,38 @@ export function StatsSection({ projectId, hasGithubUrl }: StatsSectionProps) {
               </div>
               <StatsPieChart stats={ytdStats} memberMap={memberMap} />
             </div>
-            <StatsDataTable stats={ytdStats} memberMap={memberMap} />
+            <StatsDataTable
+              stats={ytdStats}
+              memberMap={memberMap}
+              selectable={isDev || hasGithubUrl}
+              selectedUsernames={selectedUsernames}
+              onSelectionChange={setSelectedUsernames}
+            />
             <StatsInsights stats={ytdStats} memberMap={memberMap} />
           </TabsContent>
         </Tabs>
+      )}
+
+      {(isDev || hasGithubUrl) && selectedUsernames.size >= 2 && (
+        <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed inset-x-0 bottom-0 z-50 border-t backdrop-blur">
+          <div className="mx-auto flex max-w-screen-xl items-center justify-between px-6 py-3">
+            <span className="text-sm font-medium">{selectedUsernames.size} selected</span>
+            <Button size="sm" onClick={() => setIsCompareOpen(true)}>
+              <GitCompareArrows className="size-4" />
+              Compare
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isCompareOpen && (
+        <CompareContributorsSheet
+          projectId={projectId}
+          selectedUsernames={[...selectedUsernames]}
+          memberMap={memberMap}
+          hasAnthropicKey={hasAnthropicKey}
+          onClose={() => setIsCompareOpen(false)}
+        />
       )}
     </div>
   );

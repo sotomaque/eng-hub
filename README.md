@@ -23,6 +23,7 @@ Eng Hub puts it all in one place.
 | Budget & Billets | Per-project budget tracking and contracted headcount (billets) with department, title, seniority level, and count |
 | Team Arrangements | Drag-and-drop team editor, seniority composition bars, draft arrangements before committing, org chart per project |
 | Delivery Insights | GitHub stats (commits, PRs, reviews, trends) with visual dashboards and resilient sync with exponential backoff |
+| Contributor Comparison | Side-by-side comparison of selected contributors — commits, PRs merged, monthly trends, and AI-generated narrative summaries (via Anthropic Claude) |
 | People Directory | Searchable directory with profiles, manager hierarchies, department/title taxonomy, and manager change audit trail |
 
 ---
@@ -37,6 +38,7 @@ Eng Hub puts it all in one place.
 | Database | PostgreSQL via [Supabase](https://supabase.com) + [Prisma](https://prisma.io) |
 | Auth | [Clerk](https://clerk.com) with management chain-based visibility |
 | UI | [Tailwind CSS 4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
+| AI | [Vercel AI SDK](https://sdk.vercel.ai) + [Anthropic Claude](https://anthropic.com) (optional — contributor comparison summaries) |
 | Quality | Biome · Knip · Lefthook · Playwright E2E · Changesets |
 
 ---
@@ -366,3 +368,30 @@ bun run sync-git-stats cmlsmp63g0000itbru5wvt294 ~/Desktop/hypergiant/jeric2o
 ### Debugging author matching
 
 The script prints a detailed mapping table and lists unmatched commit emails with their commit counts. If contributors are missing from the output, update the Person's email in the app to match their git config email.
+
+---
+
+## Contributor comparison
+
+The Stats page lets you select 2+ contributors and open a side-by-side comparison sheet showing commits, lines changed, PRs merged, monthly trends, and recent MRs.
+
+### How data is sourced
+
+| Project type | Data source | Works in production? |
+|---|---|---|
+| GitHub URL configured | GitHub REST + GraphQL APIs (same data as stats dashboards) | Yes |
+| GitLab / local repo only | `git log` against a local clone (via `repoPath`) | No — dev/local only |
+
+GitHub-backed projects use the same `GITHUB_TOKEN` already configured for stats sync. No additional setup is needed.
+
+### AI-generated summaries
+
+When `ANTHROPIC_API_KEY` is set, the comparison sheet shows a "Generate Summary" button that streams a narrative analysis of the comparison data using Claude. The summary covers individual profiles, monthly trajectory, work style comparison, and key takeaways.
+
+A "Custom Prompt" option lets you add instructions (e.g., "Focus on who improved the most over the last 3 months").
+
+| Env var | Required? | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Optional | Enables AI summary generation. Get one at [console.anthropic.com](https://console.anthropic.com). |
+
+If the key is not set, the AI summary section is hidden — all other comparison features work without it.
