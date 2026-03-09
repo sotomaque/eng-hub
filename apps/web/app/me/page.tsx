@@ -47,13 +47,13 @@ async function MeReviewsSection() {
 
 export default function MeProfilePage() {
   return (
-    <>
+    <div className="space-y-6">
       <Suspense fallback={<PersonProfileSkeleton />}>
         <MeContent />
       </Suspense>
       <Suspense>
         <MeReviewsSection />
       </Suspense>
-    </>
+    </div>
   );
 }

@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requirePersonCapability } from "../trpc";
 
 const authorSelect = {
   id: true,
@@ -13,6 +14,7 @@ const authorSelect = {
 export const personCommentRouter = createTRPCRouter({
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
+    .use(requirePersonCapability(CAPABILITIES.PERSON_COMMENTS_READ))
     .query(async ({ input }) => {
       return db.personComment.findMany({
         where: { personId: input.personId },
@@ -30,23 +32,13 @@ export const personCommentRouter = createTRPCRouter({
         content: z.string().min(1).max(5000),
       }),
     )
+    .use(requirePersonCapability(CAPABILITIES.PERSON_COMMENTS_WRITE))
     .mutation(async ({ ctx, input }) => {
-      const authorPerson = await db.person.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
-      if (!authorPerson) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must claim a Person record first.",
-        });
-      }
-
       return db.personComment.create({
         data: {
           personId: input.personId,
           authorId: ctx.userId,
-          authorPersonId: authorPerson.id,
+          authorPersonId: ctx.personId,
           content: input.content,
         },
         include: {

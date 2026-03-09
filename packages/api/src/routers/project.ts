@@ -1,9 +1,72 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { resolveClerkPerson } from "../lib/hierarchy";
+import type { ResolvedAccess } from "../lib/access";
+import { hasCapability } from "../lib/access";
+import { CAPABILITIES } from "../lib/capabilities";
 import { detectProjectCycle } from "../lib/roadmap-hierarchy";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
+
+/**
+ * Build a shared Prisma where clause for project list queries.
+ * Handles ABAC scoping, search, status/health/type filters.
+ */
+async function buildProjectListWhere(
+  access: ResolvedAccess,
+  personId: string,
+  filters: {
+    search?: string;
+    status?: string[];
+    projectStatus?: string[];
+    type?: string[];
+  },
+): Promise<Record<string, unknown>> {
+  const where: Record<string, unknown> = {};
+
+  // Non-admin users without global project:read only see their projects
+  if (!hasCapability(access, CAPABILITIES.PROJECT_READ)) {
+    const scopedProjectIds = Array.from(access.projectCapabilities.keys());
+    const memberRows = await db.teamMember.findMany({
+      where: { personId, leftAt: null },
+      select: { projectId: true },
+    });
+    const memberProjectIds = memberRows.map((r) => r.projectId);
+    const visibleIds = [...new Set([...scopedProjectIds, ...memberProjectIds])];
+    where.id = { in: visibleIds };
+  }
+
+  if (filters.search) {
+    where.name = { contains: filters.search, mode: "insensitive" as const };
+  }
+  if (filters.projectStatus?.length) {
+    where.status = { in: filters.projectStatus };
+  }
+  if (filters.status?.length) {
+    const realStatuses = filters.status.filter((s) => s !== "NONE");
+    const hasNone = filters.status.includes("NONE");
+    const statusConditions: object[] = [];
+    if (realStatuses.length > 0) {
+      statusConditions.push({
+        healthAssessments: { some: { overallStatus: { in: realStatuses } } },
+      });
+    }
+    if (hasNone) {
+      statusConditions.push({ healthAssessments: { none: {} } });
+    }
+    where.OR = statusConditions;
+  }
+  if (filters.type?.length) {
+    const hasToplevel = filters.type.includes("toplevel");
+    const hasSubproject = filters.type.includes("subproject");
+    if (hasToplevel && !hasSubproject) {
+      where.parentId = null;
+    } else if (hasSubproject && !hasToplevel) {
+      where.parentId = { not: null };
+    }
+  }
+
+  return where;
+}
 
 const createProjectSchema = z.object({
   name: z.string().min(1),
@@ -171,40 +234,13 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = {};
-      if (input.search) {
-        where.name = { contains: input.search, mode: "insensitive" as const };
-      }
-      if (input.projectStatus?.length) {
-        where.status = { in: input.projectStatus };
-      }
-      if (input.status?.length) {
-        const realStatuses = input.status.filter((s) => s !== "NONE");
-        const hasNone = input.status.includes("NONE");
-        const statusConditions: object[] = [];
-        if (realStatuses.length > 0) {
-          statusConditions.push({
-            healthAssessments: {
-              some: { overallStatus: { in: realStatuses } },
-            },
-          });
-        }
-        if (hasNone) {
-          statusConditions.push({ healthAssessments: { none: {} } });
-        }
-        where.OR = statusConditions;
-      }
-      if (input.type?.length) {
-        const hasToplevel = input.type.includes("toplevel");
-        const hasSubproject = input.type.includes("subproject");
-        if (hasToplevel && !hasSubproject) {
-          where.parentId = null;
-        } else if (hasSubproject && !hasToplevel) {
-          where.parentId = { not: null };
-        }
-      }
-      const needsPersonId = input.favorite || input.sortBy === "favorite";
-      const personId = needsPersonId ? await resolveClerkPerson(ctx.userId) : null;
+      const where = await buildProjectListWhere(ctx.access, ctx.personId, {
+        search: input.search,
+        status: input.status,
+        projectStatus: input.projectStatus,
+        type: input.type,
+      });
+      const personId = ctx.personId;
 
       if (input.favorite) {
         if (personId) {
@@ -297,40 +333,14 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = {};
-      if (input.search) {
-        where.name = { contains: input.search, mode: "insensitive" as const };
-      }
-      if (input.projectStatus?.length) {
-        where.status = { in: input.projectStatus };
-      }
-      if (input.status?.length) {
-        const realStatuses = input.status.filter((s) => s !== "NONE");
-        const hasNone = input.status.includes("NONE");
-        const statusConditions: object[] = [];
-        if (realStatuses.length > 0) {
-          statusConditions.push({
-            healthAssessments: {
-              some: { overallStatus: { in: realStatuses } },
-            },
-          });
-        }
-        if (hasNone) {
-          statusConditions.push({ healthAssessments: { none: {} } });
-        }
-        where.OR = statusConditions;
-      }
-      if (input.type?.length) {
-        const hasToplevel = input.type.includes("toplevel");
-        const hasSubproject = input.type.includes("subproject");
-        if (hasToplevel && !hasSubproject) {
-          where.parentId = null;
-        } else if (hasSubproject && !hasToplevel) {
-          where.parentId = { not: null };
-        }
-      }
+      const where = await buildProjectListWhere(ctx.access, ctx.personId, {
+        search: input.search,
+        status: input.status,
+        projectStatus: input.projectStatus,
+        type: input.type,
+      });
       if (input.favorite) {
-        const personId = await resolveClerkPerson(ctx.userId);
+        const personId = ctx.personId;
         if (personId) {
           where.favoritedBy = { some: { personId } };
         } else {
@@ -377,75 +387,84 @@ export const projectRouter = createTRPCRouter({
     return fetchProject(input.id);
   }),
 
-  create: protectedProcedure.input(createProjectSchema).mutation(async ({ input }) => {
-    const parentId = input.parentId || null;
-    const fundedById = input.fundedById || null;
+  create: protectedProcedure
+    .input(createProjectSchema)
+    .use(requireCapability(CAPABILITIES.PROJECT_WRITE))
+    .mutation(async ({ input }) => {
+      const parentId = input.parentId || null;
+      const fundedById = input.fundedById || null;
 
-    const result = await db.project.create({
-      data: {
-        name: input.name,
-        description: input.description,
-        githubUrl: input.githubUrl || null,
-        gitlabUrl: input.gitlabUrl || null,
-        imageUrl: input.imageUrl || null,
-        parentId,
-        fundedById,
-        budget: input.budget ?? null,
-        status: input.status ?? "ACTIVE",
-      },
-    });
-
-    return result;
-  }),
-
-  update: protectedProcedure.input(updateProjectSchema).mutation(async ({ input }) => {
-    const { id, ...data } = input;
-    const parentId = data.parentId || null;
-    const fundedById = data.fundedById || null;
-
-    if (parentId === id || fundedById === id) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "A project cannot reference itself.",
+      const result = await db.project.create({
+        data: {
+          name: input.name,
+          description: input.description,
+          githubUrl: input.githubUrl || null,
+          gitlabUrl: input.gitlabUrl || null,
+          imageUrl: input.imageUrl || null,
+          parentId,
+          fundedById,
+          budget: input.budget ?? null,
+          status: input.status ?? "ACTIVE",
+        },
       });
-    }
 
-    if (parentId) {
-      const hasCycle = await detectProjectCycle(id, parentId);
-      if (hasCycle) {
+      return result;
+    }),
+
+  update: protectedProcedure
+    .input(updateProjectSchema)
+    .use(requireCapability(CAPABILITIES.PROJECT_WRITE))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      const parentId = data.parentId || null;
+      const fundedById = data.fundedById || null;
+
+      if (parentId === id || fundedById === id) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Setting this parent would create a circular hierarchy.",
+          message: "A project cannot reference itself.",
         });
       }
-    }
 
-    const result = await db.project.update({
-      where: { id },
-      data: {
-        name: data.name,
-        description: data.description,
-        githubUrl: data.githubUrl || null,
-        gitlabUrl: data.gitlabUrl || null,
-        imageUrl: data.imageUrl || null,
-        parentId,
-        fundedById,
-        budget: data.budget ?? null,
-        status: data.status,
-      },
-    });
+      if (parentId) {
+        const hasCycle = await detectProjectCycle(id, parentId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Setting this parent would create a circular hierarchy.",
+          });
+        }
+      }
 
-    return result;
-  }),
+      const result = await db.project.update({
+        where: { id },
+        data: {
+          name: data.name,
+          description: data.description,
+          githubUrl: data.githubUrl || null,
+          gitlabUrl: data.gitlabUrl || null,
+          imageUrl: data.imageUrl || null,
+          parentId,
+          fundedById,
+          budget: data.budget ?? null,
+          status: data.status,
+        },
+      });
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    return db.project.delete({
-      where: { id: input.id },
-    });
-  }),
+      return result;
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_DELETE))
+    .mutation(async ({ input }) => {
+      return db.project.delete({
+        where: { id: input.id },
+      });
+    }),
 
   myFavoriteIds: protectedProcedure.query(async ({ ctx }) => {
-    const personId = await resolveClerkPerson(ctx.userId);
+    const personId = ctx.personId;
     if (!personId) return [];
     const rows = await db.favoriteProject.findMany({
       where: { personId },
@@ -457,7 +476,7 @@ export const projectRouter = createTRPCRouter({
   isFavorited: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
+      const personId = ctx.personId;
       if (!personId) return false;
       const row = await db.favoriteProject.findUnique({
         where: {
@@ -471,7 +490,7 @@ export const projectRouter = createTRPCRouter({
   toggleFavorite: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const personId = await resolveClerkPerson(ctx.userId);
+      const personId = ctx.personId;
       if (!personId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -499,6 +518,7 @@ export const projectRouter = createTRPCRouter({
         personIds: z.array(z.string()),
       }),
     )
+    .use(requireCapability(CAPABILITIES.PROJECT_WRITE))
     .mutation(async ({ input }) => {
       await db.$transaction(async (tx) => {
         await tx.projectOwner.deleteMany({

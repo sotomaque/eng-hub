@@ -1,11 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 export const arrangementRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_READ))
     .query(async ({ input }) => {
       return db.teamArrangement.findMany({
         where: { projectId: input.projectId },
@@ -79,6 +81,7 @@ export const arrangementRouter = createTRPCRouter({
 
   create: protectedProcedure
     .input(z.object({ projectId: z.string(), name: z.string().min(1) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       return db.teamArrangement.create({
         data: { projectId: input.projectId, name: input.name },
@@ -87,6 +90,7 @@ export const arrangementRouter = createTRPCRouter({
 
   update: protectedProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       return db.teamArrangement.update({
         where: { id: input.id },
@@ -94,12 +98,16 @@ export const arrangementRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    return db.teamArrangement.delete({ where: { id: input.id } });
-  }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
+    .mutation(async ({ input }) => {
+      return db.teamArrangement.delete({ where: { id: input.id } });
+    }),
 
   clone: protectedProcedure
     .input(z.object({ sourceArrangementId: z.string(), name: z.string().min(1) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       return db.$transaction(async (tx) => {
         const source = await tx.teamArrangement.findUniqueOrThrow({
@@ -141,6 +149,7 @@ export const arrangementRouter = createTRPCRouter({
 
   cloneFromLive: protectedProcedure
     .input(z.object({ projectId: z.string(), name: z.string().min(1) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       return db.$transaction(async (tx) => {
         const teams = await tx.team.findMany({
@@ -190,6 +199,7 @@ export const arrangementRouter = createTRPCRouter({
 
   ensureActiveArrangement: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       return db.$transaction(async (tx) => {
         const existing = await tx.teamArrangement.findFirst({
@@ -247,90 +257,94 @@ export const arrangementRouter = createTRPCRouter({
       });
     }),
 
-  activate: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    await db.$transaction(async (tx) => {
-      const arrangement = await tx.teamArrangement.findUniqueOrThrow({
-        where: { id: input.id },
-        include: {
-          teams: {
-            orderBy: { sortOrder: "asc" },
-            include: { assignments: true },
+  activate: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
+    .mutation(async ({ input }) => {
+      await db.$transaction(async (tx) => {
+        const arrangement = await tx.teamArrangement.findUniqueOrThrow({
+          where: { id: input.id },
+          include: {
+            teams: {
+              orderBy: { sortOrder: "asc" },
+              include: { assignments: true },
+            },
           },
-        },
-      });
-
-      // Deactivate all arrangements for this project
-      await tx.teamArrangement.updateMany({
-        where: { projectId: arrangement.projectId },
-        data: { isActive: false },
-      });
-
-      // Clear all liveTeamId links in the project's arrangements
-      const allArrTeamIds = await tx.arrangementTeam.findMany({
-        where: { arrangement: { projectId: arrangement.projectId } },
-        select: { id: true },
-      });
-      if (allArrTeamIds.length > 0) {
-        await tx.arrangementTeam.updateMany({
-          where: { id: { in: allArrTeamIds.map((t) => t.id) } },
-          data: { liveTeamId: null },
         });
-      }
 
-      // Activate this one
-      await tx.teamArrangement.update({
-        where: { id: input.id },
-        data: { isActive: true },
-      });
+        // Deactivate all arrangements for this project
+        await tx.teamArrangement.updateMany({
+          where: { projectId: arrangement.projectId },
+          data: { isActive: false },
+        });
 
-      // Delete all existing live Team records (cascades TeamMembership via onDelete: Cascade)
-      await tx.team.deleteMany({
-        where: { projectId: arrangement.projectId },
-      });
+        // Clear all liveTeamId links in the project's arrangements
+        const allArrTeamIds = await tx.arrangementTeam.findMany({
+          where: { arrangement: { projectId: arrangement.projectId } },
+          select: { id: true },
+        });
+        if (allArrTeamIds.length > 0) {
+          await tx.arrangementTeam.updateMany({
+            where: { id: { in: allArrTeamIds.map((t) => t.id) } },
+            data: { liveTeamId: null },
+          });
+        }
 
-      // Batch-create all new live Team records in one query
-      const newTeams = await tx.team.createManyAndReturn({
-        data: arrangement.teams.map((arrTeam) => ({
-          name: arrTeam.name,
-          projectId: arrangement.projectId,
-        })),
-      });
+        // Activate this one
+        await tx.teamArrangement.update({
+          where: { id: input.id },
+          data: { isActive: true },
+        });
 
-      // Batch-update arrangement teams to link to new live teams
-      await Promise.all(
-        arrangement.teams.flatMap((arrTeam, i) => {
+        // Delete all existing live Team records (cascades TeamMembership via onDelete: Cascade)
+        await tx.team.deleteMany({
+          where: { projectId: arrangement.projectId },
+        });
+
+        // Batch-create all new live Team records in one query
+        const newTeams = await tx.team.createManyAndReturn({
+          data: arrangement.teams.map((arrTeam) => ({
+            name: arrTeam.name,
+            projectId: arrangement.projectId,
+          })),
+        });
+
+        // Batch-update arrangement teams to link to new live teams
+        await Promise.all(
+          arrangement.teams.flatMap((arrTeam, i) => {
+            const newTeamId = newTeams[i]?.id;
+            if (!newTeamId) return [];
+            return [
+              tx.arrangementTeam.update({
+                where: { id: arrTeam.id },
+                data: { liveTeamId: newTeamId },
+              }),
+            ];
+          }),
+        );
+
+        // Batch-create all team memberships in one query
+        const allMemberships = arrangement.teams.flatMap((arrTeam, i) => {
           const newTeamId = newTeams[i]?.id;
           if (!newTeamId) return [];
-          return [
-            tx.arrangementTeam.update({
-              where: { id: arrTeam.id },
-              data: { liveTeamId: newTeamId },
-            }),
-          ];
-        }),
-      );
+          return arrTeam.assignments.map((a) => ({
+            teamId: newTeamId,
+            teamMemberId: a.teamMemberId,
+          }));
+        });
+        if (allMemberships.length > 0) {
+          await tx.teamMembership.createMany({ data: allMemberships });
+        }
 
-      // Batch-create all team memberships in one query
-      const allMemberships = arrangement.teams.flatMap((arrTeam, i) => {
-        const newTeamId = newTeams[i]?.id;
-        if (!newTeamId) return [];
-        return arrTeam.assignments.map((a) => ({
-          teamId: newTeamId,
-          teamMemberId: a.teamMemberId,
-        }));
+        return arrangement.projectId;
       });
-      if (allMemberships.length > 0) {
-        await tx.teamMembership.createMany({ data: allMemberships });
-      }
-
-      return arrangement.projectId;
-    });
-  }),
+    }),
 
   // --- Team management within arrangement ---
 
   addTeam: protectedProcedure
     .input(z.object({ arrangementId: z.string(), name: z.string().min(1) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
         const arrangement = await tx.teamArrangement.findUniqueOrThrow({
@@ -369,6 +383,7 @@ export const arrangementRouter = createTRPCRouter({
 
   updateTeam: protectedProcedure
     .input(z.object({ teamId: z.string(), name: z.string().min(1) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
         const arrTeam = await tx.arrangementTeam.update({
@@ -395,6 +410,7 @@ export const arrangementRouter = createTRPCRouter({
 
   deleteTeam: protectedProcedure
     .input(z.object({ teamId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .mutation(async ({ input }) => {
       await db.$transaction(async (tx) => {
         const arrTeam = await tx.arrangementTeam.findUniqueOrThrow({
@@ -410,6 +426,7 @@ export const arrangementRouter = createTRPCRouter({
     }),
 
   reorderTeams: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .input(
       z.object({
         arrangementId: z.string(),
@@ -430,6 +447,7 @@ export const arrangementRouter = createTRPCRouter({
   // --- Member assignment ---
 
   assignMember: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .input(
       z.object({
         arrangementTeamId: z.string(),
@@ -487,6 +505,7 @@ export const arrangementRouter = createTRPCRouter({
     }),
 
   unassignMember: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .input(
       z.object({
         teamMemberId: z.string(),
@@ -520,6 +539,7 @@ export const arrangementRouter = createTRPCRouter({
     }),
 
   moveMember: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
     .input(
       z.object({
         teamMemberId: z.string(),

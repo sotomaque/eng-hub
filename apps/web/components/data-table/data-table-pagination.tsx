@@ -23,7 +23,10 @@ export function DataTablePagination<TData>({ table, pageSize }: DataTablePaginat
         <p className="text-sm text-muted-foreground">Rows per page</p>
         <Select
           value={`${displayPageSize}`}
-          onValueChange={(value) => table.setPageSize(Number(value))}
+          onValueChange={(value) => {
+            table.setPageSize(Number(value));
+            table.setPageIndex(0);
+          }}
         >
           <SelectTrigger className="h-8 w-[70px]">
             <SelectValue placeholder={displayPageSize} />

@@ -1,42 +1,49 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 export const meetingTemplateRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async () => {
-    return db.meetingTemplate.findMany({
-      orderBy: { updatedAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        authorId: true,
-        updatedAt: true,
-      },
-    });
-  }),
-
-  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
-    const template = await db.meetingTemplate.findUnique({
-      where: { id: input.id },
-    });
-    if (!template) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Template not found.",
+  getAll: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_MEETINGS_READ))
+    .query(async () => {
+      return db.meetingTemplate.findMany({
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          authorId: true,
+          updatedAt: true,
+        },
       });
-    }
-    return {
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      content: template.content as Record<string, unknown>,
-      authorId: template.authorId,
-    };
-  }),
+    }),
+
+  getById: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_MEETINGS_READ))
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const template = await db.meetingTemplate.findUnique({
+        where: { id: input.id },
+      });
+      if (!template) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Template not found.",
+        });
+      }
+      return {
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        content: template.content as Record<string, unknown>,
+        authorId: template.authorId,
+      };
+    }),
 
   create: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_MEETINGS_WRITE))
     .input(
       z.object({
         name: z.string().min(1),
@@ -57,6 +64,7 @@ export const meetingTemplateRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_MEETINGS_WRITE))
     .input(
       z.object({
         id: z.string(),
@@ -86,6 +94,7 @@ export const meetingTemplateRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_MEETINGS_WRITE))
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const template = await db.meetingTemplate.findUnique({

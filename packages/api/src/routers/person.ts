@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { CAPABILITIES } from "../lib/capabilities";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 const managerSelect = {
   id: true,
@@ -139,7 +140,7 @@ async function detectCycle(personId: string, newManagerId: string): Promise<bool
 }
 
 export const personRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async () => {
+  getAll: protectedProcedure.use(requireCapability(CAPABILITIES.PERSON_READ)).query(async () => {
     return db.person.findMany({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       include: personListInclude,
@@ -148,6 +149,7 @@ export const personRouter = createTRPCRouter({
   }),
 
   list: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
     .input(
       z.object({
         page: z.number().int().min(1).default(1),
@@ -234,6 +236,7 @@ export const personRouter = createTRPCRouter({
     }),
 
   listExport: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
     .input(
       z.object({
         search: z.string().optional(),
@@ -303,108 +306,121 @@ export const personRouter = createTRPCRouter({
       }));
     }),
 
-  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
-    return db.person.findUnique({
-      where: { id: input.id },
-      include: personInclude,
-    });
-  }),
+  getById: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      return db.person.findUnique({
+        where: { id: input.id },
+        include: personInclude,
+      });
+    }),
 
   /** Lightweight fetch for the edit sheet — omits milestones, goals, reports, etc. */
-  getForEdit: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
-    return db.person.findUnique({
-      where: { id: input.id },
-      select: personEditSelect,
-    });
-  }),
+  getForEdit: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      return db.person.findUnique({
+        where: { id: input.id },
+        select: personEditSelect,
+      });
+    }),
 
-  create: protectedProcedure.input(createPersonSchema).mutation(async ({ ctx, input }) => {
-    const managerId = input.managerId || null;
-    const person = await db.person.create({
-      data: {
-        firstName: input.firstName,
-        lastName: input.lastName,
-        callsign: input.callsign || null,
-        email: input.email,
-        emailAliases: input.emailAliases ?? [],
-        githubUsername: input.githubUsername || null,
-        gitlabUsername: input.gitlabUsername || null,
-        imageUrl: input.imageUrl || null,
-        managerId,
-        departmentId: input.departmentId || null,
-        titleId: input.titleId || null,
-      },
-    });
-
-    if (managerId) {
-      await db.managerChange.create({
+  create: protectedProcedure
+    .input(createPersonSchema)
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+    .mutation(async ({ ctx, input }) => {
+      const managerId = input.managerId || null;
+      const person = await db.person.create({
         data: {
-          personId: person.id,
-          oldManagerId: null,
-          newManagerId: managerId,
-          changedBy: ctx.userId,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          callsign: input.callsign || null,
+          email: input.email,
+          emailAliases: input.emailAliases ?? [],
+          githubUsername: input.githubUsername || null,
+          gitlabUsername: input.gitlabUsername || null,
+          imageUrl: input.imageUrl || null,
+          managerId,
+          departmentId: input.departmentId || null,
+          titleId: input.titleId || null,
         },
       });
-    }
 
-    return person;
-  }),
-
-  update: protectedProcedure.input(updatePersonSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...data } = input;
-    const newManagerId = data.managerId || null;
-
-    // Get current state
-    const current = await db.person.findUniqueOrThrow({
-      where: { id },
-      select: { managerId: true },
-    });
-
-    // Cycle detection
-    if (newManagerId && newManagerId !== current.managerId) {
-      const hasCycle = await detectCycle(id, newManagerId);
-      if (hasCycle) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot set this manager — it would create a circular reporting chain.",
+      if (managerId) {
+        await db.managerChange.create({
+          data: {
+            personId: person.id,
+            oldManagerId: null,
+            newManagerId: managerId,
+            changedBy: ctx.userId,
+          },
         });
       }
-    }
 
-    const person = await db.person.update({
-      where: { id },
-      data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        callsign: data.callsign || null,
-        email: data.email,
-        emailAliases: data.emailAliases ?? [],
-        githubUsername: data.githubUsername || null,
-        gitlabUsername: data.gitlabUsername || null,
-        imageUrl: data.imageUrl || null,
-        managerId: newManagerId,
-        departmentId: data.departmentId || null,
-        titleId: data.titleId || null,
-      },
-    });
+      return person;
+    }),
 
-    // Log manager change if it changed
-    const managerChanged = newManagerId !== current.managerId;
-    if (managerChanged) {
-      await db.managerChange.create({
+  update: protectedProcedure
+    .input(updatePersonSchema)
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      const newManagerId = data.managerId || null;
+
+      // Get current state
+      const current = await db.person.findUniqueOrThrow({
+        where: { id },
+        select: { managerId: true },
+      });
+
+      // Cycle detection
+      if (newManagerId && newManagerId !== current.managerId) {
+        const hasCycle = await detectCycle(id, newManagerId);
+        if (hasCycle) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot set this manager — it would create a circular reporting chain.",
+          });
+        }
+      }
+
+      const person = await db.person.update({
+        where: { id },
         data: {
-          personId: id,
-          oldManagerId: current.managerId,
-          newManagerId,
-          changedBy: ctx.userId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          callsign: data.callsign || null,
+          email: data.email,
+          emailAliases: data.emailAliases ?? [],
+          githubUsername: data.githubUsername || null,
+          gitlabUsername: data.gitlabUsername || null,
+          imageUrl: data.imageUrl || null,
+          managerId: newManagerId,
+          departmentId: data.departmentId || null,
+          titleId: data.titleId || null,
         },
       });
-    }
 
-    return person;
-  }),
+      // Log manager change if it changed
+      const managerChanged = newManagerId !== current.managerId;
+      if (managerChanged) {
+        await db.managerChange.create({
+          data: {
+            personId: id,
+            oldManagerId: current.managerId,
+            newManagerId,
+            changedBy: ctx.userId,
+          },
+        });
+      }
+
+      return person;
+    }),
 
   reassignReports: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
     .input(
       z.object({
         personIds: z.array(z.string()).min(1),
@@ -460,11 +476,15 @@ export const personRouter = createTRPCRouter({
       return { count: personIds.length };
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    return db.person.delete({ where: { id: input.id } });
-  }),
+  delete: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      return db.person.delete({ where: { id: input.id } });
+    }),
 
   joinProject: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
     .input(
       z.object({
         personId: z.string(),
@@ -501,6 +521,7 @@ export const personRouter = createTRPCRouter({
     }),
 
   moveToProject: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
     .input(
       z.object({
         personId: z.string(),
@@ -552,6 +573,7 @@ export const personRouter = createTRPCRouter({
     }),
 
   leaveProject: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
     .input(
       z.object({
         personId: z.string(),

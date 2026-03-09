@@ -30,6 +30,16 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: path.join(__dirname, "playwright/.clerk/user.json"),
       },
+      testIgnore: /abac\.spec\.ts/,
+      dependencies: ["setup"],
+    },
+    {
+      name: "restricted",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: path.join(__dirname, "playwright/.clerk/user2.json"),
+      },
+      testMatch: /abac\.spec\.ts/,
       dependencies: ["setup"],
     },
   ],

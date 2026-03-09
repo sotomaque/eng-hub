@@ -1,9 +1,9 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { cn } from "@workspace/ui/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAccess } from "@/lib/hooks/use-access";
 
 export const links = [
   { href: "/", label: "Home" },
@@ -15,8 +15,7 @@ export const links = [
 
 export function MainNav() {
   const pathname = usePathname();
-  const { user } = useUser();
-  const isAdmin = (user?.publicMetadata as { role?: string } | undefined)?.role === "admin";
+  const { isAdmin } = useAccess();
 
   const visibleLinks = isAdmin ? [...links, { href: "/admin", label: "Admin" }] : links;
 

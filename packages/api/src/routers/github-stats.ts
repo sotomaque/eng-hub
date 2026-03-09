@@ -1,16 +1,17 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-
+import { CAPABILITIES } from "../lib/capabilities";
 import { type ContributorInput, compareContributors } from "../lib/git-compare";
 import { parseGitHubUrl } from "../lib/github";
 import { compareContributorsViaGitHub } from "../lib/github-compare";
 import { syncGitHubStatsForProject } from "../lib/github-sync";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 export const githubStatsRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
     .query(async ({ input }) => {
       const [stats, sync, teamMembers] = await Promise.all([
         db.contributorStats.findMany({
@@ -73,6 +74,7 @@ export const githubStatsRouter = createTRPCRouter({
 
   getSyncStatus: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
     .query(async ({ input }) => {
       return db.gitHubSync.findUnique({
         where: { projectId: input.projectId },
@@ -81,6 +83,7 @@ export const githubStatsRouter = createTRPCRouter({
 
   syncNow: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
     .mutation(async ({ input }) => {
       const project = await db.project.findUnique({
         where: { id: input.projectId },
@@ -115,6 +118,7 @@ export const githubStatsRouter = createTRPCRouter({
     }),
 
   compareContributors: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
     .input(
       z.object({
         projectId: z.string(),
