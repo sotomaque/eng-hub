@@ -125,7 +125,8 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 
 INSERT INTO public.access_grants (id, person_id, profile_id, project_id)
-VALUES (gen_random_uuid()::text, 'cmlsxi37v000titr1xhpcpriz', 'profile-admin', NULL)
+SELECT gen_random_uuid()::text, 'cmlsxi37v000titr1xhpcpriz', 'profile-admin', NULL
+WHERE EXISTS (SELECT 1 FROM public.people WHERE id = 'cmlsxi37v000titr1xhpcpriz')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
