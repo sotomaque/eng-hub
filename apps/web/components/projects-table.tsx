@@ -38,6 +38,7 @@ import { DataTableViewOptions } from "@/components/data-table/data-table-view-op
 import { ExportButton } from "@/components/export-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
+import { useAccess } from "@/lib/hooks/use-access";
 import { PROJECT_STATUS_DOT, PROJECT_STATUS_LABEL } from "@/lib/project-status";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -118,6 +119,10 @@ export function ProjectsTable({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { can } = useAccess();
+  const canReadHealth = can("project:health:read");
+  const canWriteProject = can("project:write");
+  const canDeleteProject = can("project:delete");
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [prevSearch, setPrevSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -318,30 +323,38 @@ export function ProjectsTable({
           );
         },
       },
-      {
-        id: "status",
-        accessorFn: (row) => row.healthStatus ?? "NONE",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-        cell: ({ row }) => {
-          const value = row.getValue("status") as string;
-          if (value === "NONE") {
-            return (
-              <span
-                className="inline-block size-2.5 rounded-full bg-gray-300 dark:bg-gray-600"
-                title="No status"
-              />
-            );
-          }
-          const status = value as HealthStatus;
-          return (
-            <div className="flex items-center gap-1.5">
-              <span className={`inline-block size-2.5 rounded-full ${HEALTH_STATUS_DOT[status]}`} />
-              <span className="text-muted-foreground text-xs">{HEALTH_STATUS_LABEL[status]}</span>
-            </div>
-          );
-        },
-        enableSorting: false,
-      },
+      ...(canReadHealth
+        ? [
+            {
+              id: "status",
+              accessorFn: (row: ProjectItem) => row.healthStatus ?? "NONE",
+              header: ({ column }: { column: unknown }) => (
+                <DataTableColumnHeader column={column as never} title="Status" />
+              ),
+              cell: ({ row }: { row: { getValue: (id: string) => unknown } }) => {
+                const value = row.getValue("status") as string;
+                if (value === "NONE") {
+                  return (
+                    <span
+                      className="inline-block size-2.5 rounded-full bg-gray-300 dark:bg-gray-600"
+                      title="No status"
+                    />
+                  );
+                }
+                const hs = value as HealthStatus;
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`inline-block size-2.5 rounded-full ${HEALTH_STATUS_DOT[hs]}`}
+                    />
+                    <span className="text-muted-foreground text-xs">{HEALTH_STATUS_LABEL[hs]}</span>
+                  </div>
+                );
+              },
+              enableSorting: false,
+            } satisfies ColumnDef<ProjectItem>,
+          ]
+        : []),
       {
         id: "projectStatus",
         accessorFn: (row) => row.projectStatus,
@@ -388,52 +401,68 @@ export function ProjectsTable({
           );
         },
       },
-      {
-        id: "actions",
-        header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => {
-          const project = row.original;
-          return (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => handleEdit(project.id)}>
-                <Pencil className="size-4" />
-                <span className="sr-only">Edit</span>
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Trash2 className="size-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete project?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete &quot;{project.name}
-                      &quot;. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(project.id)}
-                      disabled={deletingId === project.id}
-                      className="bg-destructive text-white hover:bg-destructive/90"
-                    >
-                      {deletingId === project.id ? "Deleting…" : "Delete"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          );
-        },
-        enableSorting: false,
-        enableHiding: false,
-      },
+      ...(canWriteProject || canDeleteProject
+        ? [
+            {
+              id: "actions",
+              header: () => <span className="sr-only">Actions</span>,
+              cell: ({ row }: { row: { original: ProjectItem } }) => {
+                const project = row.original;
+                return (
+                  <div className="flex items-center gap-1">
+                    {canWriteProject && (
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(project.id)}>
+                        <Pencil className="size-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    )}
+                    {canDeleteProject && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="size-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete project?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete &quot;{project.name}
+                              &quot;. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(project.id)}
+                              disabled={deletingId === project.id}
+                              className="bg-destructive text-white hover:bg-destructive/90"
+                            >
+                              {deletingId === project.id ? "Deleting…" : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                );
+              },
+              enableSorting: false,
+              enableHiding: false,
+            } satisfies ColumnDef<ProjectItem>,
+          ]
+        : []),
     ],
-    [handleEdit, handleDelete, deletingId, router],
+    [
+      handleEdit,
+      handleDelete,
+      deletingId,
+      router,
+      canReadHealth,
+      canWriteProject,
+      canDeleteProject,
+    ],
   );
 
   const archivedIds = useMemo(
@@ -464,12 +493,14 @@ export function ProjectsTable({
               Create your first project to start tracking engineering work.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={handleCreate}>
-              <Plus className="size-4" />
-              New Project
-            </Button>
-          </EmptyContent>
+          {canWriteProject && (
+            <EmptyContent>
+              <Button onClick={handleCreate}>
+                <Plus className="size-4" />
+                New Project
+              </Button>
+            </EmptyContent>
+          )}
         </Empty>
       </div>
     );
@@ -484,10 +515,12 @@ export function ProjectsTable({
             {totalCount}
           </span>
         </div>
-        <Button onClick={handleCreate} size="sm">
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">New Project</span>
-        </Button>
+        {canWriteProject && (
+          <Button onClick={handleCreate} size="sm">
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">New Project</span>
+          </Button>
+        )}
       </div>
 
       <div className={isSearchPending ? "opacity-60 transition-opacity" : "transition-opacity"}>
@@ -547,12 +580,14 @@ export function ProjectsTable({
                 value={type ?? []}
                 onValueChange={handleTypeChange}
               />
-              <DataTableFacetedFilter
-                title="Health"
-                options={HEALTH_FILTER_OPTIONS}
-                value={status ?? []}
-                onValueChange={handleStatusChange}
-              />
+              {canReadHealth && (
+                <DataTableFacetedFilter
+                  title="Health"
+                  options={HEALTH_FILTER_OPTIONS}
+                  value={status ?? []}
+                  onValueChange={handleStatusChange}
+                />
+              )}
               <DataTableFacetedFilter
                 title="Lifecycle"
                 options={PROJECT_STATUS_FILTER_OPTIONS}

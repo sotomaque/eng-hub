@@ -251,10 +251,78 @@ export async function resetAndSeed(): Promise<void> {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // ── Optional: link E2E test user to person-alice ───────────────
+  // ── Access profiles & grants ─────────────────────────────────────
+  await db.$executeRawUnsafe(`
+    INSERT INTO access_profiles (id, name, description, capabilities, is_default) VALUES
+      ('profile-admin', 'Admin', 'Full access including admin panel', ARRAY[
+        'admin:access',
+        'project:read','project:write','project:delete',
+        'project:health:read','project:health:write',
+        'project:budget:read','project:budget:write',
+        'project:team:read','project:team:write',
+        'project:roadmap:read','project:roadmap:write',
+        'project:stats:read',
+        'project:links:read','project:links:write',
+        'project:arrangements:read','project:arrangements:write',
+        'person:read','person:write',
+        'person:goals:read','person:goals:write',
+        'person:reviews:read','person:reviews:write',
+        'person:meetings:read','person:meetings:write',
+        'person:comments:read','person:comments:write',
+        'settings:read','settings:write'
+      ], false),
+      ('profile-full-access', 'Full Access', 'All read and write capabilities (no admin)', ARRAY[
+        'project:read','project:write',
+        'project:health:read','project:health:write',
+        'project:budget:read','project:budget:write',
+        'project:team:read','project:team:write',
+        'project:roadmap:read','project:roadmap:write',
+        'project:stats:read',
+        'project:links:read','project:links:write',
+        'project:arrangements:read','project:arrangements:write',
+        'person:read','person:write',
+        'person:goals:read','person:goals:write',
+        'person:reviews:read','person:reviews:write',
+        'person:meetings:read','person:meetings:write',
+        'person:comments:read','person:comments:write',
+        'settings:read','settings:write'
+      ], true),
+      ('profile-project-member', 'Project Member', 'Basic project access (scoped to membership)', ARRAY[
+        'project:team:read',
+        'project:roadmap:read',
+        'project:links:read',
+        'project:stats:read',
+        'project:arrangements:read',
+        'person:read'
+      ], false)
+    ON CONFLICT (id) DO UPDATE SET capabilities = EXCLUDED.capabilities, description = EXCLUDED.description
+  `);
+
+  // Grant Alice: Admin + Full Access
+  await db.$executeRawUnsafe(`
+    INSERT INTO access_grants (id, person_id, profile_id, project_id) VALUES
+      ('grant-alice-admin', 'person-alice', 'profile-admin', NULL),
+      ('grant-alice-full', 'person-alice', 'profile-full-access', NULL)
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  // Grant Bob: Project Member (global, but no project:read — scoped to membership)
+  await db.$executeRawUnsafe(`
+    INSERT INTO access_grants (id, person_id, profile_id, project_id) VALUES
+      ('grant-bob-member', 'person-bob', 'profile-project-member', NULL)
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  // ── Optional: link E2E test users to person records ──────────────
   // Set E2E_CLERK_USER_ID in Vercel preview env to enable CRUD tests on /me/goals.
   const e2eClerkUserId = process.env.E2E_CLERK_USER_ID;
   if (e2eClerkUserId) {
     await db.$executeRaw`UPDATE people SET clerk_user_id = ${e2eClerkUserId} WHERE id = 'person-alice'`;
+  }
+
+  // Set E2E_CLERK_USER_ID_2 to link the restricted test user to person-bob for ABAC tests.
+  const e2eClerkUserId2 = process.env.E2E_CLERK_USER_ID_2;
+  if (e2eClerkUserId2) {
+    await db.$executeRaw`UPDATE people SET clerk_user_id = ${e2eClerkUserId2} WHERE id = 'person-bob'`;
   }
 }

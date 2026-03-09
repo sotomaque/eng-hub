@@ -1,9 +1,10 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 export const departmentRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async () => {
+  getAll: protectedProcedure.use(requireCapability(CAPABILITIES.SETTINGS_READ)).query(async () => {
     return db.department.findMany({
       orderBy: { name: "asc" },
       take: 100,
@@ -21,6 +22,7 @@ export const departmentRouter = createTRPCRouter({
         color: z.string().optional(),
       }),
     )
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       return db.department.create({
         data: {
@@ -38,6 +40,7 @@ export const departmentRouter = createTRPCRouter({
         color: z.string().optional(),
       }),
     )
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       return db.department.update({
         where: { id: input.id },
@@ -45,9 +48,12 @@ export const departmentRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    return db.department.delete({ where: { id: input.id } });
-  }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
+    .mutation(async ({ input }) => {
+      return db.department.delete({ where: { id: input.id } });
+    }),
 
   merge: protectedProcedure
     .input(
@@ -56,6 +62,7 @@ export const departmentRouter = createTRPCRouter({
         mergeIds: z.array(z.string()),
       }),
     )
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       return db.$transaction(async (tx) => {
         await tx.person.updateMany({

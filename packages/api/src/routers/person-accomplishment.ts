@@ -1,15 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { isDirectManager, resolveClerkPerson } from "../lib/hierarchy";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { hasPersonCapability } from "../lib/access";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requirePersonCapability } from "../trpc";
 
 export const personAccomplishmentRouter = createTRPCRouter({
   listMine: protectedProcedure.query(async ({ ctx }) => {
-    const personId = await resolveClerkPerson(ctx.userId);
-    if (!personId) return [];
     return db.personAccomplishment.findMany({
-      where: { personId },
+      where: { personId: ctx.personId },
       orderBy: [{ date: "desc" }, { sortOrder: "asc" }],
       take: 200,
     });
@@ -17,6 +16,7 @@ export const personAccomplishmentRouter = createTRPCRouter({
 
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
+    .use(requirePersonCapability(CAPABILITIES.PERSON_GOALS_READ))
     .query(async ({ input }) => {
       return db.personAccomplishment.findMany({
         where: { personId: input.personId },
@@ -35,19 +35,15 @@ export const personAccomplishmentRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must claim a Person record first.",
-        });
-      }
+      const targetPersonId = input.personId ?? ctx.personId;
 
-      const targetPersonId = input.personId ?? myPersonId;
-
-      if (targetPersonId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, targetPersonId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (targetPersonId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          targetPersonId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personAccomplishment.create({
@@ -70,18 +66,19 @@ export const personAccomplishmentRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
-
       const accomplishment = await db.personAccomplishment.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
       if (!accomplishment) throw new TRPCError({ code: "NOT_FOUND" });
 
-      if (accomplishment.personId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, accomplishment.personId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (accomplishment.personId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          accomplishment.personId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personAccomplishment.update({
@@ -97,18 +94,19 @@ export const personAccomplishmentRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
-
       const accomplishment = await db.personAccomplishment.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
       if (!accomplishment) throw new TRPCError({ code: "NOT_FOUND" });
 
-      if (accomplishment.personId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, accomplishment.personId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (accomplishment.personId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          accomplishment.personId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personAccomplishment.delete({ where: { id: input.id } });

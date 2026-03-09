@@ -1,17 +1,16 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { isDirectManager, resolveClerkPerson } from "../lib/hierarchy";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { hasPersonCapability } from "../lib/access";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requirePersonCapability } from "../trpc";
 
 const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
 
 export const personGoalRouter = createTRPCRouter({
   listMine: protectedProcedure.query(async ({ ctx }) => {
-    const personId = await resolveClerkPerson(ctx.userId);
-    if (!personId) return [];
     return db.personGoal.findMany({
-      where: { personId },
+      where: { personId: ctx.personId },
       orderBy: { sortOrder: "asc" },
       take: 100,
     });
@@ -19,6 +18,7 @@ export const personGoalRouter = createTRPCRouter({
 
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
+    .use(requirePersonCapability(CAPABILITIES.PERSON_GOALS_READ))
     .query(async ({ input }) => {
       return db.personGoal.findMany({
         where: { personId: input.personId },
@@ -39,19 +39,15 @@ export const personGoalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must claim a Person record first.",
-        });
-      }
+      const targetPersonId = input.personId ?? ctx.personId;
 
-      const targetPersonId = input.personId ?? myPersonId;
-
-      if (targetPersonId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, targetPersonId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (targetPersonId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          targetPersonId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personGoal.create({
@@ -78,18 +74,19 @@ export const personGoalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
-
       const goal = await db.personGoal.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
       if (!goal) throw new TRPCError({ code: "NOT_FOUND" });
 
-      if (goal.personId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, goal.personId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (goal.personId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          goal.personId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personGoal.update({
@@ -107,18 +104,19 @@ export const personGoalRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
-
       const goal = await db.personGoal.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
       if (!goal) throw new TRPCError({ code: "NOT_FOUND" });
 
-      if (goal.personId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, goal.personId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (goal.personId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          goal.personId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.personGoal.delete({ where: { id: input.id } });
@@ -127,14 +125,15 @@ export const personGoalRouter = createTRPCRouter({
   reorder: protectedProcedure
     .input(z.object({ ids: z.array(z.string()), personId: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
+      const targetPersonId = input.personId ?? ctx.personId;
 
-      const targetPersonId = input.personId ?? myPersonId;
-
-      if (targetPersonId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, targetPersonId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (targetPersonId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_GOALS_WRITE,
+          targetPersonId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.$transaction(

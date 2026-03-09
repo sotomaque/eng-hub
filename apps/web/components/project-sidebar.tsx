@@ -29,8 +29,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useAccess } from "@/lib/hooks/use-access";
 
 type ProjectSidebarProps = {
   projectId: string;
@@ -48,15 +50,15 @@ type ProjectSidebarProps = {
 };
 
 const navItems = [
-  { label: "Overview", icon: LayoutDashboard, path: "" },
-  { label: "Health", icon: Activity, path: "/health" },
-  { label: "People", icon: Users, path: "/team" },
-  { label: "Org Chart", icon: Network, path: "/org-chart" },
-  { label: "Roadmap", icon: Flag, path: "/roadmap" },
-  { label: "Links", icon: LinkIcon, path: "/links" },
-  { label: "Teams", icon: Layers, path: "/arrangements" },
-  { label: "Billets", icon: Briefcase, path: "/billets" },
-  { label: "Stats", icon: BarChart3, path: "/stats" },
+  { label: "Overview", icon: LayoutDashboard, path: "", capability: null },
+  { label: "Health", icon: Activity, path: "/health", capability: "project:health:read" },
+  { label: "People", icon: Users, path: "/team", capability: "project:team:read" },
+  { label: "Org Chart", icon: Network, path: "/org-chart", capability: "project:team:read" },
+  { label: "Roadmap", icon: Flag, path: "/roadmap", capability: "project:roadmap:read" },
+  { label: "Links", icon: LinkIcon, path: "/links", capability: "project:links:read" },
+  { label: "Teams", icon: Layers, path: "/arrangements", capability: "project:arrangements:read" },
+  { label: "Billets", icon: Briefcase, path: "/billets", capability: "project:budget:read" },
+  { label: "Stats", icon: BarChart3, path: "/stats", capability: "project:stats:read" },
 ];
 
 export function ProjectSidebar({
@@ -71,6 +73,12 @@ export function ProjectSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const basePath = `/projects/${projectId}`;
+  const { can } = useAccess();
+
+  const visibleItems = useMemo(
+    () => navItems.filter((item) => !item.capability || can(item.capability, projectId)),
+    [can, projectId],
+  );
 
   function isActive(itemPath: string) {
     const fullPath = `${basePath}${itemPath}`;
@@ -178,7 +186,7 @@ export function ProjectSidebar({
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton asChild isActive={isActive(item.path)}>
                     <Link

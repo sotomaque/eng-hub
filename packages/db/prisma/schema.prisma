@@ -82,6 +82,8 @@ model Project {
   favoritedBy      FavoriteProject[]
   owners           ProjectOwner[]
   billets          Billet[]
+  accessGrants     AccessGrant[]
+  accessOverrides  AccessOverride[]
 
   @@index([parentId])
   @@index([fundedById])
@@ -189,8 +191,8 @@ model Person {
   authoredComments      PersonComment[] @relation("PersonCommentAuthors")
   milestoneAssignments      MilestoneAssignment[]
   quarterlyGoalAssignments  QuarterlyGoalAssignment[]
-  visibilityGrantsGiven    MeetingVisibilityGrant[] @relation("GrantedVisibility")
-  visibilityGrantsReceived MeetingVisibilityGrant[] @relation("ReceivedVisibility")
+  accessGrants             AccessGrant[]
+  accessOverrides          AccessOverride[]
   favoriteProjects         FavoriteProject[]
   ownedProjects            ProjectOwner[]
   pendingInvites           PendingInvite[]
@@ -421,20 +423,6 @@ model Meeting {
   @@map("meetings")
 }
 
-model MeetingVisibilityGrant {
-  id        String   @id @default(cuid())
-  granterId String   @map("granter_id")
-  granter   Person   @relation("GrantedVisibility", fields: [granterId], references: [id], onDelete: Cascade)
-  granteeId String   @map("grantee_id")
-  grantee   Person   @relation("ReceivedVisibility", fields: [granteeId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@unique([granterId, granteeId])
-  @@index([granterId])
-  @@index([granteeId])
-  @@map("meeting_visibility_grants")
-}
-
 model PersonComment {
   id             String   @id @default(cuid())
   content        String
@@ -618,4 +606,49 @@ model Billet {
   @@index([departmentId])
   @@index([titleId])
   @@map("billets")
+}
+
+model AccessProfile {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  capabilities String[] @default([])
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  grants AccessGrant[]
+
+  @@map("access_profiles")
+}
+
+model AccessGrant {
+  id        String        @id @default(cuid())
+  personId  String        @map("person_id")
+  person    Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  profileId String        @map("profile_id")
+  profile   AccessProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  projectId String?       @map("project_id")
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@unique([personId, profileId, projectId])
+  @@index([personId])
+  @@index([projectId])
+  @@map("access_grants")
+}
+
+model AccessOverride {
+  id         String   @id @default(cuid())
+  personId   String   @map("person_id")
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  projectId  String?  @map("project_id")
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  capability String
+  effect     String   @default("deny")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([personId, projectId, capability])
+  @@index([personId])
+  @@map("access_overrides")
 }

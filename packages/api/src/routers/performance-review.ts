@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { isDirectManager, isInManagementChain, resolveClerkPerson } from "../lib/hierarchy";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { hasPersonCapability } from "../lib/access";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requirePersonCapability } from "../trpc";
 
 const scoreField = z.coerce.number().min(1).max(5).multipleOf(0.5);
 
@@ -13,10 +14,8 @@ function isPrismaUniqueConstraintError(error: unknown): boolean {
 
 export const performanceReviewRouter = createTRPCRouter({
   listMine: protectedProcedure.query(async ({ ctx }) => {
-    const personId = await resolveClerkPerson(ctx.userId);
-    if (!personId) return [];
     return db.performanceReview.findMany({
-      where: { personId },
+      where: { personId: ctx.personId },
       include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { reviewDate: "desc" },
       take: 100,
@@ -25,12 +24,8 @@ export const performanceReviewRouter = createTRPCRouter({
 
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (myPersonId !== input.personId) {
-        const inChain = await isInManagementChain(ctx.userId, input.personId);
-        if (!inChain) throw new TRPCError({ code: "FORBIDDEN" });
-      }
+    .use(requirePersonCapability(CAPABILITIES.PERSON_REVIEWS_READ))
+    .query(async ({ input }) => {
       return db.performanceReview.findMany({
         where: { personId: input.personId },
         include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
@@ -45,11 +40,12 @@ export const performanceReviewRouter = createTRPCRouter({
       include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
     });
     if (!review) throw new TRPCError({ code: "NOT_FOUND" });
-    const myPersonId = await resolveClerkPerson(ctx.userId);
-    if (myPersonId !== review.personId) {
-      const inChain = await isInManagementChain(ctx.userId, review.personId);
-      if (!inChain) throw new TRPCError({ code: "FORBIDDEN" });
-    }
+    const canRead = await hasPersonCapability(
+      ctx.access,
+      CAPABILITIES.PERSON_REVIEWS_READ,
+      review.personId,
+    );
+    if (!canRead) throw new TRPCError({ code: "FORBIDDEN" });
     return review;
   }),
 
@@ -72,19 +68,15 @@ export const performanceReviewRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must claim a Person record first.",
-        });
-      }
+      const targetPersonId = input.personId ?? ctx.personId;
 
-      const targetPersonId = input.personId ?? myPersonId;
-
-      if (targetPersonId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, targetPersonId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (targetPersonId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_REVIEWS_WRITE,
+          targetPersonId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       try {
@@ -136,18 +128,19 @@ export const performanceReviewRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
-
       const review = await db.performanceReview.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
       if (!review) throw new TRPCError({ code: "NOT_FOUND" });
 
-      if (review.personId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, review.personId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (review.personId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_REVIEWS_WRITE,
+          review.personId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       try {
@@ -182,18 +175,19 @@ export const performanceReviewRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const myPersonId = await resolveClerkPerson(ctx.userId);
-      if (!myPersonId) throw new TRPCError({ code: "FORBIDDEN" });
-
       const review = await db.performanceReview.findUnique({
         where: { id: input.id },
         select: { personId: true },
       });
       if (!review) throw new TRPCError({ code: "NOT_FOUND" });
 
-      if (review.personId !== myPersonId) {
-        const isManager = await isDirectManager(ctx.userId, review.personId);
-        if (!isManager) throw new TRPCError({ code: "FORBIDDEN" });
+      if (review.personId !== ctx.personId) {
+        const canWrite = await hasPersonCapability(
+          ctx.access,
+          CAPABILITIES.PERSON_REVIEWS_WRITE,
+          review.personId,
+        );
+        if (!canWrite) throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       return db.performanceReview.delete({ where: { id: input.id } });

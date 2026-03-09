@@ -1,3 +1,4 @@
+import { accessRouter } from "./routers/access";
 import { adminRouter } from "./routers/admin";
 import { arrangementRouter } from "./routers/arrangement";
 import { billetRouter } from "./routers/billet";
@@ -24,6 +25,7 @@ import { titleRouter } from "./routers/title";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
+  access: accessRouter,
   admin: adminRouter,
   arrangement: arrangementRouter,
   billet: billetRouter,

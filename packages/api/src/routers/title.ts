@@ -1,9 +1,10 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 export const titleRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async () => {
+  getAll: protectedProcedure.use(requireCapability(CAPABILITIES.SETTINGS_READ)).query(async () => {
     return db.title.findMany({
       orderBy: { sortOrder: "asc" },
       take: 200,
@@ -21,6 +22,7 @@ export const titleRouter = createTRPCRouter({
         departmentId: z.string().optional(),
       }),
     )
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       const maxSort = await db.title.aggregate({
         _max: { sortOrder: true },
@@ -42,6 +44,7 @@ export const titleRouter = createTRPCRouter({
         departmentId: z.string().optional().or(z.literal("")),
       }),
     )
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       return db.title.update({
         where: { id: input.id },
@@ -52,12 +55,16 @@ export const titleRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    return db.title.delete({ where: { id: input.id } });
-  }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
+    .mutation(async ({ input }) => {
+      return db.title.delete({ where: { id: input.id } });
+    }),
 
   reorder: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       return db.$transaction(
         input.ids.map((id, index) =>
@@ -76,6 +83,7 @@ export const titleRouter = createTRPCRouter({
         mergeIds: z.array(z.string()),
       }),
     )
+    .use(requireCapability(CAPABILITIES.SETTINGS_WRITE))
     .mutation(async ({ input }) => {
       return db.$transaction(async (tx) => {
         await tx.person.updateMany({

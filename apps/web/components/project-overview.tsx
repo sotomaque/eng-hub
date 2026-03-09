@@ -1,3 +1,5 @@
+"use client";
+
 import type { HealthStatus, RoadmapStatus } from "@prisma/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
@@ -17,6 +19,7 @@ import {
 import Link from "next/link";
 
 import { HEALTH_STATUS_DOT, HEALTH_STATUS_LABEL } from "@/lib/health-status";
+import { useAccess } from "@/lib/hooks/use-access";
 
 type ChildProject = {
   id: string;
@@ -119,10 +122,18 @@ export function ProjectOverview({
   const basePath = `/projects/${projectId}`;
   const milestoneStats = countByStatus(milestones);
   const goalStats = countByStatus(quarterlyGoals);
+  const { can } = useAccess();
+
+  const canHealth = can("project:health:read", projectId);
+  const canTeam = can("project:team:read", projectId);
+  const canRoadmap = can("project:roadmap:read", projectId);
+  const canLinks = can("project:links:read", projectId);
+  const canBudget = can("project:budget:read", projectId);
+  const canProjectWrite = can("project:write", projectId);
 
   return (
     <div className="space-y-8">
-      {(description || fundedBy || budget || owners.length > 0) && (
+      {(description || fundedBy || (canBudget && budget) || owners.length > 0) && (
         <div className="space-y-2">
           {fundedBy && (
             <Link
@@ -133,7 +144,7 @@ export function ProjectOverview({
               Funded by {fundedBy.name}
             </Link>
           )}
-          {budget != null && (
+          {canBudget && budget != null && (
             <div className="text-muted-foreground inline-flex items-center gap-1.5 text-sm">
               <DollarSign className="size-3.5" />
               Budget: {budgetFormatter.format(Number(budget))}
@@ -173,97 +184,109 @@ export function ProjectOverview({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Health */}
-        <MetricCard href={`${basePath}/health`} icon={Activity} label="Health">
-          {latestStatus ? (
-            <div className="flex items-center gap-2">
-              <span
-                className={`size-2.5 rounded-full ${HEALTH_STATUS_DOT[latestStatus.overallStatus]}`}
-              />
-              <span className="text-2xl font-bold tracking-tight">
-                {HEALTH_STATUS_LABEL[latestStatus.overallStatus]}
-              </span>
-            </div>
-          ) : (
-            <span className="text-muted-foreground text-sm">No assessments yet</span>
-          )}
-        </MetricCard>
+        {canHealth && (
+          <MetricCard href={`${basePath}/health`} icon={Activity} label="Health">
+            {latestStatus ? (
+              <div className="flex items-center gap-2">
+                <span
+                  className={`size-2.5 rounded-full ${HEALTH_STATUS_DOT[latestStatus.overallStatus]}`}
+                />
+                <span className="text-2xl font-bold tracking-tight">
+                  {HEALTH_STATUS_LABEL[latestStatus.overallStatus]}
+                </span>
+              </div>
+            ) : (
+              <span className="text-muted-foreground text-sm">No assessments yet</span>
+            )}
+          </MetricCard>
+        )}
 
         {/* Team */}
-        <MetricCard href={`${basePath}/team`} icon={Users} label="Team">
-          <div className="text-2xl font-bold tracking-tight">{memberCount}</div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {memberCount === 1 ? "member" : "members"}
-            {teamCount > 0 && ` across ${teamCount} ${teamCount === 1 ? "team" : "teams"}`}
-          </p>
-        </MetricCard>
+        {canTeam && (
+          <MetricCard href={`${basePath}/team`} icon={Users} label="Team">
+            <div className="text-2xl font-bold tracking-tight">{memberCount}</div>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              {memberCount === 1 ? "member" : "members"}
+              {teamCount > 0 && ` across ${teamCount} ${teamCount === 1 ? "team" : "teams"}`}
+            </p>
+          </MetricCard>
+        )}
 
         {/* Milestones */}
-        <MetricCard href={`${basePath}/roadmap`} icon={Flag} label="Milestones">
-          <div className="text-2xl font-bold tracking-tight">{milestones.length}</div>
-          {milestones.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
-              <StatPill
-                count={milestoneStats.completed}
-                label="done"
-                color="text-green-600 dark:text-green-400"
-              />
-              <StatPill
-                count={milestoneStats.inProgress}
-                label="active"
-                color="text-blue-600 dark:text-blue-400"
-              />
-              <StatPill
-                count={milestoneStats.atRisk}
-                label="at risk"
-                color="text-red-600 dark:text-red-400"
-              />
-            </div>
-          )}
-        </MetricCard>
+        {canRoadmap && (
+          <MetricCard href={`${basePath}/roadmap`} icon={Flag} label="Milestones">
+            <div className="text-2xl font-bold tracking-tight">{milestones.length}</div>
+            {milestones.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                <StatPill
+                  count={milestoneStats.completed}
+                  label="done"
+                  color="text-green-600 dark:text-green-400"
+                />
+                <StatPill
+                  count={milestoneStats.inProgress}
+                  label="active"
+                  color="text-blue-600 dark:text-blue-400"
+                />
+                <StatPill
+                  count={milestoneStats.atRisk}
+                  label="at risk"
+                  color="text-red-600 dark:text-red-400"
+                />
+              </div>
+            )}
+          </MetricCard>
+        )}
 
         {/* Quarterly Goals */}
-        <MetricCard href={`${basePath}/roadmap`} icon={Target} label="Quarterly Goals">
-          <div className="text-2xl font-bold tracking-tight">{quarterlyGoals.length}</div>
-          {quarterlyGoals.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
-              <StatPill
-                count={goalStats.completed}
-                label="done"
-                color="text-green-600 dark:text-green-400"
-              />
-              <StatPill
-                count={goalStats.inProgress}
-                label="active"
-                color="text-blue-600 dark:text-blue-400"
-              />
-              <StatPill
-                count={goalStats.atRisk}
-                label="at risk"
-                color="text-red-600 dark:text-red-400"
-              />
-            </div>
-          )}
-        </MetricCard>
+        {canRoadmap && (
+          <MetricCard href={`${basePath}/roadmap`} icon={Target} label="Quarterly Goals">
+            <div className="text-2xl font-bold tracking-tight">{quarterlyGoals.length}</div>
+            {quarterlyGoals.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                <StatPill
+                  count={goalStats.completed}
+                  label="done"
+                  color="text-green-600 dark:text-green-400"
+                />
+                <StatPill
+                  count={goalStats.inProgress}
+                  label="active"
+                  color="text-blue-600 dark:text-blue-400"
+                />
+                <StatPill
+                  count={goalStats.atRisk}
+                  label="at risk"
+                  color="text-red-600 dark:text-red-400"
+                />
+              </div>
+            )}
+          </MetricCard>
+        )}
 
         {/* Links */}
-        <MetricCard href={`${basePath}/links`} icon={LinkIcon} label="Links">
-          <div className="text-2xl font-bold tracking-tight">{linkCount}</div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {linkCount === 1 ? "resource" : "resources"}
-          </p>
-        </MetricCard>
+        {canLinks && (
+          <MetricCard href={`${basePath}/links`} icon={LinkIcon} label="Links">
+            <div className="text-2xl font-bold tracking-tight">{linkCount}</div>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              {linkCount === 1 ? "resource" : "resources"}
+            </p>
+          </MetricCard>
+        )}
       </div>
 
       {/* Sub-Projects */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold tracking-tight">Sub-Projects</h3>
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/projects?create=true&parentId=${projectId}`}>
-              <Plus className="size-4" />
-              Add Sub-Project
-            </Link>
-          </Button>
+          {canProjectWrite && (
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/projects?create=true&parentId=${projectId}`}>
+                <Plus className="size-4" />
+                Add Sub-Project
+              </Link>
+            </Button>
+          )}
         </div>
 
         {subProjects.length > 0 ? (
@@ -286,12 +309,14 @@ export function ProjectOverview({
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center">
             <FolderOpen className="text-muted-foreground/50 size-8" />
             <p className="text-muted-foreground mt-2 text-sm">No sub-projects yet</p>
-            <Button asChild size="sm" variant="outline" className="mt-3">
-              <Link href={`/projects?create=true&parentId=${projectId}`}>
-                <Plus className="size-4" />
-                Add Sub-Project
-              </Link>
-            </Button>
+            {canProjectWrite && (
+              <Button asChild size="sm" variant="outline" className="mt-3">
+                <Link href={`/projects?create=true&parentId=${projectId}`}>
+                  <Plus className="size-4" />
+                  Add Sub-Project
+                </Link>
+              </Button>
+            )}
           </div>
         )}
       </div>

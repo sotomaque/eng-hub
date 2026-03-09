@@ -1,11 +1,13 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
+import { CAPABILITIES } from "../lib/capabilities";
 import { syncLiveToActiveArrangement } from "../lib/sync-arrangement";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 export const teamRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_READ))
     .query(async ({ input }) => {
       return db.team.findMany({
         where: { projectId: input.projectId },
@@ -27,6 +29,7 @@ export const teamRouter = createTRPCRouter({
         imageUrl: z.string().url().optional().or(z.literal("")),
       }),
     )
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
         const team = await tx.team.create({
@@ -52,6 +55,7 @@ export const teamRouter = createTRPCRouter({
         imageUrl: z.string().url().optional().or(z.literal("")),
       }),
     )
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
     .mutation(async ({ input }) => {
       const result = await db.$transaction(async (tx) => {
         const team = await tx.team.update({
@@ -68,15 +72,18 @@ export const teamRouter = createTRPCRouter({
       return result;
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    const result = await db.$transaction(async (tx) => {
-      const team = await tx.team.findUniqueOrThrow({
-        where: { id: input.id },
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
+    .mutation(async ({ input }) => {
+      const result = await db.$transaction(async (tx) => {
+        const team = await tx.team.findUniqueOrThrow({
+          where: { id: input.id },
+        });
+        await tx.team.delete({ where: { id: input.id } });
+        await syncLiveToActiveArrangement(tx, team.projectId);
+        return team;
       });
-      await tx.team.delete({ where: { id: input.id } });
-      await syncLiveToActiveArrangement(tx, team.projectId);
-      return team;
-    });
-    return result;
-  }),
+      return result;
+    }),
 });

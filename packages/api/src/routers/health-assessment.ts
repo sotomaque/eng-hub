@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 const healthStatusEnum = z.enum(["RED", "YELLOW", "GREEN"]);
 
@@ -32,6 +33,7 @@ const updateHealthAssessmentSchema = createHealthAssessmentSchema
 export const healthAssessmentRouter = createTRPCRouter({
   getLatest: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_HEALTH_READ))
     .query(async ({ input }) => {
       return db.healthAssessment.findFirst({
         where: { projectId: input.projectId },
@@ -41,6 +43,7 @@ export const healthAssessmentRouter = createTRPCRouter({
 
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_HEALTH_READ))
     .query(async ({ input }) => {
       return db.healthAssessment.findMany({
         where: { projectId: input.projectId },
@@ -63,6 +66,7 @@ export const healthAssessmentRouter = createTRPCRouter({
 
   create: protectedProcedure
     .input(createHealthAssessmentSchema)
+    .use(requireCapability(CAPABILITIES.PROJECT_HEALTH_WRITE))
     .mutation(async ({ ctx, input }) => {
       const result = await db.healthAssessment.create({
         data: {
@@ -92,6 +96,7 @@ export const healthAssessmentRouter = createTRPCRouter({
 
   update: protectedProcedure
     .input(updateHealthAssessmentSchema)
+    .use(requireCapability(CAPABILITIES.PROJECT_HEALTH_WRITE))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.healthAssessment.findUnique({
         where: { id: input.id },
@@ -128,6 +133,7 @@ export const healthAssessmentRouter = createTRPCRouter({
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_HEALTH_WRITE))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.healthAssessment.findUnique({
         where: { id: input.id },

@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { canViewMeetings } from "../lib/hierarchy";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { hasPersonCapability } from "../lib/access";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requirePersonCapability } from "../trpc";
 
 const meetingInclude = {
   person: {
@@ -66,10 +67,8 @@ export const meetingRouter = createTRPCRouter({
 
   getByPersonId: protectedProcedure
     .input(z.object({ personId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const hasAccess = await canViewMeetings(ctx.userId, input.personId);
-      if (!hasAccess) return null;
-
+    .use(requirePersonCapability(CAPABILITIES.PERSON_MEETINGS_READ))
+    .query(async ({ input }) => {
       const meetings = await db.meeting.findMany({
         where: { personId: input.personId },
         include: meetingInclude,
@@ -87,9 +86,14 @@ export const meetingRouter = createTRPCRouter({
       throw new TRPCError({ code: "NOT_FOUND" });
     }
 
+    // Author can always view their own meetings
     if (meeting.authorId !== ctx.userId) {
-      const hasAccess = await canViewMeetings(ctx.userId, meeting.personId);
-      if (!hasAccess) {
+      const canRead = await hasPersonCapability(
+        ctx.access,
+        CAPABILITIES.PERSON_MEETINGS_READ,
+        meeting.personId,
+      );
+      if (!canRead) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
     }
@@ -102,34 +106,12 @@ export const meetingRouter = createTRPCRouter({
       z.object({
         personId: z.string(),
         date: z.coerce.date(),
-        content: z.any(), // Prisma Json + tRPC inference requires z.any() (z.record triggers TS2589)
+        content: z.any(),
         templateId: z.string().optional().or(z.literal("")),
       }),
     )
+    .use(requirePersonCapability(CAPABILITIES.PERSON_MEETINGS_WRITE))
     .mutation(async ({ ctx, input }) => {
-      const [viewer, reportee] = await Promise.all([
-        db.person.findUnique({
-          where: { clerkUserId: ctx.userId },
-          select: { id: true },
-        }),
-        db.person.findUnique({
-          where: { id: input.personId },
-          select: { managerId: true },
-        }),
-      ]);
-      if (!viewer) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must claim a Person record first.",
-        });
-      }
-      if (!reportee || reportee.managerId !== viewer.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only create meeting notes for your direct reports.",
-        });
-      }
-
       const created = await db.meeting.create({
         data: {
           personId: input.personId,
@@ -148,7 +130,7 @@ export const meetingRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         date: z.coerce.date().optional(),
-        content: z.any(), // Prisma Json + tRPC inference requires z.any() (z.record triggers TS2589)
+        content: z.any(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -184,89 +166,5 @@ export const meetingRouter = createTRPCRouter({
 
       await db.meeting.delete({ where: { id: input.id } });
       return { id: input.id };
-    }),
-
-  // ── Visibility Grant Management ─────────────────────────────
-
-  getMyGrants: protectedProcedure.query(async ({ ctx }) => {
-    const viewer = await db.person.findUnique({
-      where: { clerkUserId: ctx.userId },
-      select: { id: true },
-    });
-    if (!viewer) return [];
-    return db.meetingVisibilityGrant.findMany({
-      where: { granterId: viewer.id },
-      include: {
-        grantee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            imageUrl: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-  }),
-
-  grantVisibility: protectedProcedure
-    .input(z.object({ granteeId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const viewer = await db.person.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: {
-          id: true,
-          directReports: { select: { id: true }, take: 1 },
-        },
-      });
-      if (!viewer) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must claim a Person record first.",
-        });
-      }
-      if (viewer.directReports.length === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You have no direct reports to share.",
-        });
-      }
-      if (input.granteeId === viewer.id) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot grant access to yourself.",
-        });
-      }
-      return db.meetingVisibilityGrant.upsert({
-        where: {
-          granterId_granteeId: {
-            granterId: viewer.id,
-            granteeId: input.granteeId,
-          },
-        },
-        create: { granterId: viewer.id, granteeId: input.granteeId },
-        update: {},
-      });
-    }),
-
-  revokeVisibility: protectedProcedure
-    .input(z.object({ granteeId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const viewer = await db.person.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
-      if (!viewer) {
-        throw new TRPCError({ code: "BAD_REQUEST" });
-      }
-      return db.meetingVisibilityGrant.delete({
-        where: {
-          granterId_granteeId: {
-            granterId: viewer.id,
-            granteeId: input.granteeId,
-          },
-        },
-      });
     }),
 });

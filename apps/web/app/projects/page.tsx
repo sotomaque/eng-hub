@@ -95,9 +95,21 @@ async function ProjectsContent({
 
 async function EditProjectContent({ projectId }: { projectId: string }) {
   const trpc = await createServerCaller();
-  const project = await trpc.project.getById({ id: projectId });
-  if (!project) return null;
+  const [access, project] = await Promise.all([
+    trpc.access.myAccess(),
+    trpc.project.getById({ id: projectId }),
+  ]);
+  const canWrite = access.isAdmin || access.capabilities.includes("project:write");
+  if (!canWrite || !project) return null;
   return <ProjectSheet project={{ ...project, budget: project.budget?.toString() ?? null }} />;
+}
+
+async function CreateProjectContent({ parentId }: { parentId?: string }) {
+  const trpc = await createServerCaller();
+  const access = await trpc.access.myAccess();
+  const canWrite = access.isAdmin || access.capabilities.includes("project:write");
+  if (!canWrite) return null;
+  return <ProjectSheet defaultParentId={parentId} />;
 }
 
 export default async function ProjectsPage({ searchParams }: PageProps) {
@@ -133,7 +145,10 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       <AppHeader />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <Suspense fallback={<ProjectsTableSkeleton />}>
+        <Suspense
+          key={`${page}-${pageSize}-${params.search ?? ""}-${status?.join(",") ?? ""}-${projectStatus?.join(",") ?? ""}-${type?.join(",") ?? ""}-${favorite ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}`}
+          fallback={<ProjectsTableSkeleton />}
+        >
           <ProjectsContent
             page={page}
             pageSize={pageSize}
@@ -148,7 +163,11 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
         </Suspense>
       </main>
 
-      {isCreating && <ProjectSheet defaultParentId={params.parentId} />}
+      {isCreating && (
+        <Suspense fallback={null}>
+          <CreateProjectContent parentId={params.parentId} />
+        </Suspense>
+      )}
 
       {editProjectId && (
         <Suspense fallback={null}>

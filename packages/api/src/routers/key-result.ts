@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 const roadmapStatusEnum = z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "AT_RISK"]);
 
@@ -29,61 +30,70 @@ const updateKeyResultSchema = z.object({
 });
 
 export const keyResultRouter = createTRPCRouter({
-  create: protectedProcedure.input(createKeyResultSchema).mutation(async ({ input }) => {
-    const whereClause = input.milestoneId
-      ? { milestoneId: input.milestoneId }
-      : { quarterlyGoalId: input.quarterlyGoalId };
+  create: protectedProcedure
+    .input(createKeyResultSchema)
+    .use(requireCapability(CAPABILITIES.PROJECT_ROADMAP_WRITE))
+    .mutation(async ({ input }) => {
+      const whereClause = input.milestoneId
+        ? { milestoneId: input.milestoneId }
+        : { quarterlyGoalId: input.quarterlyGoalId };
 
-    const existing = await db.keyResult.count({ where: whereClause });
-    if (existing >= 5) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Maximum 5 key results allowed",
+      const existing = await db.keyResult.count({ where: whereClause });
+      if (existing >= 5) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Maximum 5 key results allowed",
+        });
+      }
+
+      const maxSort = await db.keyResult.aggregate({
+        where: whereClause,
+        _max: { sortOrder: true },
       });
-    }
 
-    const maxSort = await db.keyResult.aggregate({
-      where: whereClause,
-      _max: { sortOrder: true },
-    });
+      const result = await db.keyResult.create({
+        data: {
+          title: input.title,
+          targetValue: input.targetValue,
+          currentValue: input.currentValue,
+          unit: input.unit,
+          status: input.status,
+          sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
+          milestoneId: input.milestoneId,
+          quarterlyGoalId: input.quarterlyGoalId,
+        },
+      });
 
-    const result = await db.keyResult.create({
-      data: {
-        title: input.title,
-        targetValue: input.targetValue,
-        currentValue: input.currentValue,
-        unit: input.unit,
-        status: input.status,
-        sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
-        milestoneId: input.milestoneId,
-        quarterlyGoalId: input.quarterlyGoalId,
-      },
-    });
+      return result;
+    }),
 
-    return result;
-  }),
+  update: protectedProcedure
+    .input(updateKeyResultSchema)
+    .use(requireCapability(CAPABILITIES.PROJECT_ROADMAP_WRITE))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      const result = await db.keyResult.update({
+        where: { id },
+        data,
+        include: {
+          milestone: { select: { projectId: true } },
+          quarterlyGoal: { select: { projectId: true } },
+        },
+      });
+      return result;
+    }),
 
-  update: protectedProcedure.input(updateKeyResultSchema).mutation(async ({ input }) => {
-    const { id, ...data } = input;
-    const result = await db.keyResult.update({
-      where: { id },
-      data,
-      include: {
-        milestone: { select: { projectId: true } },
-        quarterlyGoal: { select: { projectId: true } },
-      },
-    });
-    return result;
-  }),
-
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    const result = await db.keyResult.delete({
-      where: { id: input.id },
-      include: {
-        milestone: { select: { projectId: true } },
-        quarterlyGoal: { select: { projectId: true } },
-      },
-    });
-    return result;
-  }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_ROADMAP_WRITE))
+    .mutation(async ({ input }) => {
+      const result = await db.keyResult.delete({
+        where: { id: input.id },
+        include: {
+          milestone: { select: { projectId: true } },
+          quarterlyGoal: { select: { projectId: true } },
+        },
+      });
+      return result;
+    }),
 });

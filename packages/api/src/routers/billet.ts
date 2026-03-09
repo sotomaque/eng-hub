@@ -1,12 +1,14 @@
 import { db } from "@workspace/db";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { CAPABILITIES } from "../lib/capabilities";
+import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
 
 const billetLevelEnum = z.enum(["JUNIOR", "MID", "SENIOR", "LEAD", "PRINCIPAL"]);
 
 export const billetRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_BUDGET_READ))
     .query(async ({ input }) => {
       return db.billet.findMany({
         where: { projectId: input.projectId },
@@ -28,6 +30,7 @@ export const billetRouter = createTRPCRouter({
         count: z.number().int().min(1),
       }),
     )
+    .use(requireCapability(CAPABILITIES.PROJECT_BUDGET_WRITE))
     .mutation(async ({ input }) => {
       return db.billet.create({
         data: {
@@ -50,6 +53,7 @@ export const billetRouter = createTRPCRouter({
         count: z.number().int().min(1),
       }),
     )
+    .use(requireCapability(CAPABILITIES.PROJECT_BUDGET_WRITE))
     .mutation(async ({ input }) => {
       return db.billet.update({
         where: { id: input.id },
@@ -62,7 +66,10 @@ export const billetRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    return db.billet.delete({ where: { id: input.id } });
-  }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .use(requireCapability(CAPABILITIES.PROJECT_BUDGET_WRITE))
+    .mutation(async ({ input }) => {
+      return db.billet.delete({ where: { id: input.id } });
+    }),
 });

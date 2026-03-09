@@ -1,4 +1,5 @@
 export { db, resetAndSeed } from "@workspace/db";
+export type { ResolvedAccess } from "./lib/access";
 export type {
   CompareResult,
   ContributorCompareResult,
