@@ -143,7 +143,10 @@ export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: Quarter
             status: currentStatus,
             parentId: currentParentId,
           });
-          // Force-sync Controller fields after reset
+          // Force-sync all fields after async reset — register() inputs
+          // lose DOM sync and Controller fields lose React state sync
+          setValue("title", "");
+          setValue("description", "");
           setValue("status", currentStatus);
           setValue("parentId", currentParentId);
           setValue("quarter", currentQuarter);
