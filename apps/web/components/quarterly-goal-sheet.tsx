@@ -98,6 +98,7 @@ export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: Quarter
     register,
     handleSubmit,
     reset,
+    setValue,
     getValues,
     formState: { errors, isDirty },
   } = useForm<CreateQuarterlyGoalInput>({
@@ -130,16 +131,22 @@ export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: Quarter
         }
         toast.success("Quarterly goal created");
         if (createAnother) {
-          const current = getValues();
+          const currentStatus = getValues("status");
+          const currentParentId = getValues("parentId");
+          const currentQuarter = getValues("quarter");
           reset({
             projectId,
             title: "",
             description: "",
-            quarter: current.quarter,
+            quarter: currentQuarter,
             targetDate: undefined,
-            status: current.status,
-            parentId: current.parentId,
+            status: currentStatus,
+            parentId: currentParentId,
           });
+          // Force-sync Controller fields after reset
+          setValue("status", currentStatus);
+          setValue("parentId", currentParentId);
+          setValue("quarter", currentQuarter);
           setAssigneeIds([]);
           router.refresh();
         } else {

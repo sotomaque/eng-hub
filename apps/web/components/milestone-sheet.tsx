@@ -94,6 +94,7 @@ export function MilestoneSheet({ projectId, milestone, defaultParentId }: Milest
     register,
     handleSubmit,
     reset,
+    setValue,
     getValues,
     formState: { errors, isDirty },
   } = useForm<CreateMilestoneInput>({
@@ -125,15 +126,19 @@ export function MilestoneSheet({ projectId, milestone, defaultParentId }: Milest
         }
         toast.success("Milestone created");
         if (createAnother) {
-          const current = getValues();
+          const currentStatus = getValues("status");
+          const currentParentId = getValues("parentId");
           reset({
             projectId,
             title: "",
             description: "",
             targetDate: undefined,
-            status: current.status,
-            parentId: current.parentId,
+            status: currentStatus,
+            parentId: currentParentId,
           });
+          // Force-sync Controller fields after reset
+          setValue("status", currentStatus);
+          setValue("parentId", currentParentId);
           setAssigneeIds([]);
           router.refresh();
         } else {
