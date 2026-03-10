@@ -191,7 +191,8 @@ export function DataTable<TData, TValue>({
       </div>
       <DataTablePagination
         table={table}
-        pageSize={isServerPagination ? serverPageSize : undefined}
+        pageIndex={pagination.pageIndex}
+        pageSize={pagination.pageSize}
       />
     </div>
   );

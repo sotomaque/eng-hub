@@ -95,7 +95,6 @@ export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: Quarter
 
   const {
     control,
-    register,
     handleSubmit,
     reset,
     getValues,
@@ -130,15 +129,17 @@ export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: Quarter
         }
         toast.success("Quarterly goal created");
         if (createAnother) {
-          const current = getValues();
+          const currentStatus = getValues("status");
+          const currentParentId = getValues("parentId");
+          const currentQuarter = getValues("quarter");
           reset({
             projectId,
             title: "",
             description: "",
-            quarter: current.quarter,
+            quarter: currentQuarter,
             targetDate: undefined,
-            status: current.status,
-            parentId: current.parentId,
+            status: currentStatus,
+            parentId: currentParentId,
           });
           setAssigneeIds([]);
           router.refresh();
@@ -207,21 +208,39 @@ export function QuarterlyGoalSheet({ projectId, goal, defaultParentId }: Quarter
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                placeholder="Improve test coverage to 80%"
-                {...register("title")}
-                aria-invalid={!!errors.title}
+              <Controller
+                name="title"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="title"
+                    placeholder="Improve test coverage to 80%"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    aria-invalid={!!errors.title}
+                  />
+                )}
               />
               {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="What does this goal entail?"
-                {...register("description")}
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    id="description"
+                    placeholder="What does this goal entail?"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                  />
+                )}
               />
             </div>
 

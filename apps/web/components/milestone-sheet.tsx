@@ -91,7 +91,6 @@ export function MilestoneSheet({ projectId, milestone, defaultParentId }: Milest
 
   const {
     control,
-    register,
     handleSubmit,
     reset,
     getValues,
@@ -125,14 +124,15 @@ export function MilestoneSheet({ projectId, milestone, defaultParentId }: Milest
         }
         toast.success("Milestone created");
         if (createAnother) {
-          const current = getValues();
+          const currentStatus = getValues("status");
+          const currentParentId = getValues("parentId");
           reset({
             projectId,
             title: "",
             description: "",
             targetDate: undefined,
-            status: current.status,
-            parentId: current.parentId,
+            status: currentStatus,
+            parentId: currentParentId,
           });
           setAssigneeIds([]);
           router.refresh();
@@ -201,21 +201,39 @@ export function MilestoneSheet({ projectId, milestone, defaultParentId }: Milest
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                placeholder="v2.0 Release"
-                {...register("title")}
-                aria-invalid={!!errors.title}
+              <Controller
+                name="title"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="title"
+                    placeholder="v2.0 Release"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    aria-invalid={!!errors.title}
+                  />
+                )}
               />
               {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="What does this milestone include?"
-                {...register("description")}
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    id="description"
+                    placeholder="What does this milestone include?"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                  />
+                )}
               />
             </div>
 
