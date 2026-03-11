@@ -14,21 +14,27 @@ ALTER TABLE public.manager_changes ENABLE ROW LEVEL SECURITY;
 
 -- ── Service role: full access (used by Prisma backend) ──────────────────
 
+DROP POLICY IF EXISTS service_role_meetings ON public.meetings;
 CREATE POLICY service_role_meetings ON public.meetings
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS service_role_person_comments ON public.person_comments;
 CREATE POLICY service_role_person_comments ON public.person_comments
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS service_role_health_assessments ON public.health_assessments;
 CREATE POLICY service_role_health_assessments ON public.health_assessments
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS service_role_meeting_visibility_grants ON public.meeting_visibility_grants;
 CREATE POLICY service_role_meeting_visibility_grants ON public.meeting_visibility_grants
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS service_role_people ON public.people;
 CREATE POLICY service_role_people ON public.people
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS service_role_manager_changes ON public.manager_changes;
 CREATE POLICY service_role_manager_changes ON public.manager_changes
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 

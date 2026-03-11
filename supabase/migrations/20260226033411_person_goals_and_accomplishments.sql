@@ -1,5 +1,5 @@
 
-  create table "public"."person_accomplishments" (
+  create table if not exists "public"."person_accomplishments" (
     "id" text not null,
     "person_id" text not null,
     "title" text not null,
@@ -12,7 +12,7 @@
 
 
 
-  create table "public"."person_goals" (
+  create table if not exists "public"."person_goals" (
     "id" text not null,
     "person_id" text not null,
     "title" text not null,
@@ -26,23 +26,39 @@
       );
 
 
-CREATE INDEX person_accomplishments_person_id_idx ON public.person_accomplishments USING btree (person_id);
+CREATE INDEX IF NOT EXISTS person_accomplishments_person_id_idx ON public.person_accomplishments USING btree (person_id);
 
-CREATE UNIQUE INDEX person_accomplishments_pkey ON public.person_accomplishments USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS person_accomplishments_pkey ON public.person_accomplishments USING btree (id);
 
-CREATE INDEX person_goals_person_id_idx ON public.person_goals USING btree (person_id);
+CREATE INDEX IF NOT EXISTS person_goals_person_id_idx ON public.person_goals USING btree (person_id);
 
-CREATE UNIQUE INDEX person_goals_pkey ON public.person_goals USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS person_goals_pkey ON public.person_goals USING btree (id);
 
-alter table "public"."person_accomplishments" add constraint "person_accomplishments_pkey" PRIMARY KEY using index "person_accomplishments_pkey";
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'person_accomplishments_pkey') THEN
+  alter table "public"."person_accomplishments" add constraint "person_accomplishments_pkey" PRIMARY KEY using index "person_accomplishments_pkey";
+END IF;
+END $$;
 
-alter table "public"."person_goals" add constraint "person_goals_pkey" PRIMARY KEY using index "person_goals_pkey";
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'person_goals_pkey') THEN
+  alter table "public"."person_goals" add constraint "person_goals_pkey" PRIMARY KEY using index "person_goals_pkey";
+END IF;
+END $$;
 
-alter table "public"."person_accomplishments" add constraint "person_accomplishments_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'person_accomplishments_person_id_fkey') THEN
+  alter table "public"."person_accomplishments" add constraint "person_accomplishments_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+END IF;
+END $$;
 
 alter table "public"."person_accomplishments" validate constraint "person_accomplishments_person_id_fkey";
 
-alter table "public"."person_goals" add constraint "person_goals_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'person_goals_person_id_fkey') THEN
+  alter table "public"."person_goals" add constraint "person_goals_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+END IF;
+END $$;
 
 alter table "public"."person_goals" validate constraint "person_goals_person_id_fkey";
 

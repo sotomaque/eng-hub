@@ -1,5 +1,5 @@
 
-  create table "public"."project_owners" (
+  create table if not exists "public"."project_owners" (
     "id" text not null,
     "person_id" text not null,
     "project_id" text not null,
@@ -7,21 +7,33 @@
       );
 
 
-CREATE INDEX project_owners_person_id_idx ON public.project_owners USING btree (person_id);
+CREATE INDEX IF NOT EXISTS project_owners_person_id_idx ON public.project_owners USING btree (person_id);
 
-CREATE UNIQUE INDEX project_owners_person_id_project_id_key ON public.project_owners USING btree (person_id, project_id);
+CREATE UNIQUE INDEX IF NOT EXISTS project_owners_person_id_project_id_key ON public.project_owners USING btree (person_id, project_id);
 
-CREATE UNIQUE INDEX project_owners_pkey ON public.project_owners USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS project_owners_pkey ON public.project_owners USING btree (id);
 
-CREATE INDEX project_owners_project_id_idx ON public.project_owners USING btree (project_id);
+CREATE INDEX IF NOT EXISTS project_owners_project_id_idx ON public.project_owners USING btree (project_id);
 
-alter table "public"."project_owners" add constraint "project_owners_pkey" PRIMARY KEY using index "project_owners_pkey";
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'project_owners_pkey') THEN
+  alter table "public"."project_owners" add constraint "project_owners_pkey" PRIMARY KEY using index "project_owners_pkey";
+END IF;
+END $$;
 
-alter table "public"."project_owners" add constraint "project_owners_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'project_owners_person_id_fkey') THEN
+  alter table "public"."project_owners" add constraint "project_owners_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+END IF;
+END $$;
 
 alter table "public"."project_owners" validate constraint "project_owners_person_id_fkey";
 
-alter table "public"."project_owners" add constraint "project_owners_project_id_fkey" FOREIGN KEY (project_id) REFERENCES public.projects(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'project_owners_project_id_fkey') THEN
+  alter table "public"."project_owners" add constraint "project_owners_project_id_fkey" FOREIGN KEY (project_id) REFERENCES public.projects(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+END IF;
+END $$;
 
 alter table "public"."project_owners" validate constraint "project_owners_project_id_fkey";
 

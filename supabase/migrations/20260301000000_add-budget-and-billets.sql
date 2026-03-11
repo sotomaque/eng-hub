@@ -27,5 +27,6 @@ CREATE INDEX IF NOT EXISTS billets_project_id_idx ON public.billets(project_id);
 ALTER TABLE public.billets ENABLE ROW LEVEL SECURITY;
 
 -- Service role: full access (used by Prisma backend)
+DROP POLICY IF EXISTS service_role_billets ON public.billets;
 CREATE POLICY service_role_billets ON public.billets
   FOR ALL TO service_role USING (true) WITH CHECK (true);
