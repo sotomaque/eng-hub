@@ -1,5 +1,5 @@
 
-  create table "public"."pending_invites" (
+  create table if not exists "public"."pending_invites" (
     "id" text not null,
     "email" text not null,
     "person_id" text not null,
@@ -7,15 +7,23 @@
       );
 
 
-alter table "public"."project_links" add column "tags" text[] default ARRAY[]::text[];
+alter table "public"."project_links" add column if not exists "tags" text[] default ARRAY[]::text[];
 
-CREATE UNIQUE INDEX pending_invites_email_key ON public.pending_invites USING btree (email);
+CREATE UNIQUE INDEX IF NOT EXISTS pending_invites_email_key ON public.pending_invites USING btree (email);
 
-CREATE UNIQUE INDEX pending_invites_pkey ON public.pending_invites USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS pending_invites_pkey ON public.pending_invites USING btree (id);
 
-alter table "public"."pending_invites" add constraint "pending_invites_pkey" PRIMARY KEY using index "pending_invites_pkey";
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pending_invites_pkey') THEN
+  alter table "public"."pending_invites" add constraint "pending_invites_pkey" PRIMARY KEY using index "pending_invites_pkey";
+END IF;
+END $$;
 
-alter table "public"."pending_invites" add constraint "pending_invites_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pending_invites_person_id_fkey') THEN
+  alter table "public"."pending_invites" add constraint "pending_invites_person_id_fkey" FOREIGN KEY (person_id) REFERENCES public.people(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+END IF;
+END $$;
 
 alter table "public"."pending_invites" validate constraint "pending_invites_person_id_fkey";
 

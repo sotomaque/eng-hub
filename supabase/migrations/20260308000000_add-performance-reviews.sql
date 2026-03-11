@@ -30,5 +30,6 @@ CREATE INDEX IF NOT EXISTS performance_reviews_person_id_idx
 ALTER TABLE public.performance_reviews ENABLE ROW LEVEL SECURITY;
 
 -- Service role: full access (used by Prisma backend)
+DROP POLICY IF EXISTS service_role_performance_reviews ON public.performance_reviews;
 CREATE POLICY service_role_performance_reviews ON public.performance_reviews
   FOR ALL TO service_role USING (true) WITH CHECK (true);

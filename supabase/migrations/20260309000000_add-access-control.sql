@@ -49,10 +49,13 @@ ALTER TABLE public.access_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.access_grants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.access_overrides ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS service_role_access_profiles ON public.access_profiles;
 CREATE POLICY service_role_access_profiles ON public.access_profiles
   FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS service_role_access_grants ON public.access_grants;
 CREATE POLICY service_role_access_grants ON public.access_grants
   FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS service_role_access_overrides ON public.access_overrides;
 CREATE POLICY service_role_access_overrides ON public.access_overrides
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
@@ -104,7 +107,8 @@ INSERT INTO public.access_profiles (id, name, description, capabilities, is_defa
   ], false),
   ('profile-project-viewer', 'Project Viewer', 'Project read only', ARRAY[
     'project:read'
-  ], false);
+  ], false)
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
 -- 4. Grant "Full Access" to all existing users with a Clerk ID
