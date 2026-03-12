@@ -78,6 +78,7 @@ const createProjectSchema = z.object({
   fundedById: z.string().optional().or(z.literal("")),
   budget: z.number().positive().nullable().optional(),
   status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]).optional(),
+  type: z.enum(["STANDARD", "PROTOTYPE"]).optional(),
 });
 
 const updateProjectSchema = createProjectSchema.extend({
@@ -405,6 +406,7 @@ export const projectRouter = createTRPCRouter({
           fundedById,
           budget: input.budget ?? null,
           status: input.status ?? "ACTIVE",
+          type: input.type ?? "STANDARD",
         },
       });
 
@@ -448,6 +450,7 @@ export const projectRouter = createTRPCRouter({
           fundedById,
           budget: data.budget ?? null,
           status: data.status,
+          type: data.type,
         },
       });
 

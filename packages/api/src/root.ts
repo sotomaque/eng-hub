@@ -4,6 +4,7 @@ import { arrangementRouter } from "./routers/arrangement";
 import { billetRouter } from "./routers/billet";
 import { departmentRouter } from "./routers/department";
 import { githubStatsRouter } from "./routers/github-stats";
+import { glossaryRouter } from "./routers/glossary";
 import { healthRouter } from "./routers/health";
 import { healthAssessmentRouter } from "./routers/health-assessment";
 import { keyResultRouter } from "./routers/key-result";
@@ -30,6 +31,7 @@ export const appRouter = createTRPCRouter({
   arrangement: arrangementRouter,
   billet: billetRouter,
   githubStats: githubStatsRouter,
+  glossary: glossaryRouter,
   health: healthRouter,
   keyResult: keyResultRouter,
   managerChange: managerChangeRouter,
