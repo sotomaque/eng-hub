@@ -16,7 +16,7 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
@@ -64,6 +64,7 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [skillNames, setSkillNames] = useState<string[]>(EMPTY_SKILLS);
   const [skillsDirty, setSkillsDirty] = useState(false);
+  const skillsInitialized = useRef(false);
   const emailManuallyEdited = useRef(isEditing);
 
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
@@ -77,12 +78,17 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
   const people = (peopleQuery.data ?? []).filter((p) => !person || p.id !== person.id);
   const departments = departmentsQuery.data ?? [];
   const allTitles = titlesQuery.data ?? [];
-  const allSkillSuggestions = (allSkillsQuery.data ?? []).map((s) => s.name);
+  const allSkillSuggestions = useMemo(
+    () => (allSkillsQuery.data ?? []).map((s) => s.name),
+    [allSkillsQuery.data],
+  );
 
-  // Initialise skill names from the server once the query resolves
+  // Initialise skill names once from the server — guarded so a background
+  // refetch (e.g. window focus) never clobbers the user's unsaved edits.
   useEffect(() => {
-    if (personSkillsQuery.data) {
+    if (personSkillsQuery.data && !skillsInitialized.current) {
       setSkillNames(personSkillsQuery.data.map((s) => s.name));
+      skillsInitialized.current = true;
     }
   }, [personSkillsQuery.data]);
 
