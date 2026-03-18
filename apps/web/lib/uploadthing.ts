@@ -1,11 +1,11 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerSession } from "@workspace/auth/server";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 
 const f = createUploadthing();
 
 async function requireAuth() {
-  const { userId } = await auth();
+  const { userId } = await getServerSession();
   if (!userId) {
     throw new UploadThingError("Unauthorized");
   }

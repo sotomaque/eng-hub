@@ -29,6 +29,10 @@
     },
     "packages/db": {
       "project": ["src/**/*.ts"]
+    },
+    "packages/auth": {
+      "entry": ["src/server.ts", "src/client.tsx", "src/adapters/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
     }
   }
 }

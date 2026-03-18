@@ -1,0 +1,29 @@
+{
+  "name": "@workspace/auth",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "biome check ./src --files-ignore-unknown=true",
+    "lint:fix": "biome check --write ./src --files-ignore-unknown=true",
+    "lint:types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.36.5",
+    "react": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.9",
+    "@workspace/typescript-config": "workspace:*",
+    "next": "^16.0.0",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0"
+  },
+  "exports": {
+    ".": "./src/types.ts",
+    "./server": "./src/server.ts",
+    "./client": "./src/client.tsx"
+  }
+}
