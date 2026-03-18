@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useAuthSession } from "@workspace/auth/client";
 import { Button } from "@workspace/ui/components/button";
 import {
   Sheet,
@@ -18,8 +18,7 @@ import { links } from "@/components/main-nav";
 
 export function MobileNav() {
   const pathname = usePathname();
-  const { user } = useUser();
-  const isAdmin = (user?.publicMetadata as { role?: string } | undefined)?.role === "admin";
+  const { isAdmin } = useAuthSession();
 
   const visibleLinks = isAdmin ? [...links, { href: "/admin", label: "Admin" }] : links;
 

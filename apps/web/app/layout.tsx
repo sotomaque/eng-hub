@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/nextjs";
+import { AuthProvider } from "@workspace/auth/client";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
@@ -29,26 +29,18 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-function MaybeClerkProvider({ children }: { children: React.ReactNode }) {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    return <>{children}</>;
-  }
-
-  return <ClerkProvider>{children}</ClerkProvider>;
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <MaybeClerkProvider>
+    <AuthProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
           <Providers>{children}</Providers>
         </body>
       </html>
-    </MaybeClerkProvider>
+    </AuthProvider>
   );
 }

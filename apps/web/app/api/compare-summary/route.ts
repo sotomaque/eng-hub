@@ -1,5 +1,5 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { auth } from "@clerk/nextjs/server";
+import { getServerSession } from "@workspace/auth/server";
 import { streamText } from "ai";
 import { z } from "zod/v4";
 import { env } from "@/env";
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Not available in production" }, { status: 403 });
   }
 
-  const { userId } = await auth();
+  const { userId } = await getServerSession();
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

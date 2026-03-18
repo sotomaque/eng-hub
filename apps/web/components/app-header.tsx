@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton } from "@workspace/auth/client";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { AppUserButton } from "@/components/app-user-button";

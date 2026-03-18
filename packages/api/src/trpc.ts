@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { getServerSession } from "@workspace/auth/server";
 import { ZodError } from "zod";
 import {
   assertAccess,
@@ -14,8 +14,7 @@ import { resolveClerkPerson } from "./lib/hierarchy";
 // ── Context ──────────────────────────────────────────────────
 
 export const createTRPCContext = async () => {
-  const { userId, sessionClaims } = await auth();
-  const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role ?? null;
+  const { userId } = await getServerSession();
 
   // Eagerly resolve personId + ABAC access for the authenticated user
   let personId: string | null = null;
@@ -30,7 +29,6 @@ export const createTRPCContext = async () => {
 
   return {
     userId,
-    role,
     personId,
     access,
   };
