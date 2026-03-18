@@ -17,6 +17,8 @@ export const CAPABILITIES = {
   PROJECT_LINKS_WRITE: "project:links:write",
   PROJECT_ARRANGEMENTS_READ: "project:arrangements:read",
   PROJECT_ARRANGEMENTS_WRITE: "project:arrangements:write",
+  PROJECT_GLOSSARY_READ: "project:glossary:read",
+  PROJECT_GLOSSARY_WRITE: "project:glossary:write",
 
   PERSON_READ: "person:read",
   PERSON_WRITE: "person:write",

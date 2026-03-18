@@ -44,6 +44,11 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum ProjectType {
+  STANDARD
+  PROTOTYPE
+}
+
 enum BilletLevel {
   JUNIOR
   MID
@@ -67,6 +72,7 @@ model Project {
   fundedProjects Project[] @relation("ProjectFunding")
   budget      Decimal?      @db.Decimal(14, 2)
   status      ProjectStatus @default(ACTIVE)
+  type        ProjectType   @default(STANDARD)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -84,6 +90,7 @@ model Project {
   billets          Billet[]
   accessGrants     AccessGrant[]
   accessOverrides  AccessOverride[]
+  glossaryEntries  GlossaryEntry[]
 
   @@index([parentId])
   @@index([fundedById])
@@ -676,4 +683,18 @@ model AccessOverride {
   @@unique([personId, projectId, capability])
   @@index([personId])
   @@map("access_overrides")
+}
+
+model GlossaryEntry {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  term       String
+  definition String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([projectId, term])
+  @@index([projectId])
+  @@map("glossary_entries")
 }
