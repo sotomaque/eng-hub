@@ -1,4 +1,4 @@
-import { db } from "@workspace/db";
+import { db } from "@workspace/api";
 
 export async function GET() {
   try {
