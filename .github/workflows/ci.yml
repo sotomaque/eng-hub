@@ -106,17 +106,16 @@ jobs:
 
       - name: Reset preview database
         run: |
-          for i in 1 2 3; do
-            response=$(curl -s -w "\n%{http_code}" --max-time 30 -X POST \
-              "${{ steps.vercel.outputs.url }}/api/e2e/reset" \
-              -H "x-e2e-reset-token: ${{ secrets.E2E_RESET_SECRET }}")
-            http_code=$(echo "$response" | tail -1)
-            body=$(echo "$response" | sed '$d')
-            echo "Attempt $i - Response ($http_code): $body"
-            [ "$http_code" = "200" ] && break
-            [ "$i" = "3" ] && echo "::error::Database reset failed after 3 attempts" && exit 1
-            sleep 15
-          done
+          response=$(curl -s -w "\n%{http_code}" --max-time 30 -X POST \
+            "${{ steps.vercel.outputs.url }}/api/e2e/reset" \
+            -H "x-e2e-reset-token: ${{ secrets.E2E_RESET_SECRET }}")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | sed '$d')
+          echo "Response ($http_code): $body"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Database reset failed with HTTP $http_code"
+            exit 1
+          fi
 
       - name: Run E2E tests
         run: bun run test:e2e
