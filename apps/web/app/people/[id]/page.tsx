@@ -8,6 +8,7 @@ import { PersonMeetings } from "@/components/person-meetings";
 import { PersonProfileEditable } from "@/components/person-profile-editable";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { PersonReviews } from "@/components/person-reviews";
+import { PersonSkills } from "@/components/person-skills";
 import { getCachedPerson } from "./_lib/queries";
 
 function serializeDate(date: Date | string | null | undefined): string | null {
@@ -66,6 +67,7 @@ export default async function PersonPage({ params }: PageProps) {
         <Suspense fallback={<PersonProfileSkeleton />}>
           <PersonContent id={id} />
         </Suspense>
+        <PersonSkills personId={id} />
         <PersonMeetings personId={id} />
         <Suspense>
           <PersonGoalsSection id={id} />

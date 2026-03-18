@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PersonProfileEditable } from "@/components/person-profile-editable";
 import { PersonProfileSkeleton } from "@/components/person-profile-skeleton";
 import { PersonReviews } from "@/components/person-reviews";
+import { PersonSkills } from "@/components/person-skills";
 import { getMe } from "./_lib/queries";
 
 export const metadata: Metadata = { title: "My Dashboard" };
@@ -39,6 +40,12 @@ async function MeContent() {
   );
 }
 
+async function MeSkillsSection() {
+  const person = await getMe();
+  if (!person) return null;
+  return <PersonSkills personId={person.id} />;
+}
+
 async function MeReviewsSection() {
   const person = await getMe();
   if (!person) return null;
@@ -50,6 +57,9 @@ export default function MeProfilePage() {
     <div className="space-y-6">
       <Suspense fallback={<PersonProfileSkeleton />}>
         <MeContent />
+      </Suspense>
+      <Suspense>
+        <MeSkillsSection />
       </Suspense>
       <Suspense>
         <MeReviewsSection />
