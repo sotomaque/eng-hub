@@ -106,16 +106,26 @@ jobs:
 
       - name: Reset preview database
         run: |
-          response=$(curl -s -w "\n%{http_code}" --max-time 30 -X POST \
-            "${{ steps.vercel.outputs.url }}/api/e2e/reset" \
-            -H "x-e2e-reset-token: ${{ secrets.E2E_RESET_SECRET }}")
-          http_code=$(echo "$response" | tail -1)
-          body=$(echo "$response" | sed '$d')
-          echo "Response ($http_code): $body"
-          if [ "$http_code" != "200" ]; then
-            echo "::error::Database reset failed with HTTP $http_code"
-            exit 1
-          fi
+          # Supabase branch databases can take several minutes to provision after
+          # the Vercel preview is already live. Retry for up to ~10 minutes.
+          for i in $(seq 1 20); do
+            response=$(curl -s -w "\n%{http_code}" --max-time 30 -X POST \
+              "${{ steps.vercel.outputs.url }}/api/e2e/reset" \
+              -H "x-e2e-reset-token: ${{ secrets.E2E_RESET_SECRET }}")
+            http_code=$(echo "$response" | tail -1)
+            body=$(echo "$response" | sed '$d')
+            echo "Attempt $i/20 - Response ($http_code): $body"
+            if [ "$http_code" = "200" ]; then
+              echo "Database reset succeeded"
+              exit 0
+            fi
+            if [ $i -lt 20 ]; then
+              echo "Waiting 30s for Supabase branch to finish provisioning..."
+              sleep 30
+            fi
+          done
+          echo "::error::Database reset failed after 20 attempts (~10 minutes)"
+          exit 1
 
       - name: Run E2E tests
         run: bun run test:e2e

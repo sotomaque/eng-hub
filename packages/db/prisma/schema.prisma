@@ -200,6 +200,7 @@ model Person {
   accomplishments          PersonAccomplishment[]
   performanceReviews       PerformanceReview[] @relation("PersonReviews")
   reviewedPerformanceReviews PerformanceReview[] @relation("ReviewerReviews")
+  personSkills             PersonSkill[]
 
   @@index([managerId])
   @@index([departmentId])
@@ -606,6 +607,30 @@ model Billet {
   @@index([departmentId])
   @@index([titleId])
   @@map("billets")
+}
+
+model Skill {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  personSkills PersonSkill[]
+
+  @@map("skills")
+}
+
+model PersonSkill {
+  id        String   @id @default(cuid())
+  personId  String   @map("person_id")
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  skillId   String   @map("skill_id")
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([personId, skillId])
+  @@index([personId])
+  @@index([skillId])
+  @@map("person_skills")
 }
 
 model AccessProfile {

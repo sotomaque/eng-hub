@@ -25,6 +25,7 @@ Eng Hub puts it all in one place.
 | Delivery Insights | GitHub stats (commits, PRs, reviews, trends) with visual dashboards and resilient sync with exponential backoff |
 | Contributor Comparison | Side-by-side comparison of selected contributors — commits, PRs merged, monthly trends, and AI-generated narrative summaries (via Anthropic Claude) |
 | Performance Reviews | Per-person review packets with 4 scored dimensions (Core Competency, Teamwork, Innovation, Time Management), optional comments, PDF upload, trend chart, and computed averages |
+| Skill Matrices | Per-person skill tags (e.g. React, Python, Machine Learning) with a shared global skill library and autocomplete — add skills in the edit sheet, displayed on each person's profile |
 | People Directory | Searchable directory with profiles, manager hierarchies, department/title taxonomy, and manager change audit trail |
 
 ---

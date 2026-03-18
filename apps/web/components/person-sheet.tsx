@@ -16,7 +16,7 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
@@ -25,6 +25,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import { type CreatePersonInput, createPersonSchema } from "@/lib/validations/person";
 
 const EMPTY_SUGGESTIONS: string[] = [];
+const EMPTY_SKILLS: string[] = [];
 
 type PersonWithMemberships = {
   id: string;
@@ -61,14 +62,35 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
   const isEditing = !!person;
   const [imageUrl, setImageUrl] = useState<string | null>(person?.imageUrl ?? null);
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [skillNames, setSkillNames] = useState<string[]>(EMPTY_SKILLS);
+  const [skillsDirty, setSkillsDirty] = useState(false);
+  const skillsInitialized = useRef(false);
   const emailManuallyEdited = useRef(isEditing);
 
   const peopleQuery = useQuery(trpc.person.getAll.queryOptions());
   const departmentsQuery = useQuery(trpc.department.getAll.queryOptions());
   const titlesQuery = useQuery(trpc.title.getAll.queryOptions());
+  const allSkillsQuery = useQuery(trpc.skill.getAll.queryOptions());
+  const personSkillsQuery = useQuery({
+    ...trpc.skill.getByPersonId.queryOptions({ personId: person?.id ?? "" }),
+    enabled: isEditing && !!person?.id,
+  });
   const people = (peopleQuery.data ?? []).filter((p) => !person || p.id !== person.id);
   const departments = departmentsQuery.data ?? [];
   const allTitles = titlesQuery.data ?? [];
+  const allSkillSuggestions = useMemo(
+    () => (allSkillsQuery.data ?? []).map((s) => s.name),
+    [allSkillsQuery.data],
+  );
+
+  // Initialise skill names once from the server — guarded so a background
+  // refetch (e.g. window focus) never clobbers the user's unsaved edits.
+  useEffect(() => {
+    if (personSkillsQuery.data && !skillsInitialized.current) {
+      setSkillNames(personSkillsQuery.data.map((s) => s.name));
+      skillsInitialized.current = true;
+    }
+  }, [personSkillsQuery.data]);
 
   const {
     register,
@@ -131,27 +153,24 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
 
   const createMutation = useMutation(
     trpc.person.create.mutationOptions({
-      onSuccess: () => {
-        toast.success("Person created");
-        handleClose();
-        router.refresh();
-      },
       onError: (error) => toast.error(error.message),
     }),
   );
 
   const updateMutation = useMutation(
     trpc.person.update.mutationOptions({
-      onSuccess: () => {
-        toast.success("Person updated");
-        handleClose();
-        router.refresh();
-      },
       onError: (error) => toast.error(error.message),
     }),
   );
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const setSkillsMutation = useMutation(
+    trpc.skill.setPersonSkills.mutationOptions({
+      onError: (error) => toast.error(error.message),
+    }),
+  );
+
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || setSkillsMutation.isPending;
 
   function handleClose() {
     if (onClose) {
@@ -165,16 +184,27 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
     reset();
   }
 
-  function onSubmit(data: CreatePersonInput) {
+  async function onSubmit(data: CreatePersonInput) {
     const withImage = {
       ...data,
       imageUrl: imageUrl || "",
       emailAliases: data.emailAliases.map((a) => a.trim()).filter(Boolean),
     };
-    if (isEditing && person) {
-      updateMutation.mutate({ ...withImage, id: person.id });
-    } else {
-      createMutation.mutate(withImage);
+    try {
+      if (isEditing && person) {
+        await updateMutation.mutateAsync({ ...withImage, id: person.id });
+        if (skillsDirty) {
+          await setSkillsMutation.mutateAsync({ personId: person.id, skillNames });
+        }
+        toast.success("Person updated");
+      } else {
+        await createMutation.mutateAsync(withImage);
+        toast.success("Person created");
+      }
+      handleClose();
+      router.refresh();
+    } catch {
+      // errors already shown by individual mutation onError handlers
     }
   }
 
@@ -388,6 +418,24 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
 
             {isEditing && person && (
               <div className="space-y-2">
+                <Label>Skills</Label>
+                <TagInput
+                  value={skillNames}
+                  onChange={(names) => {
+                    setSkillNames(names);
+                    setSkillsDirty(true);
+                  }}
+                  suggestions={allSkillSuggestions}
+                  placeholder="Add skill..."
+                />
+                <p className="text-muted-foreground text-xs">
+                  Technical and domain skills (e.g. React, Python, Machine Learning)
+                </p>
+              </div>
+            )}
+
+            {isEditing && person && (
+              <div className="space-y-2">
                 <Label>Projects</Label>
                 {person.projectMemberships.length > 0 && (
                   <div className="flex flex-wrap gap-1">
@@ -431,7 +479,7 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
               disabled={
                 isSubmitting ||
                 isImageUploading ||
-                (!isDirty && imageUrl === (person?.imageUrl ?? null))
+                (!isDirty && !skillsDirty && imageUrl === (person?.imageUrl ?? null))
               }
             >
               {isSubmitting && <Loader2 className="animate-spin" />}

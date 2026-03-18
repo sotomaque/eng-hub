@@ -19,6 +19,7 @@ import { personGoalRouter } from "./routers/person-goal";
 import { projectRouter } from "./routers/project";
 import { projectLinkRouter } from "./routers/project-link";
 import { quarterlyGoalRouter } from "./routers/quarterly-goal";
+import { skillRouter } from "./routers/skill";
 import { teamRouter } from "./routers/team";
 import { teamMemberRouter } from "./routers/team-member";
 import { titleRouter } from "./routers/title";
@@ -38,6 +39,7 @@ export const appRouter = createTRPCRouter({
   milestone: milestoneRouter,
   performanceReview: performanceReviewRouter,
   person: personRouter,
+  skill: skillRouter,
   personAccomplishment: personAccomplishmentRouter,
   personComment: personCommentRouter,
   personGoal: personGoalRouter,
