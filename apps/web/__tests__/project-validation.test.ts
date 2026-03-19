@@ -58,6 +58,30 @@ describe("createProjectSchema", () => {
   });
 });
 
+describe("createProjectSchema — type field", () => {
+  test("defaults to omitting type when not provided", () => {
+    const result = createProjectSchema.safeParse({ name: "My Project" });
+    expect(result.success).toBe(true);
+  });
+
+  test("accepts STANDARD type", () => {
+    const result = createProjectSchema.safeParse({ name: "My Project", type: "STANDARD" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.type).toBe("STANDARD");
+  });
+
+  test("accepts PROTOTYPE type", () => {
+    const result = createProjectSchema.safeParse({ name: "My Project", type: "PROTOTYPE" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.type).toBe("PROTOTYPE");
+  });
+
+  test("rejects an invalid type value", () => {
+    const result = createProjectSchema.safeParse({ name: "My Project", type: "INVALID" });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("updateProjectSchema", () => {
   test("requires id field", () => {
     const result = updateProjectSchema.safeParse({ name: "Updated" });

@@ -65,7 +65,16 @@ const { createCallerFactory } = await import("../../trpc");
 const { projectRouter } = await import("../project");
 
 const createCaller = createCallerFactory(projectRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 const validInput = {
   id: "proj-1",

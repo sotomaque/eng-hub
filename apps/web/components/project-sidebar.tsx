@@ -17,6 +17,7 @@ import {
   Activity,
   ArrowLeft,
   BarChart3,
+  BookOpen,
   Briefcase,
   DollarSign,
   Flag,
@@ -59,6 +60,7 @@ const navItems = [
   { label: "Teams", icon: Layers, path: "/arrangements", capability: "project:arrangements:read" },
   { label: "Billets", icon: Briefcase, path: "/billets", capability: "project:budget:read" },
   { label: "Stats", icon: BarChart3, path: "/stats", capability: "project:stats:read" },
+  { label: "Glossary", icon: BookOpen, path: "/glossary", capability: "project:glossary:read" },
 ];
 
 export function ProjectSidebar({

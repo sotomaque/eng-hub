@@ -1,12 +1,13 @@
 "use client";
 
-import type { HealthStatus, RoadmapStatus } from "@prisma/client";
+import type { HealthStatus, ProjectType, RoadmapStatus } from "@prisma/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   ArrowRight,
+  Beaker,
   Crown,
   DollarSign,
   Flag,
@@ -30,6 +31,7 @@ type ChildProject = {
 type ProjectOverviewProps = {
   projectId: string;
   description: string | null;
+  type: ProjectType;
   budget: string | number | null;
   latestStatus: { overallStatus: HealthStatus } | null;
   memberCount: number;
@@ -108,6 +110,7 @@ const budgetFormatter = new Intl.NumberFormat("en-US", {
 export function ProjectOverview({
   projectId,
   description,
+  type,
   budget,
   latestStatus,
   memberCount,
@@ -133,8 +136,18 @@ export function ProjectOverview({
 
   return (
     <div className="space-y-8">
-      {(description || fundedBy || (canBudget && budget) || owners.length > 0) && (
+      {(description ||
+        type === "PROTOTYPE" ||
+        fundedBy ||
+        (canBudget && budget) ||
+        owners.length > 0) && (
         <div className="space-y-2">
+          {type === "PROTOTYPE" && (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300">
+              <Beaker className="size-3" />
+              Prototype
+            </div>
+          )}
           {fundedBy && (
             <Link
               href={`/projects/${fundedBy.id}`}

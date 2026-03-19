@@ -61,7 +61,16 @@ const { createCallerFactory } = await import("../../trpc");
 const { githubStatsRouter } = await import("../github-stats");
 
 const createCaller = createCallerFactory(githubStatsRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 // ── Tests ──────────────────────────────────────────────────
 

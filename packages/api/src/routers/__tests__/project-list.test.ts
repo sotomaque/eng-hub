@@ -49,7 +49,16 @@ const { createCallerFactory } = await import("../../trpc");
 const { projectRouter } = await import("../project");
 
 const createCaller = createCallerFactory(projectRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 // ── Tests ────────────────────────────────────────────────────
 
@@ -250,16 +259,6 @@ describe("project.list", () => {
     expect(callArgs.where?.favoritedBy).toEqual({
       some: { personId: "person-1" },
     });
-  });
-
-  test("favorite filter returns empty when no linked person", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    const result = await caller.list({ page: 1, pageSize: 10, favorite: true });
-
-    expect(result.items).toEqual([]);
-    expect(result.totalCount).toBe(0);
-    expect(mockProjectFindMany).not.toHaveBeenCalled();
   });
 
   test("favorite filter composes with search and status", async () => {

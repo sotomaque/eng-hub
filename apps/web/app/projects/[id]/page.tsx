@@ -22,6 +22,7 @@ async function OverviewContent({ id }: { id: string }) {
     <ProjectOverview
       projectId={id}
       description={project.description}
+      type={project.type}
       budget={project.budget?.toString() ?? null}
       latestStatus={project.healthAssessments[0] ?? null}
       memberCount={project.teamMembers.length}

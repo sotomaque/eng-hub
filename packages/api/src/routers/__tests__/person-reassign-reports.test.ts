@@ -13,19 +13,28 @@ mock.module("@clerk/nextjs/server", () => ({
 // ── DB mock ──────────────────────────────────────────────────
 
 const mockPersonFindUnique = mock(() =>
-  Promise.resolve(null as { managerId: string | null } | null),
+  Promise.resolve(null as { id?: string; managerId: string | null } | null),
 );
-const mockPersonFindUniqueOrThrow = mock(() => Promise.resolve({ managerId: "old-mgr" }));
 const mockPersonUpdate = mock(() => Promise.resolve({}));
-const mockManagerChangeCreate = mock(() => Promise.resolve({}));
+const mockPersonUpdateMany = mock(() => Promise.resolve({ count: 0 }));
+const mockManagerChangeCreateMany = mock(() => Promise.resolve({ count: 0 }));
 const mockQueryRaw = mock(() => Promise.resolve([{ found: false }]));
+
+const mockTxPersonFindMany = mock(() =>
+  Promise.resolve([] as { id: string; managerId: string | null }[]),
+);
 
 const tx = {
   person: {
-    findUniqueOrThrow: mockPersonFindUniqueOrThrow,
+    findMany: mockTxPersonFindMany,
+    findUniqueOrThrow: mock(() => Promise.resolve({ managerId: "old-mgr" })),
     update: mockPersonUpdate,
+    updateMany: mockPersonUpdateMany,
   },
-  managerChange: { create: mockManagerChangeCreate },
+  managerChange: {
+    create: mock(() => Promise.resolve({})),
+    createMany: mockManagerChangeCreateMany,
+  },
 };
 
 const mockTransaction = mock(async (fn: (arg: unknown) => Promise<unknown>) => fn(tx));
@@ -40,10 +49,13 @@ mock.module("@workspace/db", () => ({
       create: mock(() => Promise.resolve({ id: "new-person" })),
       delete: mock(() => Promise.resolve({})),
       count: mock(() => Promise.resolve(0)),
-      updateMany: mock(() => Promise.resolve({ count: 0 })),
+      updateMany: mockPersonUpdateMany,
       groupBy: mock(() => Promise.resolve([])),
     },
-    managerChange: { create: mockManagerChangeCreate },
+    managerChange: {
+      create: mock(() => Promise.resolve({})),
+      createMany: mockManagerChangeCreateMany,
+    },
     teamMember: {
       create: mock(() => Promise.resolve({ id: "tm-1" })),
       delete: mock(() => Promise.resolve({})),
@@ -63,16 +75,25 @@ const { createCallerFactory } = await import("../../trpc");
 const { personRouter } = await import("../person");
 
 const createCaller = createCallerFactory(personRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 // ── Tests ──────────────────────────────────────────────────
 
 describe("person.reassignReports", () => {
   beforeEach(() => {
     mockPersonFindUnique.mockReset();
-    mockPersonFindUniqueOrThrow.mockReset().mockResolvedValue({ managerId: "old-mgr" });
-    mockPersonUpdate.mockReset().mockResolvedValue({});
-    mockManagerChangeCreate.mockReset().mockResolvedValue({});
+    mockPersonUpdateMany.mockReset().mockResolvedValue({ count: 0 });
+    mockManagerChangeCreateMany.mockReset().mockResolvedValue({ count: 0 });
+    mockTxPersonFindMany.mockReset().mockResolvedValue([]);
     mockQueryRaw.mockReset().mockResolvedValue([{ found: false }]);
     mockTransaction
       .mockReset()
@@ -81,7 +102,11 @@ describe("person.reassignReports", () => {
 
   test("reassigns multiple reports and logs manager changes", async () => {
     // Existence check for newManagerId
-    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null });
+    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null, id: "new-mgr" });
+    mockTxPersonFindMany.mockResolvedValueOnce([
+      { id: "person-a", managerId: "old-mgr" },
+      { id: "person-b", managerId: "old-mgr" },
+    ]);
 
     const result = await caller.reassignReports({
       personIds: ["person-a", "person-b"],
@@ -89,8 +114,26 @@ describe("person.reassignReports", () => {
     });
 
     expect(result.count).toBe(2);
-    expect(mockPersonUpdate).toHaveBeenCalledTimes(2);
-    expect(mockManagerChangeCreate).toHaveBeenCalledTimes(2);
+    expect(mockPersonUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["person-a", "person-b"] } },
+      data: { managerId: "new-mgr" },
+    });
+    expect(mockManagerChangeCreateMany).toHaveBeenCalledWith({
+      data: [
+        {
+          personId: "person-a",
+          oldManagerId: "old-mgr",
+          newManagerId: "new-mgr",
+          changedBy: "test-user-id",
+        },
+        {
+          personId: "person-b",
+          oldManagerId: "old-mgr",
+          newManagerId: "new-mgr",
+          changedBy: "test-user-id",
+        },
+      ],
+    });
   });
 
   test("throws NOT_FOUND when new manager does not exist", async () => {
@@ -105,12 +148,12 @@ describe("person.reassignReports", () => {
       code: "NOT_FOUND",
     });
 
-    expect(mockPersonUpdate).not.toHaveBeenCalled();
+    expect(mockPersonUpdateMany).not.toHaveBeenCalled();
   });
 
   test("throws BAD_REQUEST on cycle detection", async () => {
     // newManagerId exists
-    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null });
+    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null, id: "new-mgr" });
     // cycle detected by recursive CTE
     mockQueryRaw.mockResolvedValueOnce([{ found: true }]);
 
@@ -124,25 +167,27 @@ describe("person.reassignReports", () => {
       message: expect.stringContaining("circular"),
     });
 
-    expect(mockPersonUpdate).not.toHaveBeenCalled();
+    expect(mockPersonUpdateMany).not.toHaveBeenCalled();
   });
 
   test("logs correct old and new manager IDs in audit trail", async () => {
-    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null }); // existence
-    mockPersonFindUniqueOrThrow.mockResolvedValue({ managerId: "old-mgr-id" });
+    mockPersonFindUnique.mockResolvedValueOnce({ managerId: null, id: "new-mgr" });
+    mockTxPersonFindMany.mockResolvedValueOnce([{ id: "person-a", managerId: "old-mgr-id" }]);
 
     await caller.reassignReports({
       personIds: ["person-a"],
       newManagerId: "new-mgr",
     });
 
-    expect(mockManagerChangeCreate).toHaveBeenCalledWith({
-      data: {
-        personId: "person-a",
-        oldManagerId: "old-mgr-id",
-        newManagerId: "new-mgr",
-        changedBy: "test-user-id",
-      },
+    expect(mockManagerChangeCreateMany).toHaveBeenCalledWith({
+      data: [
+        {
+          personId: "person-a",
+          oldManagerId: "old-mgr-id",
+          newManagerId: "new-mgr",
+          changedBy: "test-user-id",
+        },
+      ],
     });
   });
 });

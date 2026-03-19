@@ -24,7 +24,7 @@ const mockTxArrTeamFindMany = mock(() => Promise.resolve([] as { id: string }[])
 const mockTxArrTeamUpdateMany = mock(() => Promise.resolve({ count: 0 }));
 const mockTxArrangementUpdate = mock(() => Promise.resolve({}));
 const mockTxTeamDeleteMany = mock(() => Promise.resolve({ count: 0 }));
-const mockTxTeamCreate = mock(() => Promise.resolve({ id: "live-t1" }));
+const mockTxTeamCreateManyAndReturn = mock(() => Promise.resolve([] as { id: string }[]));
 const mockTxArrTeamUpdate = mock(() => Promise.resolve({}));
 const mockTxMembershipCreateMany = mock(() => Promise.resolve({ count: 0 }));
 
@@ -44,6 +44,7 @@ const tx = {
     aggregate: mock(() => Promise.resolve({ _max: { sortOrder: 0 } })),
     findUniqueOrThrow: mock(() => Promise.resolve({})),
     delete: mock(() => Promise.resolve({})),
+    createManyAndReturn: mock(() => Promise.resolve([])),
   },
   arrangementAssignment: {
     createMany: mock(() => Promise.resolve({ count: 0 })),
@@ -53,7 +54,8 @@ const tx = {
   team: {
     findMany: mock(() => Promise.resolve([])),
     deleteMany: mockTxTeamDeleteMany,
-    create: mockTxTeamCreate,
+    create: mock(() => Promise.resolve({ id: "live-t1" })),
+    createManyAndReturn: mockTxTeamCreateManyAndReturn,
     delete: mock(() => Promise.resolve({})),
   },
   teamMembership: {
@@ -80,7 +82,16 @@ const { createCallerFactory } = await import("../../trpc");
 const { arrangementRouter } = await import("../arrangement");
 
 const createCaller = createCallerFactory(arrangementRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 // ── Tests ──────────────────────────────────────────────────
 
@@ -95,7 +106,7 @@ describe("arrangement.activate", () => {
     mockTxArrTeamUpdateMany.mockReset().mockResolvedValue({ count: 0 });
     mockTxArrangementUpdate.mockReset().mockResolvedValue({});
     mockTxTeamDeleteMany.mockReset().mockResolvedValue({ count: 0 });
-    mockTxTeamCreate.mockReset().mockResolvedValue({ id: "live-t1" });
+    mockTxTeamCreateManyAndReturn.mockReset().mockResolvedValue([]);
     mockTxArrTeamUpdate.mockReset().mockResolvedValue({});
     mockTxMembershipCreateMany.mockReset().mockResolvedValue({ count: 0 });
   });
@@ -153,18 +164,15 @@ describe("arrangement.activate", () => {
         { id: "at-2", name: "Beta", sortOrder: 1, assignments: [] },
       ],
     });
-    mockTxTeamCreate
-      .mockResolvedValueOnce({ id: "live-a" })
-      .mockResolvedValueOnce({ id: "live-b" });
+    mockTxTeamCreateManyAndReturn.mockResolvedValueOnce([{ id: "live-a" }, { id: "live-b" }]);
 
     await caller.activate({ id: "arr-1" });
 
-    expect(mockTxTeamCreate).toHaveBeenCalledTimes(2);
-    expect(mockTxTeamCreate).toHaveBeenCalledWith({
-      data: { name: "Alpha", projectId: "proj-1" },
-    });
-    expect(mockTxTeamCreate).toHaveBeenCalledWith({
-      data: { name: "Beta", projectId: "proj-1" },
+    expect(mockTxTeamCreateManyAndReturn).toHaveBeenCalledWith({
+      data: [
+        { name: "Alpha", projectId: "proj-1" },
+        { name: "Beta", projectId: "proj-1" },
+      ],
     });
   });
 
@@ -173,7 +181,7 @@ describe("arrangement.activate", () => {
       projectId: "proj-1",
       teams: [{ id: "at-1", name: "Alpha", sortOrder: 0, assignments: [] }],
     });
-    mockTxTeamCreate.mockResolvedValueOnce({ id: "live-a" });
+    mockTxTeamCreateManyAndReturn.mockResolvedValueOnce([{ id: "live-a" }]);
 
     await caller.activate({ id: "arr-1" });
 
@@ -195,7 +203,7 @@ describe("arrangement.activate", () => {
         },
       ],
     });
-    mockTxTeamCreate.mockResolvedValueOnce({ id: "live-a" });
+    mockTxTeamCreateManyAndReturn.mockResolvedValueOnce([{ id: "live-a" }]);
 
     await caller.activate({ id: "arr-1" });
 
@@ -212,7 +220,7 @@ describe("arrangement.activate", () => {
       projectId: "proj-1",
       teams: [{ id: "at-1", name: "Alpha", sortOrder: 0, assignments: [] }],
     });
-    mockTxTeamCreate.mockResolvedValueOnce({ id: "live-a" });
+    mockTxTeamCreateManyAndReturn.mockResolvedValueOnce([{ id: "live-a" }]);
 
     await caller.activate({ id: "arr-1" });
 

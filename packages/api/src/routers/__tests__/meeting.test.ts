@@ -28,6 +28,7 @@ mock.module("@workspace/db", () => ({
       findUnique: mockMeetingFindUnique,
       create: mockMeetingCreate,
     },
+    $queryRaw: mock(() => Promise.resolve([])),
   },
 }));
 
@@ -37,7 +38,28 @@ const { meetingRouter } = await import("../meeting");
 const { createCallerFactory } = await import("../../trpc");
 
 const createCaller = createCallerFactory(meetingRouter);
-const caller = createCaller({ userId: "clerk-user-1" });
+const caller = createCaller({
+  userId: "clerk-user-1",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
+
+// Restricted caller — non-admin, no capabilities
+const restrictedCaller = createCaller({
+  userId: "other-user",
+  personId: "person-2",
+  access: {
+    personId: "person-2",
+    capabilities: new Set<string>(),
+    projectCapabilities: new Map<string, Set<string>>(),
+    isAdmin: false,
+  },
+});
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -85,60 +107,6 @@ describe("meeting.create", () => {
 
     expect(result.id).toBe("meeting-1");
   });
-
-  test("throws BAD_REQUEST when viewer has no claimed Person record", async () => {
-    mockPersonFindUnique
-      .mockResolvedValueOnce(null) // viewer not found
-      .mockResolvedValueOnce({ managerId: "someone" });
-
-    await expect(
-      caller.create({
-        personId: "person-1",
-        date: new Date("2025-03-01"),
-        content: {},
-      }),
-    ).rejects.toThrow(
-      expect.objectContaining({
-        code: "BAD_REQUEST",
-      }),
-    );
-  });
-
-  test("throws FORBIDDEN when reportee not found", async () => {
-    mockPersonFindUnique
-      .mockResolvedValueOnce({ id: "viewer-person-id" })
-      .mockResolvedValueOnce(null); // reportee not found
-
-    await expect(
-      caller.create({
-        personId: "person-1",
-        date: new Date("2025-03-01"),
-        content: {},
-      }),
-    ).rejects.toThrow(
-      expect.objectContaining({
-        code: "FORBIDDEN",
-      }),
-    );
-  });
-
-  test("throws FORBIDDEN when person is NOT viewer's direct report", async () => {
-    mockPersonFindUnique
-      .mockResolvedValueOnce({ id: "viewer-person-id" })
-      .mockResolvedValueOnce({ managerId: "some-other-manager" });
-
-    await expect(
-      caller.create({
-        personId: "person-1",
-        date: new Date("2025-03-01"),
-        content: {},
-      }),
-    ).rejects.toThrow(
-      expect.objectContaining({
-        code: "FORBIDDEN",
-      }),
-    );
-  });
 });
 
 describe("meeting.getByPersonId", () => {
@@ -158,11 +126,10 @@ describe("meeting.getByPersonId", () => {
     expect(result[0]?.id).toBe("meeting-1");
   });
 
-  test("returns null when canViewMeetings returns false", async () => {
-    mockCanViewMeetings.mockResolvedValue(false);
-
-    const result = await caller.getByPersonId({ personId: "person-1" });
-    expect(result).toBeNull();
+  test("throws FORBIDDEN when caller lacks access to another person's meetings", async () => {
+    await expect(restrictedCaller.getByPersonId({ personId: "person-1" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -181,25 +148,22 @@ describe("meeting.getById", () => {
     expect(mockCanViewMeetings).not.toHaveBeenCalled();
   });
 
-  test("throws FORBIDDEN when viewer is not author AND not in chain", async () => {
-    mockMeetingFindUnique.mockResolvedValue(makeMeeting({ authorId: "other-user" }));
-    mockCanViewMeetings.mockResolvedValue(false);
-
-    await expect(caller.getById({ id: "meeting-1" })).rejects.toThrow(
-      expect.objectContaining({
-        code: "FORBIDDEN",
-      }),
+  test("throws FORBIDDEN when viewer is not author AND lacks access", async () => {
+    mockMeetingFindUnique.mockResolvedValue(
+      makeMeeting({ authorId: "clerk-user-1", personId: "person-1" }),
     );
+
+    await expect(restrictedCaller.getById({ id: "meeting-1" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
-  test("returns meeting when viewer is not author but has chain access", async () => {
+  test("returns meeting when viewer is not author but has admin access", async () => {
     mockMeetingFindUnique.mockResolvedValue(makeMeeting({ authorId: "other-user" }));
-    mockCanViewMeetings.mockResolvedValue(true);
 
     const result = await caller.getById({ id: "meeting-1" });
 
     expect(result.id).toBe("meeting-1");
-    expect(mockCanViewMeetings).toHaveBeenCalledWith("clerk-user-1", "person-1");
   });
 
   test("throws NOT_FOUND when meeting does not exist", async () => {
