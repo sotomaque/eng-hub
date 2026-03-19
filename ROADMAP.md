@@ -203,6 +203,62 @@ packages/storage/src/
      using (bucket_id = 'images');
    ```
 
+### Activating Supabase Storage
+
+After merging the storage adapter PR, **UploadThing remains the active provider** — `NEXT_PUBLIC_STORAGE_PROVIDER` is not set in Vercel, so the default (`uploadthing`) applies. The Supabase adapter is wired up but dormant. No existing behavior changes.
+
+#### Step 1 — Create buckets
+
+Run in the Supabase dashboard or add as a migration:
+
+```sql
+insert into storage.buckets (id, name, public, file_size_limit)
+values
+  ('images', 'images', true, 4194304),        -- 4 MB, public
+  ('documents', 'documents', false, 16777216)  -- 16 MB, private
+on conflict (id) do nothing;
+```
+
+#### Step 2 — Flip the env var in Vercel
+
+```env
+NEXT_PUBLIC_STORAGE_PROVIDER=supabase
+SUPABASE_SERVICE_ROLE_KEY=<service role key from Supabase dashboard>
+NEXT_PUBLIC_SUPABASE_URL=<already set if using Supabase branching>
+```
+
+New uploads will go to Supabase immediately. Existing UploadThing URLs stored in the database continue to work — they're public CDN links and don't expire.
+
+#### Step 3 — Backfill existing files (optional)
+
+```ts
+// One-off migration script: bun run scripts/migrate-storage.ts
+import { db } from "@workspace/db";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+// Example: migrate person avatars
+const people = await db.person.findMany({ where: { avatarUrl: { contains: "ufs.sh" } } });
+for (const person of people) {
+  const res = await fetch(person.avatarUrl!);
+  const blob = await res.blob();
+  const key = `migrated/${crypto.randomUUID()}.jpg`;
+  await supabase.storage.from("images").upload(key, blob);
+  const { data: { publicUrl } } = supabase.storage.from("images").getPublicUrl(key);
+  await db.person.update({ where: { id: person.id }, data: { avatarUrl: publicUrl } });
+}
+```
+
+Repeat for each model that stores file URLs (`performanceReview.pdfUrl`, etc.).
+
+#### Step 4 — Remove UploadThing (optional cleanup)
+
+Once all URLs are backfilled, remove `UPLOADTHING_TOKEN` from Vercel and delete `apps/web/app/api/uploadthing/route.ts`.
+
 ### Why Supabase Storage over other S3 alternatives?
 
 - **Already in the stack** — `supabase start` launches Storage alongside Postgres and Auth. Zero additional infrastructure.
