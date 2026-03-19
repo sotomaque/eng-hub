@@ -57,7 +57,7 @@ Eng Hub already uses Supabase (PostgreSQL + Prisma) for its database layer. The 
 
 ---
 
-## 2. Auth: Moving from Clerk to a Self-Hostable Solution
+## 2. Auth: Moving from Clerk to a Self-Hostable Solution ⚙️ In Progress
 
 Clerk is excellent for managed auth but is a cloud-only SaaS — it can't be self-hosted. For a truly self-hostable platform, auth needs to be replaceable.
 
@@ -66,37 +66,46 @@ Clerk is excellent for managed auth but is a cloud-only SaaS — it can't be sel
 Rather than ripping out Clerk immediately, introduce an **auth adapter interface** so multiple providers can be supported:
 
 ```
-AuthAdapter
-  ├── ClerkAdapter       (current, for cloud/managed deployments)
-  ├── SupabaseAuthAdapter (self-hosted, uses Supabase Auth / GoTrue)
-  └── BetterAuthAdapter   (self-hosted, uses better-auth)
+@workspace/auth
+  ├── ClerkAdapter       ✅ implemented (current, for cloud/managed deployments)
+  ├── SupabaseAuthAdapter 🔲 stub only (self-hosted, uses Supabase Auth / GoTrue)
+  └── BetterAuthAdapter   🔲 stub only (self-hosted, uses better-auth)
 ```
 
 ### Migration strategy
 
-1. **Define an `AuthAdapter` interface** — Extract the auth contract:
-   - `getCurrentUser(): { userId, email, role }`
-   - `protectRoute()`
-   - `handleWebhook()`
-   - `getUserProfile()`
+1. ✅ **Define an `AuthAdapter` interface** — `packages/auth` package with `ServerAuthAdapter` and `ClientAuthAdapter` types.
 
-2. **Wrap current Clerk usage** — Move all Clerk-specific imports (`@clerk/nextjs`, `auth()`, `currentUser()`, `ClerkProvider`) behind the adapter. Today these touch:
-   - `apps/web/app/layout.tsx` (ClerkProvider)
-   - `packages/api/src/trpc.ts` (context creation)
-   - `apps/web/app/api/webhooks/clerk/route.ts` (webhook)
-   - E2E test helpers (Clerk testing tokens)
+2. ✅ **Wrap current Clerk usage** — All Clerk-specific imports moved behind the adapter. Switched callsites:
+   - `apps/web/app/layout.tsx` — `AuthProvider` (was `ClerkProvider`)
+   - `packages/api/src/trpc.ts` — `getServerSession()` (was `auth()`)
+   - `apps/web/components/app-header.tsx` — `SignedIn`, `SignedOut`, `SignInButton`
+   - `apps/web/components/mobile-nav.tsx` — `useAuthSession()` (was `useUser()`)
+   - `apps/web/lib/uploadthing.ts` — `getServerSession()`
+   - `apps/web/app/api/compare-summary/route.ts` — `getServerSession()`
 
-3. **Implement Supabase Auth adapter** — Best fit for self-hosting since Supabase Auth (GoTrue) is already part of the Supabase self-hosted stack:
+   Still Clerk-specific (follow-on work):
+   - `AppUserButton` — Clerk `UserButton` with shadcn theme + menu items
+   - `packages/api/src/routers/admin.ts` — `clerkClient()` for waitlist/invitations
+   - `apps/web/app/api/webhooks/clerk/route.ts` — svix webhook handler
+   - E2E test helpers — `@clerk/testing/playwright`
+
+3. 🔲 **Wrap remaining Clerk-specific callsites** — Complete the adapter boundary:
+   - Abstract `AppUserButton` behind a `UserButton` export in `@workspace/auth/client`
+   - Move `clerkClient` admin operations (invitations, waitlist) behind an `AdminAuthAdapter`
+   - Abstract the webhook handler behind a provider-agnostic user-sync endpoint
+
+4. 🔲 **Implement Supabase Auth adapter** — Best fit for self-hosting since Supabase Auth (GoTrue) is already part of the Supabase self-hosted stack:
    - Email/password, magic link, OAuth providers
    - Row Level Security (RLS) integration
    - No additional service to manage
 
-4. **Implement better-auth adapter (alternative)** — [better-auth](https://www.better-auth.com/) is a popular self-hosted auth library for Next.js with built-in support for:
+5. 🔲 **Implement better-auth adapter (alternative)** — [better-auth](https://www.better-auth.com/) is a popular self-hosted auth library for Next.js with built-in support for:
    - Email/password, OAuth, magic link, passkeys
    - Session management
    - Works with any PostgreSQL database (including existing Supabase DB)
 
-5. **Configuration toggle** — Select auth provider via `AUTH_PROVIDER=clerk|supabase|better-auth` in `.env`.
+6. ✅ **Configuration toggle** — Select auth provider via `AUTH_PROVIDER=clerk|supabase|better-auth` in `.env`.
 
 ---
 
