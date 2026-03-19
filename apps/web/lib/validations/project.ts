@@ -10,6 +10,7 @@ export const createProjectSchema = z.object({
   fundedById: z.string().optional().or(z.literal("")),
   budget: z.number().positive().nullable().optional(),
   status: z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]).optional(),
+  type: z.enum(["STANDARD", "PROTOTYPE"]).optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.extend({

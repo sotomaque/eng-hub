@@ -44,6 +44,7 @@ type ProjectSheetProps = {
     fundedById: string | null;
     budget: string | number | null;
     status?: string;
+    type?: string;
     owners?: { person: { id: string } }[];
   };
   defaultParentId?: string;
@@ -82,6 +83,7 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
       fundedById: project?.fundedById ?? initialParentId,
       budget: project?.budget ? Number(project.budget) : null,
       status: (project?.status as "ACTIVE" | "PAUSED" | "ARCHIVED") ?? "ACTIVE",
+      type: (project?.type as "STANDARD" | "PROTOTYPE") ?? "STANDARD",
     },
   });
 
@@ -193,6 +195,25 @@ export function ProjectSheet({ project, defaultParentId }: ProjectSheetProps) {
                       <SelectItem value="ACTIVE">Active</SelectItem>
                       <SelectItem value="PAUSED">Paused</SelectItem>
                       <SelectItem value="ARCHIVED">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? "STANDARD"}>
+                    <SelectTrigger aria-label="Project type">
+                      <SelectValue placeholder="Select type…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="STANDARD">Standard</SelectItem>
+                      <SelectItem value="PROTOTYPE">Prototype</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
