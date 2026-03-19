@@ -51,6 +51,7 @@
     "@upstash/qstash": "^2.9.0",
     "@workspace/api": "workspace:*",
     "@workspace/auth": "workspace:*",
+    "@workspace/storage": "workspace:*",
     "@workspace/ui": "workspace:*",
     "ai": "^6.0.116",
     "date-fns": "^4.1.0",

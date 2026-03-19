@@ -24,9 +24,9 @@ import { useRef, useState } from "react";
 import { type Control, Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { PersonSelect } from "@/components/person-select";
+import { useFileUpload } from "@/lib/storage";
 import { useTRPC } from "@/lib/trpc/client";
 import type { PerformanceReview } from "@/lib/types/performance-review";
-import { useUploadThing } from "@/lib/uploadthing-components";
 import {
   type PerformanceReviewInput,
   performanceReviewSchema,
@@ -91,14 +91,11 @@ export function PerformanceReviewSheet({
   const [reviewerId, setReviewerId] = useState<string | null>(review?.reviewerId ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { startUpload, isUploading } = useUploadThing("pdfUploader", {
-    onClientUploadComplete: (res) => {
-      const url = res[0]?.ufsUrl;
-      if (url) {
-        setPdfUrl(url);
-        setPdfName(res[0]?.name ?? "Uploaded PDF");
-        toast.success("PDF uploaded");
-      }
+  const { startUpload, isUploading } = useFileUpload("documents", {
+    onUploadComplete: (url, fileName) => {
+      setPdfUrl(url);
+      setPdfName(fileName ?? "Uploaded PDF");
+      toast.success("PDF uploaded");
     },
     onUploadError: (error) => {
       toast.error(`Upload failed: ${error.message}`);

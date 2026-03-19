@@ -7,7 +7,7 @@ import { ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { CropDialog } from "@/components/crop-dialog";
-import { useUploadThing } from "@/lib/uploadthing-components";
+import { useFileUpload } from "@/lib/storage";
 
 type ImageUploaderProps = {
   label?: string;
@@ -32,11 +32,10 @@ export function ImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isSquare = shape === "square";
 
-  const { startUpload, isUploading } = useUploadThing("imageUploader", {
-    onClientUploadComplete: (res) => {
+  const { startUpload, isUploading } = useFileUpload("images", {
+    onUploadComplete: (url) => {
       onUploadingChange?.(false);
-      const url = res[0]?.ufsUrl;
-      if (url) onUploadComplete(url);
+      onUploadComplete(url);
     },
     onUploadError: (error) => {
       onUploadingChange?.(false);
