@@ -55,6 +55,7 @@ type PeopleTableProps = {
   people: PersonWithMemberships[];
   projectNames: string[];
   departmentNames: string[];
+  skillNames: string[];
   totalCount: number;
   page: number;
   pageSize: number;
@@ -64,12 +65,14 @@ type PeopleTableProps = {
   multiProject?: boolean;
   departments?: string[];
   projects?: string[];
+  skills?: string[];
 };
 
 export function PeopleTable({
   people,
   projectNames,
   departmentNames,
+  skillNames,
   totalCount,
   page,
   pageSize,
@@ -79,6 +82,7 @@ export function PeopleTable({
   multiProject,
   departments,
   projects,
+  skills,
 }: PeopleTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -105,6 +109,7 @@ export function PeopleTable({
     multiProject?: boolean;
     departments?: string[];
     projects?: string[];
+    skills?: string[];
   }) {
     const params = new URLSearchParams();
     params.set("page", overrides.page ?? "1");
@@ -121,6 +126,8 @@ export function PeopleTable({
     if (d?.length) params.set("department", d.join(","));
     const p = overrides.projects ?? projects;
     if (p?.length) params.set("project", p.join(","));
+    const sk = overrides.skills ?? skills;
+    if (sk?.length) params.set("skill", sk.join(","));
     return params.toString();
   }
 
@@ -150,7 +157,7 @@ export function PeopleTable({
 
   const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
 
-  function handleFilterChange(key: "departments" | "projects", values: string[]) {
+  function handleFilterChange(key: "departments" | "projects" | "skills", values: string[]) {
     const qs = buildParams({ page: "1", [key]: values });
     startSearchTransition(() => {
       router.replace(`/people?${qs}`, { scroll: false });
@@ -165,6 +172,7 @@ export function PeopleTable({
       search: "",
       departments: [],
       projects: [],
+      skills: [],
       multiProject: false,
     });
     startSearchTransition(() => {
@@ -184,10 +192,15 @@ export function PeopleTable({
     router.push(`/people?${params.toString()}`, { scroll: false });
   }
 
-  const filterCount = (departments?.length ?? 0) + (projects?.length ?? 0) + (multiProject ? 1 : 0);
+  const filterCount =
+    (departments?.length ?? 0) +
+    (projects?.length ?? 0) +
+    (skills?.length ?? 0) +
+    (multiProject ? 1 : 0);
 
   const projectOptions = projectNames.map((n) => ({ label: n, value: n }));
   const departmentOptions = departmentNames.map((d) => ({ label: d, value: d }));
+  const skillOptions = skillNames.map((s) => ({ label: s, value: s }));
 
   const columns: ColumnDef<PersonWithMemberships>[] = [
     {
@@ -402,6 +415,14 @@ export function PeopleTable({
                   onValueChange={(v) => handleFilterChange("departments", v)}
                 />
               )}
+              {skillOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  title="Skill"
+                  options={skillOptions}
+                  value={skills ?? []}
+                  onValueChange={(v) => handleFilterChange("skills", v)}
+                />
+              )}
               <Button
                 variant={multiProject ? "default" : "outline"}
                 size="sm"
@@ -425,6 +446,7 @@ export function PeopleTable({
                       search: searchInput || undefined,
                       departments,
                       projects,
+                      skills,
                       multiProject,
                     }),
                   )

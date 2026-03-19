@@ -233,6 +233,53 @@ describe("person.list", () => {
     expect(callArgs.where?.projectMemberships).toBeUndefined();
   });
 
+  test("applies skills filter to where clause", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      skills: ["TypeScript", "React"],
+    });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: { personSkills?: { some: { skill: { name: { in: string[] } } } } };
+    };
+    expect(callArgs.where?.personSkills).toEqual({
+      some: { skill: { name: { in: ["TypeScript", "React"] } } },
+    });
+  });
+
+  test("does NOT add personSkills to where when skills array is empty", async () => {
+    await caller.list({ page: 1, pageSize: 10, skills: [] });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: Record<string, unknown>;
+    };
+    expect(callArgs.where?.personSkills).toBeUndefined();
+  });
+
+  test("combines skills filter with department and search filters", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      search: "alice",
+      departments: ["Engineering"],
+      skills: ["TypeScript"],
+    });
+
+    const callArgs = mockPersonFindMany.mock.calls[0]?.[0] as {
+      where?: {
+        OR?: unknown[];
+        department?: { name: { in: string[] } };
+        personSkills?: { some: { skill: { name: { in: string[] } } } };
+      };
+    };
+    expect(callArgs.where?.OR).toHaveLength(4);
+    expect(callArgs.where?.department).toEqual({ name: { in: ["Engineering"] } });
+    expect(callArgs.where?.personSkills).toEqual({
+      some: { skill: { name: { in: ["TypeScript"] } } },
+    });
+  });
+
   test("sorts by name ascending by default", async () => {
     await caller.list({ page: 1, pageSize: 10 });
 

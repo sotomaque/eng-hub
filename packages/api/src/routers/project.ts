@@ -19,6 +19,7 @@ async function buildProjectListWhere(
     status?: string[];
     projectStatus?: string[];
     type?: string[];
+    projectType?: string[];
   },
 ): Promise<Record<string, unknown>> {
   const where: Record<string, unknown> = {};
@@ -63,6 +64,9 @@ async function buildProjectListWhere(
     } else if (hasSubproject && !hasToplevel) {
       where.parentId = { not: null };
     }
+  }
+  if (filters.projectType?.length) {
+    where.type = { in: filters.projectType };
   }
 
   return where;
@@ -229,6 +233,7 @@ export const projectRouter = createTRPCRouter({
         status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
         projectStatus: z.array(z.enum(["ACTIVE", "PAUSED", "ARCHIVED"])).optional(),
         type: z.array(z.enum(["toplevel", "subproject"])).optional(),
+        projectType: z.array(z.enum(["STANDARD", "PROTOTYPE"])).optional(),
         favorite: z.boolean().optional(),
         sortBy: z.enum(["name", "updatedAt", "favorite"]).optional().default("updatedAt"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
@@ -240,6 +245,7 @@ export const projectRouter = createTRPCRouter({
         status: input.status,
         projectStatus: input.projectStatus,
         type: input.type,
+        projectType: input.projectType,
       });
       const personId = ctx.personId;
 
@@ -330,6 +336,7 @@ export const projectRouter = createTRPCRouter({
         status: z.array(z.enum(["GREEN", "YELLOW", "RED", "NONE"])).optional(),
         projectStatus: z.array(z.enum(["ACTIVE", "PAUSED", "ARCHIVED"])).optional(),
         type: z.array(z.enum(["toplevel", "subproject"])).optional(),
+        projectType: z.array(z.enum(["STANDARD", "PROTOTYPE"])).optional(),
         favorite: z.boolean().optional(),
       }),
     )
@@ -339,6 +346,7 @@ export const projectRouter = createTRPCRouter({
         status: input.status,
         projectStatus: input.projectStatus,
         type: input.type,
+        projectType: input.projectType,
       });
       if (input.favorite) {
         const personId = ctx.personId;

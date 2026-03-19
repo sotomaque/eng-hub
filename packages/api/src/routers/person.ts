@@ -157,6 +157,7 @@ export const personRouter = createTRPCRouter({
         search: z.string().optional(),
         departments: z.array(z.string()).optional(),
         projects: z.array(z.string()).optional(),
+        skills: z.array(z.string()).optional(),
         multiProject: z.boolean().optional(),
         sortBy: z.enum(["name", "email", "department"]).optional().default("name"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
@@ -211,6 +212,9 @@ export const personRouter = createTRPCRouter({
           some: { project: { name: { in: input.projects } }, leftAt: null },
         };
       }
+      if (input.skills?.length) {
+        where.personSkills = { some: { skill: { name: { in: input.skills } } } };
+      }
       if (multiProjectIds) {
         where.id = { in: multiProjectIds };
       }
@@ -242,6 +246,7 @@ export const personRouter = createTRPCRouter({
         search: z.string().optional(),
         departments: z.array(z.string()).optional(),
         projects: z.array(z.string()).optional(),
+        skills: z.array(z.string()).optional(),
         multiProject: z.boolean().optional(),
       }),
     )
@@ -273,6 +278,9 @@ export const personRouter = createTRPCRouter({
         where.projectMemberships = {
           some: { project: { name: { in: input.projects } }, leftAt: null },
         };
+      }
+      if (input.skills?.length) {
+        where.personSkills = { some: { skill: { name: { in: input.skills } } } };
       }
       if (multiProjectIds) {
         where.id = { in: multiProjectIds };

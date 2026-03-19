@@ -9,7 +9,11 @@ import { PersonSheet } from "@/components/person-sheet";
 import { ProjectsTableSkeleton } from "@/components/projects-table-skeleton";
 import { TitleSheet } from "@/components/title-sheet";
 import { createServerCaller } from "@/lib/trpc/server";
-import { getCachedDepartmentNames, getCachedProjectNames } from "./_lib/queries";
+import {
+  getCachedDepartmentNames,
+  getCachedProjectNames,
+  getCachedSkillNames,
+} from "./_lib/queries";
 
 export const metadata: Metadata = { title: "People" };
 
@@ -30,6 +34,7 @@ type PageProps = {
     multiProject?: string;
     department?: string;
     project?: string;
+    skill?: string;
   }>;
 };
 
@@ -42,6 +47,7 @@ async function PeopleContent({
   multiProject,
   departments,
   projects,
+  skills,
 }: {
   page: number;
   pageSize: number;
@@ -51,27 +57,31 @@ async function PeopleContent({
   multiProject?: boolean;
   departments?: string[];
   projects?: string[];
+  skills?: string[];
 }) {
   const trpc = await createServerCaller();
-  const [{ items, totalCount }, projectNames, departmentNames] = await Promise.all([
+  const [{ items, totalCount }, projectNames, departmentNames, skillNames] = await Promise.all([
     trpc.person.list({
       page,
       pageSize,
       search: search || undefined,
       departments,
       projects,
+      skills,
       sortBy,
       sortOrder,
       multiProject,
     }),
     getCachedProjectNames(),
     getCachedDepartmentNames(),
+    getCachedSkillNames(),
   ]);
   return (
     <PeopleTable
       people={items}
       projectNames={projectNames}
       departmentNames={departmentNames}
+      skillNames={skillNames}
       totalCount={totalCount}
       page={page}
       pageSize={pageSize}
@@ -81,6 +91,7 @@ async function PeopleContent({
       multiProject={multiProject}
       departments={departments}
       projects={projects}
+      skills={skills}
     />
   );
 }
@@ -127,6 +138,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const multiProject = params.multiProject === "true" ? true : undefined;
   const departments = params.department?.split(",").filter(Boolean);
   const projects = params.project?.split(",").filter(Boolean);
+  const skills = params.skill?.split(",").filter(Boolean);
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,7 +146,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Suspense
-          key={`${page}-${pageSize}-${params.search ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}-${multiProject ?? ""}-${departments?.join(",") ?? ""}-${projects?.join(",") ?? ""}`}
+          key={`${page}-${pageSize}-${params.search ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}-${multiProject ?? ""}-${departments?.join(",") ?? ""}-${projects?.join(",") ?? ""}-${skills?.join(",") ?? ""}`}
           fallback={<ProjectsTableSkeleton />}
         >
           <PeopleContent
@@ -146,6 +158,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
             multiProject={multiProject}
             departments={departments}
             projects={projects}
+            skills={skills}
           />
         </Suspense>
       </main>
