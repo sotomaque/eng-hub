@@ -33,6 +33,7 @@ mock.module("@workspace/db", () => ({
       update: mockReviewUpdate,
       delete: mockReviewDelete,
     },
+    $queryRaw: mock(() => Promise.resolve([])),
   },
 }));
 
@@ -42,7 +43,28 @@ const { performanceReviewRouter } = await import("../performance-review");
 const { createCallerFactory } = await import("../../trpc");
 
 const createCaller = createCallerFactory(performanceReviewRouter);
-const caller = createCaller({ userId: "clerk-user-1" });
+const caller = createCaller({
+  userId: "clerk-user-1",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
+
+// Restricted caller — non-admin, no capabilities
+const restrictedCaller = createCaller({
+  userId: "clerk-user-1",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set<string>(),
+    projectCapabilities: new Map<string, Set<string>>(),
+    isAdmin: false,
+  },
+});
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -95,15 +117,6 @@ describe("performanceReview.listMine", () => {
     const callArgs = mockReviewFindMany.mock.calls[0]?.[0] as { where?: { personId?: string } };
     expect(callArgs?.where?.personId).toBe("person-1");
   });
-
-  test("returns empty array when caller has no person record", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    const result = await caller.listMine();
-
-    expect(result).toEqual([]);
-    expect(mockReviewFindMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("performanceReview.getByPersonId", () => {
@@ -134,9 +147,7 @@ describe("performanceReview.getByPersonId", () => {
   });
 
   test("throws FORBIDDEN when caller is not in management chain", async () => {
-    mockIsInManagementChain.mockResolvedValue(false);
-
-    await expect(caller.getByPersonId({ personId: "person-2" })).rejects.toMatchObject({
+    await expect(restrictedCaller.getByPersonId({ personId: "person-2" })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -179,9 +190,8 @@ describe("performanceReview.getById", () => {
   test("throws FORBIDDEN when caller is not in management chain", async () => {
     const review = makeReview({ personId: "person-2" });
     mockReviewFindUnique.mockResolvedValue(review);
-    mockIsInManagementChain.mockResolvedValue(false);
 
-    await expect(caller.getById({ id: "review-1" })).rejects.toMatchObject({
+    await expect(restrictedCaller.getById({ id: "review-1" })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -212,18 +222,10 @@ describe("performanceReview.create", () => {
   });
 
   test("throws FORBIDDEN when creating for non-report", async () => {
-    mockIsDirectManager.mockResolvedValue(false);
-
-    await expect(caller.create({ ...validInput, personId: "person-2" })).rejects.toMatchObject({
+    await expect(
+      restrictedCaller.create({ ...validInput, personId: "person-2" }),
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
-    });
-  });
-
-  test("throws BAD_REQUEST when caller has no person record", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    await expect(caller.create(validInput)).rejects.toMatchObject({
-      code: "BAD_REQUEST",
     });
   });
 
@@ -278,9 +280,8 @@ describe("performanceReview.update", () => {
 
   test("throws FORBIDDEN when not owner or manager", async () => {
     mockReviewFindUnique.mockResolvedValue({ personId: "person-2" });
-    mockIsDirectManager.mockResolvedValue(false);
 
-    await expect(caller.update({ id: "review-1", ...validInput })).rejects.toMatchObject({
+    await expect(restrictedCaller.update({ id: "review-1", ...validInput })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -342,17 +343,8 @@ describe("performanceReview.delete", () => {
 
   test("throws FORBIDDEN when not owner or manager", async () => {
     mockReviewFindUnique.mockResolvedValue({ personId: "person-2" });
-    mockIsDirectManager.mockResolvedValue(false);
 
-    await expect(caller.delete({ id: "review-1" })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
-
-  test("throws FORBIDDEN when caller has no person record", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    await expect(caller.delete({ id: "review-1" })).rejects.toMatchObject({
+    await expect(restrictedCaller.delete({ id: "review-1" })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });

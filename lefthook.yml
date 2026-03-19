@@ -11,6 +11,6 @@ pre-push:
     typecheck:
       run: bun run --filter=web lint:types
     test:
-      run: bun run --filter=web test
+      run: bun run test
     knip:
       run: bun run knip

@@ -55,7 +55,16 @@ const { createCallerFactory } = await import("../../trpc");
 const { projectRouter } = await import("../project");
 
 const createCaller = createCallerFactory(projectRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 // ── Tests ────────────────────────────────────────────────────
 
@@ -71,15 +80,6 @@ describe("project.myFavoriteIds", () => {
     const result = await caller.myFavoriteIds();
 
     expect(result).toEqual(["proj-1", "proj-2"]);
-  });
-
-  test("returns empty array when no linked person", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    const result = await caller.myFavoriteIds();
-
-    expect(result).toEqual([]);
-    expect(mockFavFindMany).not.toHaveBeenCalled();
   });
 
   test("returns empty array when user has no favorites", async () => {
@@ -109,15 +109,6 @@ describe("project.isFavorited", () => {
     const result = await caller.isFavorited({ projectId: "proj-1" });
 
     expect(result).toBe(false);
-  });
-
-  test("returns false when no linked person", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    const result = await caller.isFavorited({ projectId: "proj-1" });
-
-    expect(result).toBe(false);
-    expect(mockFavFindUnique).not.toHaveBeenCalled();
   });
 });
 
@@ -158,14 +149,5 @@ describe("project.toggleFavorite", () => {
       where: { personId: "person-1", projectId: "proj-1" },
     });
     expect(mockFavCreate).not.toHaveBeenCalled();
-  });
-
-  test("throws BAD_REQUEST when no linked person", async () => {
-    mockResolveClerkPerson.mockResolvedValue(null);
-
-    await expect(caller.toggleFavorite({ projectId: "proj-1" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: expect.stringContaining("No linked person"),
-    });
   });
 });

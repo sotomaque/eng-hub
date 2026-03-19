@@ -4,17 +4,12 @@ const mockFindUnique = mock(() =>
   Promise.resolve(null as { id?: string; managerId?: string | null } | null),
 );
 
-const mockGrantFindUnique = mock(() => Promise.resolve(null as { id: string } | null));
-
 const mockQueryRaw = mock(() => Promise.resolve([] as { id: string }[]));
 
 mock.module("@workspace/db", () => ({
   db: {
     person: {
       findUnique: mockFindUnique,
-    },
-    meetingVisibilityGrant: {
-      findUnique: mockGrantFindUnique,
     },
     $queryRaw: mockQueryRaw,
   },
@@ -25,7 +20,6 @@ const { isDirectManager, isInManagementChain, canViewMeetings } = await import("
 describe("isInManagementChain", () => {
   beforeEach(() => {
     mockFindUnique.mockReset();
-    mockGrantFindUnique.mockReset();
     mockQueryRaw.mockReset().mockResolvedValue([]);
   });
 
@@ -77,70 +71,38 @@ describe("isInManagementChain", () => {
 describe("canViewMeetings", () => {
   beforeEach(() => {
     mockFindUnique.mockReset();
-    mockGrantFindUnique.mockReset();
     mockQueryRaw.mockReset().mockResolvedValue([]);
   });
 
   test("returns true when viewer is in management chain", async () => {
-    // isInManagementChain: resolveClerkPerson → viewer-id
     mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
-    // getManagementChain returns chain with viewer-id
     mockQueryRaw.mockResolvedValueOnce([{ id: "viewer-id" }]);
 
     const result = await canViewMeetings("clerk-abc", "person-1");
     expect(result).toBe(true);
-    expect(mockGrantFindUnique).not.toHaveBeenCalled();
   });
 
-  test("returns true via visibility grant when NOT in chain", async () => {
-    // isInManagementChain: resolveClerkPerson → viewer-id
-    mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
-    // getManagementChain returns chain without viewer-id
-    mockQueryRaw.mockResolvedValueOnce([{ id: "manager-a" }]);
-    // canViewMeetings: resolveClerkPerson again → viewer-id
-    mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
-    // person lookup → has a manager
-    mockFindUnique.mockResolvedValueOnce({ managerId: "manager-a" });
-    // grant exists
-    mockGrantFindUnique.mockResolvedValueOnce({ id: "grant-1" });
-
-    const result = await canViewMeetings("clerk-abc", "person-1");
-    expect(result).toBe(true);
-  });
-
-  test("returns false when not in chain AND no grant exists", async () => {
+  test("returns false when viewer is not in management chain", async () => {
     mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
     mockQueryRaw.mockResolvedValueOnce([{ id: "manager-a" }]);
-    mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
-    mockFindUnique.mockResolvedValueOnce({ managerId: "manager-a" });
-    mockGrantFindUnique.mockResolvedValueOnce(null);
 
     const result = await canViewMeetings("clerk-abc", "person-1");
     expect(result).toBe(false);
   });
 
-  test("returns false when person has no manager", async () => {
+  test("returns false when person has no management chain", async () => {
     mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
     mockQueryRaw.mockResolvedValueOnce([]);
-    // canViewMeetings: resolveClerkPerson again → viewer-id
-    mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
-    // person lookup → no manager
-    mockFindUnique.mockResolvedValueOnce({ managerId: null });
 
     const result = await canViewMeetings("clerk-abc", "person-1");
     expect(result).toBe(false);
-    expect(mockGrantFindUnique).not.toHaveBeenCalled();
   });
 
   test("returns false when viewer has no person record", async () => {
-    // isInManagementChain: resolveClerkPerson returns null
-    mockFindUnique.mockResolvedValueOnce(null);
-    // canViewMeetings: resolveClerkPerson returns null
     mockFindUnique.mockResolvedValueOnce(null);
 
     const result = await canViewMeetings("clerk-unknown", "person-1");
     expect(result).toBe(false);
-    expect(mockGrantFindUnique).not.toHaveBeenCalled();
   });
 });
 

@@ -79,7 +79,16 @@ const { teamMemberRouter } = await import("../team-member");
 const { createCallerFactory } = await import("../../trpc");
 
 const createCaller = createCallerFactory(teamMemberRouter);
-const caller = createCaller({ userId: "test-user-id" });
+const caller = createCaller({
+  userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
+});
 
 // ── Tests ────────────────────────────────────────────────────
 

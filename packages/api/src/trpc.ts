@@ -3,8 +3,8 @@ import { getServerSession } from "@workspace/auth/server";
 import { ZodError } from "zod";
 import {
   assertAccess,
-  assertPersonAccess,
   hasCapability,
+  hasPersonCapability,
   type ResolvedAccess,
   resolveAccess,
 } from "./lib/access";
@@ -104,7 +104,8 @@ export function requirePersonCapability(cap: Capability) {
     if (!ctx.access) throw new TRPCError({ code: "UNAUTHORIZED" });
     const targetPersonId = (input as { personId?: string } | null)?.personId;
     if (!targetPersonId) throw new TRPCError({ code: "BAD_REQUEST", message: "personId required" });
-    await assertPersonAccess(ctx.access, cap, targetPersonId);
+    const allowed = await hasPersonCapability(ctx.access, cap, targetPersonId);
+    if (!allowed) throw new TRPCError({ code: "FORBIDDEN" });
     return next();
   });
 }

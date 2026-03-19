@@ -138,17 +138,6 @@ export function assertAccess(
   }
 }
 
-export async function assertPersonAccess(
-  access: ResolvedAccess,
-  cap: Capability | string,
-  targetPersonId: string,
-): Promise<void> {
-  const allowed = await hasPersonCapability(access, cap, targetPersonId);
-  if (!allowed) {
-    throw new AccessDeniedError(cap);
-  }
-}
-
 class AccessDeniedError extends Error {
   code = "FORBIDDEN" as const;
   constructor(cap: string) {

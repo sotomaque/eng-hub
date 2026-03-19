@@ -52,9 +52,23 @@ const { titleRouter } = await import("../title");
 
 const deptCaller = createCallerFactory(departmentRouter)({
   userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
 });
 const titleCaller = createCallerFactory(titleRouter)({
   userId: "test-user-id",
+  personId: "person-1",
+  access: {
+    personId: "person-1",
+    capabilities: new Set(["admin:access"]),
+    projectCapabilities: new Map(),
+    isAdmin: true,
+  },
 });
 
 // ── Tests ──────────────────────────────────────────────────
