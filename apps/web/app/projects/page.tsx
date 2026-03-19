@@ -24,6 +24,7 @@ type PageProps = {
     status?: string;
     projectStatus?: string;
     type?: string;
+    projectType?: string;
     favorite?: string;
   }>;
 };
@@ -35,6 +36,7 @@ async function ProjectsContent({
   status,
   projectStatus,
   type,
+  projectType,
   favorite,
   sortBy,
   sortOrder,
@@ -45,6 +47,7 @@ async function ProjectsContent({
   status?: ("GREEN" | "YELLOW" | "RED" | "NONE")[];
   projectStatus?: ("ACTIVE" | "PAUSED" | "ARCHIVED")[];
   type?: ("toplevel" | "subproject")[];
+  projectType?: ("STANDARD" | "PROTOTYPE")[];
   favorite?: boolean;
   sortBy?: "name" | "updatedAt" | "favorite";
   sortOrder?: "asc" | "desc";
@@ -58,6 +61,7 @@ async function ProjectsContent({
       status,
       projectStatus,
       type,
+      projectType,
       favorite,
       sortBy,
       sortOrder,
@@ -75,6 +79,7 @@ async function ProjectsContent({
         updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : p.updatedAt.toISOString(),
         healthStatus: p.healthAssessments[0]?.overallStatus ?? null,
         projectStatus: p.status,
+        projectType: p.type,
         parentId: p.parentId,
         parentName: p.parent?.name ?? null,
         isFavorited: favoriteSet.has(p.id),
@@ -86,6 +91,7 @@ async function ProjectsContent({
       status={status}
       projectStatus={projectStatus}
       type={type}
+      projectType={projectType}
       favorite={favorite}
       sortBy={sortBy}
       sortOrder={sortOrder}
@@ -138,6 +144,12 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const type = params.type
     ?.split(",")
     .filter((t): t is (typeof validTypes)[number] => (validTypes as readonly string[]).includes(t));
+  const validProjectTypes = ["STANDARD", "PROTOTYPE"] as const;
+  const projectType = params.projectType
+    ?.split(",")
+    .filter((t): t is (typeof validProjectTypes)[number] =>
+      (validProjectTypes as readonly string[]).includes(t),
+    );
   const favorite = params.favorite === "true" ? true : undefined;
 
   return (
@@ -146,7 +158,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Suspense
-          key={`${page}-${pageSize}-${params.search ?? ""}-${status?.join(",") ?? ""}-${projectStatus?.join(",") ?? ""}-${type?.join(",") ?? ""}-${favorite ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}`}
+          key={`${page}-${pageSize}-${params.search ?? ""}-${status?.join(",") ?? ""}-${projectStatus?.join(",") ?? ""}-${type?.join(",") ?? ""}-${projectType?.join(",") ?? ""}-${favorite ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}`}
           fallback={<ProjectsTableSkeleton />}
         >
           <ProjectsContent
@@ -156,6 +168,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
             status={status}
             projectStatus={projectStatus}
             type={type}
+            projectType={projectType}
             favorite={favorite}
             sortBy={sortBy}
             sortOrder={sortOrder}

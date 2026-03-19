@@ -261,6 +261,60 @@ describe("project.list", () => {
     });
   });
 
+  test("applies projectType filter to where clause", async () => {
+    await caller.list({ page: 1, pageSize: 10, projectType: ["PROTOTYPE"] });
+
+    const callArgs = mockProjectFindMany.mock.calls[0]?.[0] as {
+      where?: { type?: { in: string[] } };
+    };
+    expect(callArgs.where?.type).toEqual({ in: ["PROTOTYPE"] });
+  });
+
+  test("applies multiple projectType values to where clause", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      projectType: ["STANDARD", "PROTOTYPE"],
+    });
+
+    const callArgs = mockProjectFindMany.mock.calls[0]?.[0] as {
+      where?: { type?: { in: string[] } };
+    };
+    expect(callArgs.where?.type).toEqual({ in: ["STANDARD", "PROTOTYPE"] });
+  });
+
+  test("does NOT add type to where when projectType array is empty", async () => {
+    await caller.list({ page: 1, pageSize: 10, projectType: [] });
+
+    const callArgs = mockProjectFindMany.mock.calls[0]?.[0] as {
+      where?: Record<string, unknown>;
+    };
+    expect(callArgs.where?.type).toBeUndefined();
+  });
+
+  test("combines projectType filter with search and status", async () => {
+    await caller.list({
+      page: 1,
+      pageSize: 10,
+      search: "alpha",
+      status: ["GREEN"],
+      projectType: ["PROTOTYPE"],
+    });
+
+    const callArgs = mockProjectFindMany.mock.calls[0]?.[0] as {
+      where?: {
+        name?: { contains: string; mode: string };
+        OR?: object[];
+        type?: { in: string[] };
+      };
+    };
+    expect(callArgs.where?.name).toEqual({ contains: "alpha", mode: "insensitive" });
+    expect(callArgs.where?.OR).toEqual([
+      { healthAssessments: { some: { overallStatus: { in: ["GREEN"] } } } },
+    ]);
+    expect(callArgs.where?.type).toEqual({ in: ["PROTOTYPE"] });
+  });
+
   test("favorite filter composes with search and status", async () => {
     await caller.list({
       page: 1,

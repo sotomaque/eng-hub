@@ -1,6 +1,6 @@
 "use client";
 
-import type { HealthStatus, ProjectStatus } from "@prisma/client";
+import type { HealthStatus, ProjectStatus, ProjectType } from "@prisma/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -60,6 +60,11 @@ const PROJECT_STATUS_FILTER_OPTIONS = [
   { label: "Archived", value: "ARCHIVED" },
 ];
 
+const PROJECT_TYPE_FILTER_OPTIONS = [
+  { label: "Standard", value: "STANDARD" },
+  { label: "Prototype", value: "PROTOTYPE" },
+];
+
 type ProjectItem = {
   id: string;
   name: string;
@@ -68,6 +73,7 @@ type ProjectItem = {
   updatedAt: string;
   healthStatus: HealthStatus | null;
   projectStatus: ProjectStatus;
+  projectType: ProjectType;
   parentId: string | null;
   parentName: string | null;
   isFavorited: boolean;
@@ -82,6 +88,7 @@ type ProjectsTableProps = {
   status?: string[];
   projectStatus?: string[];
   type?: string[];
+  projectType?: string[];
   favorite?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -111,6 +118,7 @@ export function ProjectsTable({
   status,
   projectStatus,
   type,
+  projectType,
   favorite,
   sortBy,
   sortOrder,
@@ -144,6 +152,7 @@ export function ProjectsTable({
       status?: string[];
       projectStatus?: string[];
       type?: string[];
+      projectType?: string[];
       favorite?: boolean;
     }) => {
       const params = new URLSearchParams();
@@ -161,11 +170,13 @@ export function ProjectsTable({
       if (ps?.length) params.set("projectStatus", ps.join(","));
       const tp = overrides.type ?? type;
       if (tp?.length) params.set("type", tp.join(","));
+      const pt = overrides.projectType ?? projectType;
+      if (pt?.length) params.set("projectType", pt.join(","));
       const fav = overrides.favorite ?? favorite;
       if (fav) params.set("favorite", "true");
       return params.toString();
     },
-    [pageSize, searchInput, sortBy, sortOrder, status, projectStatus, type, favorite],
+    [pageSize, searchInput, sortBy, sortOrder, status, projectStatus, type, projectType, favorite],
   );
 
   const handleSearchChange = useCallback(
@@ -212,6 +223,16 @@ export function ProjectsTable({
     [buildParams, router],
   );
 
+  const handleProjectTypeChange = useCallback(
+    (values: string[]) => {
+      const qs = buildParams({ page: "1", projectType: values });
+      startSearchTransition(() => {
+        router.replace(`/projects?${qs}`, { scroll: false });
+      });
+    },
+    [buildParams, router],
+  );
+
   const handleFavoriteToggle = useCallback(() => {
     const qs = buildParams({ page: "1", favorite: !favorite });
     startSearchTransition(() => {
@@ -228,6 +249,7 @@ export function ProjectsTable({
       status: [],
       projectStatus: [],
       type: [],
+      projectType: [],
       favorite: false,
     });
     startSearchTransition(() => {
@@ -236,7 +258,11 @@ export function ProjectsTable({
   }, [buildParams, router]);
 
   const filterCount =
-    (status?.length ?? 0) + (projectStatus?.length ?? 0) + (type?.length ?? 0) + (favorite ? 1 : 0);
+    (status?.length ?? 0) +
+    (projectStatus?.length ?? 0) +
+    (type?.length ?? 0) +
+    (projectType?.length ?? 0) +
+    (favorite ? 1 : 0);
 
   const deleteMutation = useMutation(
     trpc.project.delete.mutationOptions({
@@ -373,6 +399,25 @@ export function ProjectsTable({
         enableSorting: false,
       },
       {
+        id: "projectType",
+        accessorFn: (row) => row.projectType,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Type" className="hidden sm:flex" />
+        ),
+        cell: ({ row }) => {
+          const value = row.getValue("projectType") as ProjectType;
+          if (value === "PROTOTYPE") {
+            return (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                Prototype
+              </span>
+            );
+          }
+          return <span className="text-muted-foreground hidden text-xs sm:inline">Standard</span>;
+        },
+        enableSorting: false,
+      },
+      {
         id: "description",
         accessorFn: (row) => row.description ?? "",
         header: ({ column }) => (
@@ -476,6 +521,7 @@ export function ProjectsTable({
     !status?.length &&
     !projectStatus?.length &&
     !type?.length &&
+    !projectType?.length &&
     !favorite
   ) {
     return (
@@ -575,10 +621,16 @@ export function ProjectsTable({
                 Favorites
               </Button>
               <DataTableFacetedFilter
-                title="Type"
+                title="Hierarchy"
                 options={TYPE_FILTER_OPTIONS}
                 value={type ?? []}
                 onValueChange={handleTypeChange}
+              />
+              <DataTableFacetedFilter
+                title="Type"
+                options={PROJECT_TYPE_FILTER_OPTIONS}
+                value={projectType ?? []}
+                onValueChange={handleProjectTypeChange}
               />
               {canReadHealth && (
                 <DataTableFacetedFilter
@@ -605,6 +657,7 @@ export function ProjectsTable({
                         | ("ACTIVE" | "PAUSED" | "ARCHIVED")[]
                         | undefined,
                       type: type as ("toplevel" | "subproject")[] | undefined,
+                      projectType: projectType as ("STANDARD" | "PROTOTYPE")[] | undefined,
                       favorite,
                     }),
                   )
@@ -615,6 +668,7 @@ export function ProjectsTable({
                 columnLabels={{
                   status: "Health",
                   projectStatus: "Lifecycle",
+                  projectType: "Type",
                   description: "Description",
                   updatedAt: "Last Updated",
                 }}

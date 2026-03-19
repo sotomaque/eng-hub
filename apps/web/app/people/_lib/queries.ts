@@ -12,3 +12,9 @@ export const getCachedDepartmentNames = cache(async () => {
   const departments = await trpc.department.getAll();
   return departments.map((d) => d.name).sort();
 });
+
+export const getCachedSkillNames = cache(async () => {
+  const trpc = await createServerCaller();
+  const skills = await trpc.skill.getAll();
+  return skills.map((s) => s.name); // already sorted by name
+});
