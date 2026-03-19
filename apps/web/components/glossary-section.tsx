@@ -4,9 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
-import { GlossaryEntrySheet } from "@/components/glossary-entry-sheet";
 import { useAccess } from "@/lib/hooks/use-access";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -27,9 +25,6 @@ export function GlossarySection({ projectId, entries }: GlossarySectionProps) {
   const { can } = useAccess();
   const canWrite = can("project:glossary:write", projectId);
 
-  const [editingEntry, setEditingEntry] = useState<GlossaryEntry | null>(null);
-  const [addingEntry, setAddingEntry] = useState(false);
-
   const deleteMutation = useMutation(
     trpc.glossary.delete.mutationOptions({
       onSuccess: () => {
@@ -40,12 +35,6 @@ export function GlossarySection({ projectId, entries }: GlossarySectionProps) {
     }),
   );
 
-  function handleSaved() {
-    setEditingEntry(null);
-    setAddingEntry(false);
-    router.refresh();
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -54,7 +43,7 @@ export function GlossarySection({ projectId, entries }: GlossarySectionProps) {
           <p className="text-muted-foreground text-sm">Project-specific terms and definitions.</p>
         </div>
         {canWrite && (
-          <Button size="sm" onClick={() => setAddingEntry(true)}>
+          <Button size="sm" onClick={() => router.push(`?addEntry=true`, { scroll: false })}>
             <Plus className="size-4" />
             Add Entry
           </Button>
@@ -87,7 +76,7 @@ export function GlossarySection({ projectId, entries }: GlossarySectionProps) {
                     size="icon"
                     variant="ghost"
                     className="size-7"
-                    onClick={() => setEditingEntry(entry)}
+                    onClick={() => router.push(`?editEntry=${entry.id}`, { scroll: false })}
                   >
                     <Pencil className="size-3.5" />
                     <span className="sr-only">Edit</span>
@@ -107,11 +96,6 @@ export function GlossarySection({ projectId, entries }: GlossarySectionProps) {
             </div>
           ))}
         </div>
-      )}
-
-      {addingEntry && <GlossaryEntrySheet projectId={projectId} onSaved={handleSaved} />}
-      {editingEntry && (
-        <GlossaryEntrySheet projectId={projectId} entry={editingEntry} onSaved={handleSaved} />
       )}
     </div>
   );

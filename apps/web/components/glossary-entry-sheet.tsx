@@ -15,7 +15,7 @@ import {
 } from "@workspace/ui/components/sheet";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -35,16 +35,12 @@ type GlossaryEntrySheetProps = {
     term: string;
     definition: string;
   };
-  onSaved: () => void;
 };
 
-export function GlossaryEntrySheet({ projectId, entry, onSaved }: GlossaryEntrySheetProps) {
+export function GlossaryEntrySheet({ projectId, entry }: GlossaryEntrySheetProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const trpc = useTRPC();
   const isEditing = !!entry;
-
-  const isOpen = isEditing || searchParams.get("addEntry") === "true";
 
   const {
     register,
@@ -59,14 +55,23 @@ export function GlossaryEntrySheet({ projectId, entry, onSaved }: GlossaryEntryS
     },
   });
 
+  function handleClose() {
+    reset();
+    router.push(`/projects/${projectId}/glossary`, { scroll: false });
+  }
+
+  function handleError(error: { message: string }) {
+    toast.error(error.message);
+  }
+
   const createMutation = useMutation(
     trpc.glossary.create.mutationOptions({
       onSuccess: () => {
         toast.success("Entry added");
         handleClose();
-        onSaved();
+        router.refresh();
       },
-      onError: (error) => toast.error(error.message),
+      onError: handleError,
     }),
   );
 
@@ -75,21 +80,13 @@ export function GlossaryEntrySheet({ projectId, entry, onSaved }: GlossaryEntryS
       onSuccess: () => {
         toast.success("Entry updated");
         handleClose();
-        onSaved();
+        router.refresh();
       },
-      onError: (error) => toast.error(error.message),
+      onError: handleError,
     }),
   );
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-
-  function handleClose() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("addEntry");
-    params.delete("editEntry");
-    router.push(`?${params.toString()}`, { scroll: false });
-    reset();
-  }
 
   function onSubmit(data: GlossaryEntryInput) {
     if (isEditing && entry) {
@@ -100,7 +97,7 @@ export function GlossaryEntrySheet({ projectId, entry, onSaved }: GlossaryEntryS
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Sheet open onOpenChange={(open) => !open && handleClose()}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Entry" : "Add Entry"}</SheetTitle>
