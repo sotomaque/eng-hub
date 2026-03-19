@@ -141,11 +141,7 @@
         "@types/node": "^22.15.3",
         "@types/react": "^19.1.9",
         "@workspace/typescript-config": "workspace:*",
-        "next": "^16.0.0",
         "typescript": "^5.9.2",
-      },
-      "peerDependencies": {
-        "next": "^16.0.0",
       },
     },
     "packages/typescript-config": {
