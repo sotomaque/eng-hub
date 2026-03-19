@@ -100,7 +100,115 @@ AuthAdapter
 
 ---
 
-## 3. People: Time Off, Sick Days & Travel Tracking
+## 3. Storage: Migrating from UploadThing to Supabase S3 Storage
+
+UploadThing works well as a managed file upload service, but like Clerk it's a cloud-only SaaS — it can't be self-hosted. For a fully self-hostable platform, file storage needs the same adapter treatment as auth.
+
+### Current usage
+
+UploadThing is used in two places today:
+
+| Route / File | Purpose |
+|---|---|
+| `apps/web/lib/uploadthing.ts` | File router — defines `imageUploader` (4 MB) and `pdfUploader` (16 MB) with auth middleware |
+| `apps/web/lib/uploadthing-components.ts` | Client helpers — `UploadButton` and `useUploadThing` hook |
+| `apps/web/app/api/uploadthing/route.ts` | Next.js API route handler (`GET`, `POST`) |
+| `apps/web/components/image-uploader.tsx` | UI component — uses `useUploadThing("imageUploader")` for avatar/image uploads |
+| `apps/web/components/performance-review-sheet.tsx` | UI component — uses upload for review attachments |
+
+### Recommended path: Abstract storage behind an adapter
+
+Follow the same pattern as `packages/auth` — define a storage adapter interface and swap implementations via an env var:
+
+```
+packages/storage/src/
+├── types.ts                        # StorageAdapter interface
+├── server.ts                       # Server entry point (dynamic adapter selection)
+├── client.tsx                      # Client entry point (hooks & components)
+└── adapters/
+    ├── uploadthing/                # Current provider (cloud/managed)
+    │   ├── server.ts
+    │   └── client.tsx
+    └── supabase/                   # Self-hosted (S3-compatible)
+        ├── server.ts
+        └── client.tsx
+```
+
+### Migration strategy
+
+1. **Define a `StorageAdapter` interface** — Extract the upload contract into `packages/storage/src/types.ts`:
+   - `uploadFile(file, bucket, options): Promise<{ url: string }>` — upload a file and return its public URL
+   - `deleteFile(url): Promise<void>` — remove a file by URL or key
+   - `getSignedUrl(key, expiresIn): Promise<string>` — generate a time-limited download URL (for private files)
+   - `listFiles(bucket, prefix): Promise<FileEntry[]>` — list files in a bucket/folder
+
+2. **Create the `packages/storage` package** — Mirror the structure of `packages/auth`:
+   - `server.ts` reads `STORAGE_PROVIDER` env var (`uploadthing` | `supabase`), selects the adapter
+   - `client.tsx` reads `NEXT_PUBLIC_STORAGE_PROVIDER`, re-exports provider-specific hooks
+   - Each adapter exports the same interface so swapping is a single env-var change
+
+3. **Wrap current UploadThing usage** — Move all UploadThing-specific imports behind the adapter:
+   - `uploadthing` / `uploadthing/next` / `@uploadthing/react` → `@workspace/storage/server` / `@workspace/storage/client`
+   - `useUploadThing()` hook → `useFileUpload()` (provider-agnostic)
+   - `UploadButton` component → re-export through adapter or replace with custom component
+   - API route handler → adapter-provided route or Supabase client-side upload
+
+4. **Implement Supabase Storage adapter** — Best fit for self-hosting since Supabase Storage is already part of the self-hosted stack:
+   - Uses S3-compatible API under the hood — works with any S3 client
+   - Buckets configured via Supabase Dashboard or SQL migrations (`storage.buckets`)
+   - RLS policies on `storage.objects` for fine-grained access control
+   - Supports public and private buckets with signed URL generation
+   - File size limits enforced at the bucket level
+   - No additional service to deploy — already running in `supabase start`
+
+5. **Update components** — Swap upload call sites to use the new adapter:
+   - `image-uploader.tsx` → `useFileUpload("images")` instead of `useUploadThing("imageUploader")`
+   - `performance-review-sheet.tsx` → `useFileUpload("documents")` instead of UploadThing
+   - Remove `apps/web/app/api/uploadthing/route.ts` when not using UploadThing adapter
+
+6. **Configuration toggle** — Select storage provider via `STORAGE_PROVIDER=uploadthing|supabase` in `.env`:
+
+   ```env
+   # Cloud/managed deployment (current default)
+   STORAGE_PROVIDER=uploadthing
+   UPLOADTHING_TOKEN=your_token_here
+
+   # Self-hosted deployment
+   STORAGE_PROVIDER=supabase
+   NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
+
+7. **Supabase bucket setup** — Add SQL migration for storage buckets:
+
+   ```sql
+   -- Create buckets for file uploads
+   insert into storage.buckets (id, name, public, file_size_limit)
+   values
+     ('images', 'images', true, 4194304),      -- 4 MB, public
+     ('documents', 'documents', false, 16777216); -- 16 MB, private
+
+   -- RLS: authenticated users can upload to their own folder
+   create policy "Users can upload files"
+     on storage.objects for insert
+     with check (auth.uid()::text = (storage.foldername(name))[1]);
+
+   -- RLS: anyone can read public bucket files
+   create policy "Public read for images"
+     on storage.objects for select
+     using (bucket_id = 'images');
+   ```
+
+### Why Supabase Storage over other S3 alternatives?
+
+- **Already in the stack** — `supabase start` launches Storage alongside Postgres and Auth. Zero additional infrastructure.
+- **RLS integration** — Access control policies live in the database, same as every other table. No separate IAM or ACL system.
+- **S3-compatible** — If teams later want to point at AWS S3, MinIO, or R2, the S3-compatible API makes it a config change.
+- **Consistent tooling** — Buckets, policies, and files are visible in Supabase Studio alongside the rest of the database.
+
+---
+
+## 4. People: Time Off, Sick Days & Travel Tracking
 
 Add visibility into how team members spend their time beyond code.
 
@@ -121,7 +229,7 @@ Add visibility into how team members spend their time beyond code.
 
 ---
 
-## 4. Feature Ideas to Consider as You Scale
+## 5. Feature Ideas to Consider as You Scale
 
 ### Team & People
 
@@ -183,7 +291,7 @@ Add visibility into how team members spend their time beyond code.
 
 ---
 
-## 5. Suggested Priority Phases
+## 6. Suggested Priority Phases
 
 ### Phase 1 — Foundation for Self-Hosting
 - Auth adapter interface + Supabase Auth implementation
