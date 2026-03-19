@@ -109,7 +109,7 @@ Rather than ripping out Clerk immediately, introduce an **auth adapter interface
 
 ---
 
-## 3. Storage: Migrating from UploadThing to Supabase S3 Storage
+## 3. Storage: Migrating from UploadThing to Supabase S3 Storage ⚙️ In Progress
 
 UploadThing works well as a managed file upload service, but like Clerk it's a cloud-only SaaS — it can't be self-hosted. For a fully self-hostable platform, file storage needs the same adapter treatment as auth.
 
@@ -145,24 +145,19 @@ packages/storage/src/
 
 ### Migration strategy
 
-1. **Define a `StorageAdapter` interface** — Extract the upload contract into `packages/storage/src/types.ts`:
-   - `uploadFile(file, bucket, options): Promise<{ url: string }>` — upload a file and return its public URL
-   - `deleteFile(url): Promise<void>` — remove a file by URL or key
-   - `getSignedUrl(key, expiresIn): Promise<string>` — generate a time-limited download URL (for private files)
-   - `listFiles(bucket, prefix): Promise<FileEntry[]>` — list files in a bucket/folder
+1. ✅ **Define a `StorageAdapter` interface** — `packages/storage/src/types.ts` with `StorageBucket`, `UseFileUploadOptions`, `UseFileUploadResult`, `PresignRequest`, `PresignResponse`.
 
-2. **Create the `packages/storage` package** — Mirror the structure of `packages/auth`:
-   - `server.ts` reads `STORAGE_PROVIDER` env var (`uploadthing` | `supabase`), selects the adapter
-   - `client.tsx` reads `NEXT_PUBLIC_STORAGE_PROVIDER`, re-exports provider-specific hooks
-   - Each adapter exports the same interface so swapping is a single env-var change
+2. ✅ **Create the `packages/storage` package** — Mirror the structure of `packages/auth`:
+   - `server.ts` re-exports Supabase presign helper
+   - `client.tsx` re-exports `useSupabaseFileUpload` hook
+   - `apps/web/lib/storage.tsx` factory: selects UploadThing bridge (default) or Supabase via `NEXT_PUBLIC_STORAGE_PROVIDER`
 
-3. **Wrap current UploadThing usage** — Move all UploadThing-specific imports behind the adapter:
-   - `uploadthing` / `uploadthing/next` / `@uploadthing/react` → `@workspace/storage/server` / `@workspace/storage/client`
-   - `useUploadThing()` hook → `useFileUpload()` (provider-agnostic)
-   - `UploadButton` component → re-export through adapter or replace with custom component
-   - API route handler → adapter-provided route or Supabase client-side upload
+3. ✅ **Wrap current UploadThing usage** — All UploadThing-specific imports moved behind the adapter:
+   - `apps/web/components/image-uploader.tsx` — `useFileUpload("images")` (was `useUploadThing("imageUploader")`)
+   - `apps/web/components/performance-review-sheet.tsx` — `useFileUpload("documents")` (was `useUploadThing("pdfUploader")`)
+   - `apps/web/app/api/storage/presign/route.ts` — new presign endpoint for Supabase adapter
 
-4. **Implement Supabase Storage adapter** — Best fit for self-hosting since Supabase Storage is already part of the self-hosted stack:
+4. ✅ **Implement Supabase Storage adapter** — Best fit for self-hosting since Supabase Storage is already part of the self-hosted stack:
    - Uses S3-compatible API under the hood — works with any S3 client
    - Buckets configured via Supabase Dashboard or SQL migrations (`storage.buckets`)
    - RLS policies on `storage.objects` for fine-grained access control
@@ -170,12 +165,12 @@ packages/storage/src/
    - File size limits enforced at the bucket level
    - No additional service to deploy — already running in `supabase start`
 
-5. **Update components** — Swap upload call sites to use the new adapter:
-   - `image-uploader.tsx` → `useFileUpload("images")` instead of `useUploadThing("imageUploader")`
-   - `performance-review-sheet.tsx` → `useFileUpload("documents")` instead of UploadThing
-   - Remove `apps/web/app/api/uploadthing/route.ts` when not using UploadThing adapter
+5. ✅ **Update components** — Swap upload call sites to use the new adapter:
+   - `image-uploader.tsx` → `useFileUpload("images")` (done)
+   - `performance-review-sheet.tsx` → `useFileUpload("documents")` (done)
+   - `apps/web/app/api/uploadthing/route.ts` — keep for now (still needed when `STORAGE_PROVIDER=uploadthing`)
 
-6. **Configuration toggle** — Select storage provider via `STORAGE_PROVIDER=uploadthing|supabase` in `.env`:
+6. ✅ **Configuration toggle** — Select storage provider via `NEXT_PUBLIC_STORAGE_PROVIDER=uploadthing|supabase` in `.env`:
 
    ```env
    # Cloud/managed deployment (current default)
@@ -207,6 +202,62 @@ packages/storage/src/
      on storage.objects for select
      using (bucket_id = 'images');
    ```
+
+### Activating Supabase Storage
+
+After merging the storage adapter PR, **UploadThing remains the active provider** — `NEXT_PUBLIC_STORAGE_PROVIDER` is not set in Vercel, so the default (`uploadthing`) applies. The Supabase adapter is wired up but dormant. No existing behavior changes.
+
+#### Step 1 — Create buckets
+
+Run in the Supabase dashboard or add as a migration:
+
+```sql
+insert into storage.buckets (id, name, public, file_size_limit)
+values
+  ('images', 'images', true, 4194304),        -- 4 MB, public
+  ('documents', 'documents', false, 16777216)  -- 16 MB, private
+on conflict (id) do nothing;
+```
+
+#### Step 2 — Flip the env var in Vercel
+
+```env
+NEXT_PUBLIC_STORAGE_PROVIDER=supabase
+SUPABASE_SERVICE_ROLE_KEY=<service role key from Supabase dashboard>
+NEXT_PUBLIC_SUPABASE_URL=<already set if using Supabase branching>
+```
+
+New uploads will go to Supabase immediately. Existing UploadThing URLs stored in the database continue to work — they're public CDN links and don't expire.
+
+#### Step 3 — Backfill existing files (optional)
+
+```ts
+// One-off migration script: bun run scripts/migrate-storage.ts
+import { db } from "@workspace/db";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+// Example: migrate person avatars
+const people = await db.person.findMany({ where: { avatarUrl: { contains: "ufs.sh" } } });
+for (const person of people) {
+  const res = await fetch(person.avatarUrl!);
+  const blob = await res.blob();
+  const key = `migrated/${crypto.randomUUID()}.jpg`;
+  await supabase.storage.from("images").upload(key, blob);
+  const { data: { publicUrl } } = supabase.storage.from("images").getPublicUrl(key);
+  await db.person.update({ where: { id: person.id }, data: { avatarUrl: publicUrl } });
+}
+```
+
+Repeat for each model that stores file URLs (`performanceReview.pdfUrl`, etc.).
+
+#### Step 4 — Remove UploadThing (optional cleanup)
+
+Once all URLs are backfilled, remove `UPLOADTHING_TOKEN` from Vercel and delete `apps/web/app/api/uploadthing/route.ts`.
 
 ### Why Supabase Storage over other S3 alternatives?
 
