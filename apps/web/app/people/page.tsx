@@ -145,10 +145,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       <AppHeader />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <Suspense
-          key={`${page}-${pageSize}-${params.search ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}-${multiProject ?? ""}-${departments?.join(",") ?? ""}-${projects?.join(",") ?? ""}-${skills?.join(",") ?? ""}`}
-          fallback={<ProjectsTableSkeleton />}
-        >
+        <Suspense fallback={<ProjectsTableSkeleton />}>
           <PeopleContent
             page={page}
             pageSize={pageSize}

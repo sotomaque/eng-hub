@@ -266,7 +266,7 @@ async function main() {
   console.log(`  Contributors matched: ${commitData.map((c) => c.username).join(", ")}`);
 
   // 5. Aggregate using the same logic as GitHub sync (no PR data)
-  const { allTime, ytd } = aggregateStats(commitData, [], teamUsernames);
+  const { allTime, ytd } = aggregateStats(commitData, []);
 
   function toRecord(s: (typeof allTime)[number], period: StatsPeriod) {
     return {

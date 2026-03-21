@@ -23,6 +23,7 @@ type MemberInfo = {
   callsign: string | null;
   imageUrl: string | null;
   leftAt: string | null;
+  isTeamMember: boolean;
 };
 
 type StatsDataTableProps = {
@@ -116,7 +117,12 @@ export function StatsDataTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="size-6">
-                        <AvatarImage src={member?.imageUrl ?? undefined} />
+                        <AvatarImage
+                          src={
+                            member?.imageUrl ??
+                            `https://avatars.githubusercontent.com/${s.githubUsername}`
+                          }
+                        />
                         <AvatarFallback className="text-xs">{name[0]}</AvatarFallback>
                       </Avatar>
                       {member ? (
@@ -129,12 +135,13 @@ export function StatsDataTable({
                       ) : (
                         <span className="font-medium">{name}</span>
                       )}
-                      {member && (
-                        <span className="text-muted-foreground text-xs">
-                          {s.githubUsername.includes("@")
-                            ? s.githubUsername
-                            : `@${s.githubUsername}`}
-                        </span>
+                      <span className="text-muted-foreground text-xs">
+                        {s.githubUsername.includes("@") ? s.githubUsername : `@${s.githubUsername}`}
+                      </span>
+                      {(!member || !member.isTeamMember) && (
+                        <Badge variant="outline" className="ml-1 text-[10px]">
+                          External
+                        </Badge>
                       )}
                       {member?.leftAt && (
                         <Badge variant="secondary" className="ml-1 text-[10px]">

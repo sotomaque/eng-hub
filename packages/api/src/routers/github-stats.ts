@@ -49,6 +49,7 @@ export const githubStatsRouter = createTRPCRouter({
           callsign: string | null;
           imageUrl: string | null;
           leftAt: string | null;
+          isTeamMember: boolean;
         }
       > = {};
       for (const tm of teamMembers) {
@@ -59,6 +60,7 @@ export const githubStatsRouter = createTRPCRouter({
           callsign: tm.person.callsign,
           imageUrl: tm.person.imageUrl,
           leftAt: tm.leftAt?.toISOString() ?? null,
+          isTeamMember: true,
         };
         if (tm.person.githubUsername) {
           memberMap[tm.person.githubUsername] = info;
@@ -67,6 +69,36 @@ export const githubStatsRouter = createTRPCRouter({
           memberMap[tm.person.gitlabUsername] = info;
         }
         memberMap[tm.person.email] = info;
+      }
+
+      // Look up Person records for contributors not on the team
+      const unmatchedUsernames = stats.map((s) => s.githubUsername).filter((u) => !memberMap[u]);
+
+      if (unmatchedUsernames.length > 0) {
+        const matchedPeople = await db.person.findMany({
+          where: { githubUsername: { in: unmatchedUsernames } },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            callsign: true,
+            githubUsername: true,
+            imageUrl: true,
+          },
+        });
+        for (const p of matchedPeople) {
+          if (p.githubUsername) {
+            memberMap[p.githubUsername] = {
+              personId: p.id,
+              firstName: p.firstName,
+              lastName: p.lastName,
+              callsign: p.callsign,
+              imageUrl: p.imageUrl,
+              leftAt: null,
+              isTeamMember: false,
+            };
+          }
+        }
       }
 
       return { stats, sync, memberMap };
