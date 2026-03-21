@@ -19,6 +19,8 @@ export const CAPABILITIES = {
   PROJECT_ARRANGEMENTS_WRITE: "project:arrangements:write",
   PROJECT_GLOSSARY_READ: "project:glossary:read",
   PROJECT_GLOSSARY_WRITE: "project:glossary:write",
+  PROJECT_DOCUMENTS_READ: "project:documents:read",
+  PROJECT_DOCUMENTS_WRITE: "project:documents:write",
 
   PERSON_READ: "person:read",
   PERSON_WRITE: "person:write",
@@ -30,6 +32,8 @@ export const CAPABILITIES = {
   PERSON_MEETINGS_WRITE: "person:meetings:write",
   PERSON_COMMENTS_READ: "person:comments:read",
   PERSON_COMMENTS_WRITE: "person:comments:write",
+  PERSON_DOCUMENTS_READ: "person:documents:read",
+  PERSON_DOCUMENTS_WRITE: "person:documents:write",
 
   SETTINGS_READ: "settings:read",
   SETTINGS_WRITE: "settings:write",
@@ -47,6 +51,7 @@ export const MANAGER_INHERITED_CAPABILITIES: Capability[] = [
   "person:meetings:read",
   "person:meetings:write",
   "person:comments:read",
+  "person:documents:read",
 ];
 
 /** All capability values as an array (useful for admin UI) */

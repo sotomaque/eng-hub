@@ -38,6 +38,30 @@ export const ourFileRouter: FileRouter = {
     .onUploadComplete(async ({ metadata, file }) => {
       return { uploadedBy: metadata.userId, url: file.ufsUrl };
     }),
+
+  documentUploader: f({
+    pdf: { maxFileSize: "16MB", maxFileCount: 1 },
+    "application/msword": { maxFileSize: "16MB", maxFileCount: 1 },
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+      maxFileSize: "16MB",
+      maxFileCount: 1,
+    },
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+      maxFileSize: "16MB",
+      maxFileCount: 1,
+    },
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": {
+      maxFileSize: "16MB",
+      maxFileCount: 1,
+    },
+    "text/plain": { maxFileSize: "16MB", maxFileCount: 1 },
+  })
+    .middleware(async () => {
+      return await requireAuth();
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { uploadedBy: metadata.userId, url: file.ufsUrl };
+    }),
 };
 
 export type OurFileRouter = typeof ourFileRouter;

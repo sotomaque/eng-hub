@@ -7,8 +7,8 @@ import { useUploadThing } from "@/lib/uploadthing-components";
 // Map abstract bucket names to UploadThing route keys defined in lib/uploadthing.ts
 const UPLOADTHING_ROUTES = {
   images: "imageUploader",
-  documents: "pdfUploader",
-} as const satisfies Record<StorageBucket, "imageUploader" | "pdfUploader">;
+  documents: "documentUploader",
+} as const satisfies Record<StorageBucket, "imageUploader" | "documentUploader">;
 
 function useUploadThingFileUpload(
   bucket: StorageBucket,

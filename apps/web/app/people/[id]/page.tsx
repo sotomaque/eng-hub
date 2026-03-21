@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getMe } from "@/app/me/_lib/queries";
 import { AppHeader } from "@/components/app-header";
 import { PersonComments } from "@/components/person-comments";
+import { PersonDocuments } from "@/components/person-documents";
 import { PersonGoals } from "@/components/person-goals";
 import { PersonMeetings } from "@/components/person-meetings";
 import { PersonProfileEditable } from "@/components/person-profile-editable";
@@ -57,6 +58,12 @@ async function PersonReviewsSection({ id }: { id: string }) {
   return <PersonReviews personId={id} canEdit={canEdit} />;
 }
 
+async function PersonDocumentsSection({ id }: { id: string }) {
+  const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
+  const canEdit = !!me && !!person && me.id === person.managerId;
+  return <PersonDocuments personId={id} canEdit={canEdit} />;
+}
+
 export default async function PersonPage({ params }: PageProps) {
   const { id } = await params;
 
@@ -74,6 +81,9 @@ export default async function PersonPage({ params }: PageProps) {
         </Suspense>
         <Suspense>
           <PersonReviewsSection id={id} />
+        </Suspense>
+        <Suspense>
+          <PersonDocumentsSection id={id} />
         </Suspense>
         <PersonComments personId={id} />
       </main>
