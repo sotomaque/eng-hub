@@ -44,10 +44,6 @@ Rules:
 - Keep the total analysis under 600 words.`;
 
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV === "production") {
-    return Response.json({ error: "Not available in production" }, { status: 403 });
-  }
-
   const { userId } = await getServerSession();
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
