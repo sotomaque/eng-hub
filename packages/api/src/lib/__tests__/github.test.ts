@@ -41,7 +41,7 @@ function weekTs(date: Date): number {
 
 describe("aggregateStats", () => {
   test("returns empty arrays when no data", () => {
-    const result = aggregateStats([], [], new Set());
+    const result = aggregateStats([], []);
     expect(result.allTime).toEqual([]);
     expect(result.ytd).toEqual([]);
   });
@@ -69,7 +69,7 @@ describe("aggregateStats", () => {
         ],
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
 
     expect(result.allTime).toHaveLength(1);
     const alice = result.allTime[0];
@@ -78,7 +78,7 @@ describe("aggregateStats", () => {
     expect(alice?.deletions).toBe(100);
   });
 
-  test("filters by teamUsernames (excludes non-team members)", () => {
+  test("includes all contributors regardless of team membership", () => {
     const commits: ContributorCommitData[] = [
       {
         username: "alice",
@@ -95,10 +95,10 @@ describe("aggregateStats", () => {
         weeklyData: [],
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
 
-    expect(result.allTime).toHaveLength(1);
-    expect(result.allTime[0]?.githubUsername).toBe("alice");
+    expect(result.allTime).toHaveLength(2);
+    expect(result.allTime.map((c) => c.githubUsername).sort()).toEqual(["alice", "bob"]);
   });
 
   test("calculates all-time trend: up when recent >= avg * 1.2", () => {
@@ -121,7 +121,7 @@ describe("aggregateStats", () => {
         weeklyData,
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
     expect(result.allTime[0]?.trend).toBe("up");
   });
 
@@ -145,7 +145,7 @@ describe("aggregateStats", () => {
         weeklyData,
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
     expect(result.allTime[0]?.trend).toBe("down");
   });
 
@@ -167,7 +167,7 @@ describe("aggregateStats", () => {
         weeklyData,
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
     expect(result.allTime[0]?.trend).toBe("stable");
   });
 
@@ -189,7 +189,7 @@ describe("aggregateStats", () => {
         weeklyData,
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
     // avg = 5/10 = 0.5, recent (last 8) = 5/8 = 0.625
     // recent >= avg * 1.2 → 0.625 >= 0.6 → true → "up"
     expect(result.allTime[0]?.trend).toBe("up");
@@ -214,7 +214,7 @@ describe("aggregateStats", () => {
         reviews: [],
       },
     ];
-    const result = aggregateStats([], prs, new Set(["alice"]));
+    const result = aggregateStats([], prs);
 
     expect(result.allTime[0]?.prsOpened).toBe(2);
     expect(result.allTime[0]?.prsMerged).toBe(1);
@@ -236,7 +236,7 @@ describe("aggregateStats", () => {
         ],
       },
     ];
-    const result = aggregateStats([], prs, new Set(["alice", "bob", "charlie"]));
+    const result = aggregateStats([], prs);
 
     const bob = result.allTime.find((c) => c.githubUsername === "bob");
     const charlie = result.allTime.find((c) => c.githubUsername === "charlie");
@@ -244,7 +244,7 @@ describe("aggregateStats", () => {
     expect(charlie?.reviewsDone).toBe(1);
   });
 
-  test("excludes non-team reviewers", () => {
+  test("includes external reviewers", () => {
     const prs: PRData[] = [
       {
         author: "alice",
@@ -255,11 +255,11 @@ describe("aggregateStats", () => {
         reviews: [{ login: "external-user", createdAt: "2025-02-28T01:00:00Z" }],
       },
     ];
-    const result = aggregateStats([], prs, new Set(["alice"]));
+    const result = aggregateStats([], prs);
 
-    // external-user is not in teamUsernames, should not appear
     const external = result.allTime.find((c) => c.githubUsername === "external-user");
-    expect(external).toBeUndefined();
+    expect(external).toBeDefined();
+    expect(external?.reviewsDone).toBe(1);
   });
 
   test("YTD only includes data from current year", () => {
@@ -290,7 +290,7 @@ describe("aggregateStats", () => {
         ],
       },
     ];
-    const result = aggregateStats(commits, [], new Set(["alice"]));
+    const result = aggregateStats(commits, []);
 
     // allTime should have 20 total commits
     expect(result.allTime[0]?.commits).toBe(20);

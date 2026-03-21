@@ -181,7 +181,12 @@ query($owner: String!, $repo: String!, $cursor: String) {
 }
 `;
 
-export async function fetchPRStats(owner: string, repo: string, token?: string): Promise<PRData[]> {
+export async function fetchPRStats(
+  owner: string,
+  repo: string,
+  token?: string,
+  since?: string,
+): Promise<PRData[]> {
   if (!token) {
     // GraphQL API requires authentication
     return [];
@@ -192,8 +197,9 @@ export async function fetchPRStats(owner: string, repo: string, token?: string):
   let cursor: string | null = null;
   let hasNextPage = true;
   let pageCount = 0;
+  let reachedCutoff = false;
 
-  while (hasNextPage && pageCount < MAX_PAGES) {
+  while (hasNextPage && pageCount < MAX_PAGES && !reachedCutoff) {
     pageCount++;
     const response = await fetch("https://api.github.com/graphql", {
       method: "POST",
@@ -245,6 +251,11 @@ export async function fetchPRStats(owner: string, repo: string, token?: string):
     if (!prs) break;
 
     for (const pr of prs.nodes) {
+      // PRs are ordered CREATED_AT DESC — stop once we pass the cutoff
+      if (since && pr.createdAt < since) {
+        reachedCutoff = true;
+        break;
+      }
       if (!pr.author?.login) continue;
       allPRs.push({
         author: pr.author.login,
@@ -276,7 +287,6 @@ function computeTrend(avg: number, recent: number): Trend {
 export function aggregateStats(
   commits: ContributorCommitData[],
   prs: PRData[],
-  teamUsernames: Set<string>,
 ): { allTime: ContributorAggregated[]; ytd: ContributorAggregated[] } {
   const currentYear = new Date().getFullYear();
   const ytdStart = new Date(currentYear, 0, 1);
@@ -324,8 +334,6 @@ export function aggregateStats(
 
   // Process commit data
   for (const c of commits) {
-    if (!teamUsernames.has(c.username)) continue;
-
     const allTime = getOrCreate(allTimeMap, c.username);
     allTime.commits = c.totalCommits;
     allTime.additions = c.additions;
@@ -366,23 +374,20 @@ export function aggregateStats(
 
   // Process PR data
   for (const pr of prs) {
-    if (teamUsernames.has(pr.author)) {
-      const allTime = getOrCreate(allTimeMap, pr.author);
-      allTime.prsOpened++;
-      if (pr.merged) allTime.prsMerged++;
+    const allTime = getOrCreate(allTimeMap, pr.author);
+    allTime.prsOpened++;
+    if (pr.merged) allTime.prsMerged++;
 
-      const prDate = new Date(pr.createdAt);
-      if (prDate >= ytdStart) {
-        const ytdEntry = getOrCreate(ytdMap, pr.author);
-        ytdEntry.prsOpened++;
-        if (pr.merged) ytdEntry.prsMerged++;
-      }
+    const prDate = new Date(pr.createdAt);
+    if (prDate >= ytdStart) {
+      const ytdEntry = getOrCreate(ytdMap, pr.author);
+      ytdEntry.prsOpened++;
+      if (pr.merged) ytdEntry.prsMerged++;
     }
 
     // Count reviews (dedupe per reviewer per PR)
     const seen = new Set<string>();
     for (const review of pr.reviews) {
-      if (!teamUsernames.has(review.login)) continue;
       if (seen.has(review.login)) continue;
       seen.add(review.login);
 

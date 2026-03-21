@@ -117,7 +117,7 @@ export async function compareContributorsViaGitHub(
 ): Promise<CompareResult> {
   const [commitStats, prStats] = await Promise.all([
     fetchCommitStats(owner, repo, token),
-    fetchPRStats(owner, repo, token),
+    fetchPRStats(owner, repo, token, since),
   ]);
 
   const sinceDate = new Date(since);

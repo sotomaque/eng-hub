@@ -261,7 +261,7 @@ describe("compareContributorsViaGitHub", () => {
     await compareContributorsViaGitHub("my-org", "my-repo", "gh-token", CONTRIBUTORS, "2025-01-01");
 
     expect(mockFetchCommitStats).toHaveBeenCalledWith("my-org", "my-repo", "gh-token");
-    expect(mockFetchPRStats).toHaveBeenCalledWith("my-org", "my-repo", "gh-token");
+    expect(mockFetchPRStats).toHaveBeenCalledWith("my-org", "my-repo", "gh-token", "2025-01-01");
   });
 
   test("handles contributor with no matching commit data gracefully", async () => {

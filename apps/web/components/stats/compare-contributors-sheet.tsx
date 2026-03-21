@@ -43,6 +43,7 @@ type MemberInfo = {
   callsign: string | null;
   imageUrl: string | null;
   leftAt: string | null;
+  isTeamMember: boolean;
 };
 
 type CompareContributorsSheetProps = {
@@ -114,7 +115,6 @@ export function CompareContributorsSheet({
 }: CompareContributorsSheetProps) {
   const trpc = useTRPC();
   const [referencePersonId, setReferencePersonId] = useState<string | undefined>();
-  const hasFetched = useRef(false);
 
   const personIds = selectedUsernames
     .map((u) => memberMap[u]?.personId)
@@ -132,12 +132,16 @@ export function CompareContributorsSheet({
 
   const compareLoading = useLoadingSteps(COMPARE_LOADING_STEPS, compareMutation.isPending);
 
-  // Trigger fetch once on mount — interaction-driven (sheet opens from user click)
-  if (!hasFetched.current && uniquePersonIds.length >= 2) {
-    hasFetched.current = true;
-    compareLoading.start();
-    compareMutation.mutate({ projectId, personIds: uniquePersonIds });
-  }
+  // Trigger fetch once on mount via useEffect (not during render) so the
+  // mutation observer is properly connected after React commits the component.
+  const { mutate } = compareMutation;
+  useEffect(() => {
+    if (uniquePersonIds.length >= 2) {
+      compareLoading.start();
+      mutate({ projectId, personIds: uniquePersonIds });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
 
   const data = compareMutation.data;
 

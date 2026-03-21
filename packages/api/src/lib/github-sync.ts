@@ -28,23 +28,13 @@ export async function syncGitHubStatsForProject(projectId: string): Promise<void
   try {
     const token = process.env.GITHUB_TOKEN;
 
-    const [commitData, prData, teamMembers] = await Promise.all([
+    const [commitData, prData] = await Promise.all([
       fetchCommitStats(parsed.owner, parsed.repo, token),
       fetchPRStats(parsed.owner, parsed.repo, token),
-      db.teamMember.findMany({
-        where: { projectId },
-        include: {
-          person: { select: { githubUsername: true } },
-        },
-      }),
     ]);
 
-    const teamUsernames = new Set(
-      teamMembers.map((tm) => tm.person.githubUsername).filter((u): u is string => !!u),
-    );
-
     const commitDataAvailable = commitData.length > 0;
-    const { allTime, ytd } = aggregateStats(commitData, prData, teamUsernames);
+    const { allTime, ytd } = aggregateStats(commitData, prData);
 
     function toRecord(s: (typeof allTime)[number], period: StatsPeriod) {
       return {

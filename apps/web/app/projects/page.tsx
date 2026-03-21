@@ -157,10 +157,7 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       <AppHeader />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <Suspense
-          key={`${page}-${pageSize}-${params.search ?? ""}-${status?.join(",") ?? ""}-${projectStatus?.join(",") ?? ""}-${type?.join(",") ?? ""}-${projectType?.join(",") ?? ""}-${favorite ?? ""}-${sortBy ?? ""}-${sortOrder ?? ""}`}
-          fallback={<ProjectsTableSkeleton />}
-        >
+        <Suspense fallback={<ProjectsTableSkeleton />}>
           <ProjectsContent
             page={page}
             pageSize={pageSize}
