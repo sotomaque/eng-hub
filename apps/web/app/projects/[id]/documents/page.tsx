@@ -19,11 +19,12 @@ type PageProps = {
 };
 
 async function DocumentsContent({ id }: { id: string }) {
-  const project = await getCachedProject(id);
-  if (!project) notFound();
-
   const trpc = await createServerCaller();
-  const documents = await trpc.document.getByProjectId({ projectId: id });
+  const [project, documents] = await Promise.all([
+    getCachedProject(id),
+    trpc.document.getByProjectId({ projectId: id }),
+  ]);
+  if (!project) notFound();
 
   return <DocumentsSection basePath={`/projects/${id}/documents`} documents={documents} />;
 }

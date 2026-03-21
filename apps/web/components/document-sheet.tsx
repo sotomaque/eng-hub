@@ -43,6 +43,8 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const EMPTY_TAGS: string[] = [];
+
 export function DocumentSheet({ projectId, personId, returnPath, document }: DocumentSheetProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -55,7 +57,7 @@ export function DocumentSheet({ projectId, personId, returnPath, document }: Doc
     mimeType?: string;
   } | null>(null);
 
-  const { data: existingTags = [] } = useQuery(
+  const { data: existingTags = EMPTY_TAGS } = useQuery(
     trpc.document.getDistinctTags.queryOptions({ projectId, personId }),
   );
 
@@ -188,11 +190,11 @@ export function DocumentSheet({ projectId, personId, returnPath, document }: Doc
                     <FileText className="text-muted-foreground size-5 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{uploadedFile.name}</p>
-                      {uploadedFile.size && (
+                      {uploadedFile.size != null && uploadedFile.size > 0 ? (
                         <p className="text-muted-foreground text-xs">
                           {formatFileSize(uploadedFile.size)}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                     <Button
                       type="button"
