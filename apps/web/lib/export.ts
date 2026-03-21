@@ -50,3 +50,8 @@ export async function downloadXlsx(rows: Row[], filename: string): Promise<void>
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }
+
+export function downloadText(content: string, filename: string): void {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
+  triggerDownload(blob, `${filename}.txt`);
+}

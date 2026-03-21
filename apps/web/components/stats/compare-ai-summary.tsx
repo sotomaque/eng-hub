@@ -25,9 +25,10 @@ const SUMMARY_LOADING_STEPS = [
 
 type CompareAISummaryProps = {
   data: Record<string, unknown>;
+  onCompletionChange?: (text: string) => void;
 };
 
-export function CompareAISummary({ data }: CompareAISummaryProps) {
+export function CompareAISummary({ data, onCompletionChange }: CompareAISummaryProps) {
   const [customPromptOpen, setCustomPromptOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [summaryStep, setSummaryStep] = useState(0);
@@ -57,6 +58,10 @@ export function CompareAISummary({ data }: CompareAISummaryProps) {
   useEffect(() => {
     if (!isSummaryLoading) stopSummarySteps();
   }, [isSummaryLoading, stopSummarySteps]);
+
+  useEffect(() => {
+    if (completion) onCompletionChange?.(completion);
+  }, [completion, onCompletionChange]);
 
   return (
     <>

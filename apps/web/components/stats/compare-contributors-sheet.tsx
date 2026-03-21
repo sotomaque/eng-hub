@@ -5,6 +5,12 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,9 +32,11 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { downloadCsv, downloadJson, downloadText, downloadXlsx } from "@/lib/export";
 import { useTRPC } from "@/lib/trpc/client";
 
 const CompareAISummary = dynamic(
@@ -144,13 +152,105 @@ export function CompareContributorsSheet({
   }, []);
 
   const data = compareMutation.data;
+  const [aiSummary, setAiSummary] = useState("");
+
+  const buildExportRows = useCallback(() => {
+    if (!data) return [];
+    return data.contributors.map((c) => ({
+      Name: c.name,
+      "All-time Commits": c.allTimeCommits,
+      "Period Commits": c.totalCommits,
+      "MRs Merged": c.mrsMerged,
+      "Lines Added": c.additions,
+      "Lines Removed": c.deletions,
+      "Net Lines": c.netLines,
+      "First Commit": c.firstCommitDate ?? "",
+      "Last Commit": c.lastCommitDate ?? "",
+    }));
+  }, [data]);
+
+  const buildExportText = useCallback(() => {
+    if (!data) return "";
+    const lines: string[] = ["# Contributor Comparison Report", ""];
+    for (const c of data.contributors) {
+      lines.push(`## ${c.name}`);
+      lines.push(`- All-time Commits: ${c.allTimeCommits}`);
+      lines.push(`- Period Commits: ${c.totalCommits}`);
+      lines.push(`- MRs Merged: ${c.mrsMerged}`);
+      lines.push(`- Lines Added: ${c.additions.toLocaleString()}`);
+      lines.push(`- Lines Removed: ${c.deletions.toLocaleString()}`);
+      lines.push(`- Net Lines: ${c.netLines.toLocaleString()}`);
+      lines.push(`- First Commit: ${c.firstCommitDate ?? "N/A"}`);
+      lines.push(`- Last Commit: ${c.lastCommitDate ?? "N/A"}`);
+      if (c.commitTypes.length > 0) {
+        lines.push(
+          `- Commit Types: ${c.commitTypes.map((t) => `${t.type}(${t.count})`).join(", ")}`,
+        );
+      }
+      lines.push("");
+    }
+    if (data.months.length > 0) {
+      lines.push("## Monthly Commits");
+      for (const month of data.months) {
+        const vals = data.contributors.map((c) => `${c.name}: ${c.monthlyCommits[month] ?? 0}`);
+        lines.push(`- ${month}: ${vals.join(", ")}`);
+      }
+      lines.push("");
+    }
+    if (aiSummary) {
+      lines.push("## AI Analysis", "", aiSummary, "");
+    }
+    return lines.join("\n");
+  }, [data, aiSummary]);
+
+  const handleExport = useCallback(
+    async (format: "xlsx" | "csv" | "json" | "text") => {
+      try {
+        if (format === "text") {
+          downloadText(buildExportText(), "contributor-comparison");
+        } else {
+          const rows = buildExportRows();
+          if (format === "xlsx") await downloadXlsx(rows, "contributor-comparison");
+          else if (format === "csv") downloadCsv(rows, "contributor-comparison");
+          else downloadJson(rows, "contributor-comparison");
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Export failed");
+      }
+    },
+    [buildExportRows, buildExportText],
+  );
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="flex w-full max-w-4xl flex-col overflow-hidden sm:max-w-4xl">
-        <SheetHeader>
-          <SheetTitle>Compare Contributors</SheetTitle>
-          <SheetDescription>Side-by-side contributor comparison</SheetDescription>
+        <SheetHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <SheetTitle>Compare Contributors</SheetTitle>
+            <SheetDescription>Side-by-side contributor comparison</SheetDescription>
+          </div>
+          {data && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 shrink-0">
+                  <Download className="size-3.5" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => handleExport("xlsx")}>
+                  Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleExport("csv")}>CSV (.csv)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleExport("json")}>
+                  JSON (.json)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleExport("text")}>
+                  Raw Text (.txt)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </SheetHeader>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-8">
@@ -340,7 +440,9 @@ export function CompareContributorsSheet({
               ) : null}
 
               {/* AI Summary — lazy-loaded to keep @ai-sdk/react out of the main bundle */}
-              {hasAnthropicKey ? <CompareAISummary data={data} /> : null}
+              {hasAnthropicKey ? (
+                <CompareAISummary data={data} onCompletionChange={setAiSummary} />
+              ) : null}
             </>
           ) : null}
         </div>
