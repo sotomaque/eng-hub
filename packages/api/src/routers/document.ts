@@ -35,6 +35,22 @@ const updateDocumentSchema = z.object({
   tags: tagsSchema,
 });
 
+async function assertDocumentWriteAccess(
+  access: NonNullable<Parameters<typeof assertAccess>[0]>,
+  doc: { projectId: string | null; personId: string | null },
+) {
+  if (doc.projectId) {
+    assertAccess(access, CAPABILITIES.PROJECT_DOCUMENTS_WRITE, doc.projectId);
+  } else if (doc.personId) {
+    const allowed = await hasPersonCapability(
+      access,
+      CAPABILITIES.PERSON_DOCUMENTS_WRITE,
+      doc.personId,
+    );
+    if (!allowed) throw new TRPCError({ code: "FORBIDDEN" });
+  }
+}
+
 export const documentRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
     .input(z.object({ projectId: z.string() }))
@@ -74,17 +90,10 @@ export const documentRouter = createTRPCRouter({
 
   create: protectedProcedure.input(createDocumentSchema).mutation(async ({ ctx, input }) => {
     if (!ctx.access) throw new TRPCError({ code: "UNAUTHORIZED" });
-
-    if (input.projectId) {
-      assertAccess(ctx.access, CAPABILITIES.PROJECT_DOCUMENTS_WRITE, input.projectId);
-    } else if (input.personId) {
-      const allowed = await hasPersonCapability(
-        ctx.access,
-        CAPABILITIES.PERSON_DOCUMENTS_WRITE,
-        input.personId,
-      );
-      if (!allowed) throw new TRPCError({ code: "FORBIDDEN" });
-    }
+    await assertDocumentWriteAccess(ctx.access, {
+      projectId: input.projectId ?? null,
+      personId: input.personId ?? null,
+    });
 
     return db.document.create({
       data: {
@@ -107,17 +116,7 @@ export const documentRouter = createTRPCRouter({
 
     const doc = await db.document.findUnique({ where: { id: input.id } });
     if (!doc) throw new TRPCError({ code: "NOT_FOUND" });
-
-    if (doc.projectId) {
-      assertAccess(ctx.access, CAPABILITIES.PROJECT_DOCUMENTS_WRITE, doc.projectId);
-    } else if (doc.personId) {
-      const allowed = await hasPersonCapability(
-        ctx.access,
-        CAPABILITIES.PERSON_DOCUMENTS_WRITE,
-        doc.personId,
-      );
-      if (!allowed) throw new TRPCError({ code: "FORBIDDEN" });
-    }
+    await assertDocumentWriteAccess(ctx.access, doc);
 
     return db.document.update({
       where: { id: input.id },
@@ -136,17 +135,7 @@ export const documentRouter = createTRPCRouter({
 
       const doc = await db.document.findUnique({ where: { id: input.id } });
       if (!doc) throw new TRPCError({ code: "NOT_FOUND" });
-
-      if (doc.projectId) {
-        assertAccess(ctx.access, CAPABILITIES.PROJECT_DOCUMENTS_WRITE, doc.projectId);
-      } else if (doc.personId) {
-        const allowed = await hasPersonCapability(
-          ctx.access,
-          CAPABILITIES.PERSON_DOCUMENTS_WRITE,
-          doc.personId,
-        );
-        if (!allowed) throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertDocumentWriteAccess(ctx.access, doc);
 
       return db.document.delete({ where: { id: input.id } });
     }),
@@ -159,11 +148,12 @@ export const documentRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
+      const where: { projectId?: string; personId?: string } = {};
+      if (input.projectId) where.projectId = input.projectId;
+      if (input.personId) where.personId = input.personId;
+
       const docs = await db.document.findMany({
-        where: {
-          ...(input.projectId ? { projectId: input.projectId } : {}),
-          ...(input.personId ? { personId: input.personId } : {}),
-        },
+        where,
         select: { tags: true },
       });
       const tagSet = new Set(docs.flatMap((d) => d.tags));

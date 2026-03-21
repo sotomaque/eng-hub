@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { DocumentSheet } from "@/components/document-sheet";
 import { DocumentsSection } from "@/components/documents-section";
 import { useTRPC } from "@/lib/trpc/client";

@@ -124,11 +124,14 @@ export function CompareContributorsSheet({
   const trpc = useTRPC();
   const [referencePersonId, setReferencePersonId] = useState<string | undefined>();
 
-  const personIds = selectedUsernames
-    .map((u) => memberMap[u]?.personId)
-    .filter((id): id is string => !!id);
-
-  const uniquePersonIds = useMemo(() => [...new Set(personIds)], [personIds]);
+  const uniquePersonIds = useMemo(
+    () => [
+      ...new Set(
+        selectedUsernames.map((u) => memberMap[u]?.personId).filter((id): id is string => !!id),
+      ),
+    ],
+    [selectedUsernames, memberMap],
+  );
 
   const compareMutation = useMutation(
     trpc.githubStats.compareContributors.mutationOptions({
