@@ -232,7 +232,7 @@ export function CompareContributorsSheet({
           {data && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 shrink-0">
+                <Button variant="outline" size="sm" className="h-8 shrink-0 mr-8">
                   <Download className="size-3.5" />
                   Export
                 </Button>

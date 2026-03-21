@@ -3,6 +3,7 @@ import { adminRouter } from "./routers/admin";
 import { arrangementRouter } from "./routers/arrangement";
 import { billetRouter } from "./routers/billet";
 import { departmentRouter } from "./routers/department";
+import { documentRouter } from "./routers/document";
 import { githubStatsRouter } from "./routers/github-stats";
 import { glossaryRouter } from "./routers/glossary";
 import { healthRouter } from "./routers/health";
@@ -49,6 +50,7 @@ export const appRouter = createTRPCRouter({
   projectLink: projectLinkRouter,
   quarterlyGoal: quarterlyGoalRouter,
   department: departmentRouter,
+  document: documentRouter,
   healthAssessment: healthAssessmentRouter,
   team: teamRouter,
   teamMember: teamMemberRouter,
