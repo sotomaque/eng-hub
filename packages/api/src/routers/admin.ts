@@ -109,7 +109,7 @@ export const adminRouter = createTRPCRouter({
   /** List Person records not yet linked to a Clerk user */
   unlinkedPeople: adminProcedure.query(async () => {
     return db.person.findMany({
-      where: { clerkUserId: null },
+      where: { clerkUserId: null, leftAt: null },
       select: {
         id: true,
         firstName: true,

@@ -5,6 +5,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
+import { format } from "date-fns";
 import { ArrowLeft, Building2, Github, Mail, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,7 @@ export type PersonData = {
   imageUrl: string | null;
   githubUsername: string | null;
   gitlabUsername: string | null;
+  leftAt: string | Date | null;
   department: { name: string } | null;
   title: { name: string } | null;
   manager: {
@@ -81,6 +83,7 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
   const router = useRouter();
   const fullName = `${person.firstName} ${person.lastName}`;
   const initials = `${person.firstName[0]}${person.lastName[0]}`;
+  const leftAtDate = person.leftAt ? new Date(person.leftAt) : null;
   const sortedMemberships = [...person.projectMemberships].sort((a, b) => {
     if (!a.leftAt && b.leftAt) return -1;
     if (a.leftAt && !b.leftAt) return 1;
@@ -109,7 +112,12 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
         <div className="space-y-1.5">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
-            {onEdit && (
+            {leftAtDate && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                Not active · left {format(leftAtDate, "MMM d, yyyy")}
+              </Badge>
+            )}
+            {onEdit && !leftAtDate && (
               <Button variant="ghost" size="icon" onClick={onEdit} className="size-8">
                 <Pencil className="size-4" />
                 <span className="sr-only">Edit</span>

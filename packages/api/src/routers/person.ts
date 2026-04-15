@@ -140,13 +140,18 @@ async function detectCycle(personId: string, newManagerId: string): Promise<bool
 }
 
 export const personRouter = createTRPCRouter({
-  getAll: protectedProcedure.use(requireCapability(CAPABILITIES.PERSON_READ)).query(async () => {
-    return db.person.findMany({
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      include: personListInclude,
-      take: 1000,
-    });
-  }),
+  getAll: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
+    .input(z.object({ includeDeparted: z.boolean().optional().default(false) }).optional())
+    .query(async ({ input }) => {
+      const includeDeparted = input?.includeDeparted ?? false;
+      return db.person.findMany({
+        where: includeDeparted ? {} : { leftAt: null },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        include: personListInclude,
+        take: 1000,
+      });
+    }),
 
   list: protectedProcedure
     .use(requireCapability(CAPABILITIES.PERSON_READ))
@@ -159,6 +164,7 @@ export const personRouter = createTRPCRouter({
         projects: z.array(z.string()).optional(),
         skills: z.array(z.string()).optional(),
         multiProject: z.boolean().optional(),
+        includeDeparted: z.boolean().optional().default(false),
         sortBy: z.enum(["name", "email", "department"]).optional().default("name"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
       }),
@@ -176,6 +182,9 @@ export const personRouter = createTRPCRouter({
       }
 
       const where: Record<string, unknown> = {};
+      if (!input.includeDeparted) {
+        where.leftAt = null;
+      }
       if (input.search) {
         where.OR = [
           {
@@ -248,6 +257,7 @@ export const personRouter = createTRPCRouter({
         projects: z.array(z.string()).optional(),
         skills: z.array(z.string()).optional(),
         multiProject: z.boolean().optional(),
+        includeDeparted: z.boolean().optional().default(false),
       }),
     )
     .query(async ({ input }) => {
@@ -263,6 +273,9 @@ export const personRouter = createTRPCRouter({
       }
 
       const where: Record<string, unknown> = {};
+      if (!input.includeDeparted) {
+        where.leftAt = null;
+      }
       if (input.search) {
         where.OR = [
           { firstName: { contains: input.search, mode: "insensitive" as const } },
@@ -484,11 +497,59 @@ export const personRouter = createTRPCRouter({
       return { count: personIds.length };
     }),
 
-  delete: protectedProcedure
-    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+  getDepartureImpact: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
     .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const [directReports, ownedProjects] = await Promise.all([
+        db.person.findMany({
+          where: { managerId: input.id, leftAt: null },
+          select: { id: true, firstName: true, lastName: true, email: true, imageUrl: true },
+          orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        }),
+        db.projectOwner.findMany({
+          where: { personId: input.id },
+          select: { project: { select: { id: true, name: true } } },
+          orderBy: { project: { name: "asc" } },
+        }),
+      ]);
+      return {
+        directReports,
+        ownedProjects: ownedProjects.map((o) => o.project),
+      };
+    }),
+
+  markAsDeparted: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+    .input(
+      z.object({
+        id: z.string(),
+        leftAt: z.coerce.date(),
+      }),
+    )
     .mutation(async ({ input }) => {
-      return db.person.delete({ where: { id: input.id } });
+      const activeReports = await db.person.count({
+        where: { managerId: input.id, leftAt: null },
+      });
+      if (activeReports > 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "This person has active direct reports. Reassign them before marking as departed.",
+        });
+      }
+
+      return db.$transaction(async (tx) => {
+        const person = await tx.person.update({
+          where: { id: input.id },
+          data: { leftAt: input.leftAt },
+        });
+        await tx.teamMember.updateMany({
+          where: { personId: input.id, leftAt: null },
+          data: { leftAt: input.leftAt },
+        });
+        return person;
+      });
     }),
 
   joinProject: protectedProcedure

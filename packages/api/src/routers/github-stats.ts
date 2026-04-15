@@ -76,7 +76,7 @@ export const githubStatsRouter = createTRPCRouter({
 
       if (unmatchedUsernames.length > 0) {
         const matchedPeople = await db.person.findMany({
-          where: { githubUsername: { in: unmatchedUsernames } },
+          where: { githubUsername: { in: unmatchedUsernames }, leftAt: null },
           select: {
             id: true,
             firstName: true,

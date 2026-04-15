@@ -48,19 +48,19 @@ async function PersonContent({ id }: { id: string }) {
 
 async function PersonGoalsSection({ id }: { id: string }) {
   const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
-  const canEdit = !!me && !!person && me.id === person.managerId;
+  const canEdit = !!me && !!person && !person.leftAt && me.id === person.managerId;
   return <PersonGoals personId={id} canEdit={canEdit} />;
 }
 
 async function PersonReviewsSection({ id }: { id: string }) {
   const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
-  const canEdit = !!me && !!person && me.id === person.managerId;
+  const canEdit = !!me && !!person && !person.leftAt && me.id === person.managerId;
   return <PersonReviews personId={id} canEdit={canEdit} />;
 }
 
 async function PersonDocumentsSection({ id }: { id: string }) {
   const [me, person] = await Promise.all([getMe(), getCachedPerson(id)]);
-  const canEdit = !!me && !!person && me.id === person.managerId;
+  const canEdit = !!me && !!person && !person.leftAt && me.id === person.managerId;
   return <PersonDocuments personId={id} canEdit={canEdit} />;
 }
 
