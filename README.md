@@ -349,7 +349,7 @@ bun run sync-git-stats <projectId> <repoPath>
 
 ```bash
 cd packages/api
-bun run sync-git-stats cmlsmp63g0000itbru5wvt294 ~/Desktop/hypergiant/jeric2o
+bun run sync-git-stats cmlsmp63g0000itbru5wvt294 ~/Desktop/hypergiant/jeric2o development
 ```
 
 ### How it works

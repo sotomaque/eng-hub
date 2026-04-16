@@ -22,9 +22,11 @@ import { aggregateStats, type ContributorCommitData } from "../lib/github";
 const COMMIT_DELIMITER = "---COMMIT_DELIM---";
 
 function printUsage(): void {
-  console.log("Usage: bun run packages/api/src/scripts/sync-git-stats.ts <projectId> <repoPath>");
   console.log(
-    "Example: bun run packages/api/src/scripts/sync-git-stats.ts cmlsmp63g0000itbru5wvt294 ~/repos/jeric2o",
+    "Usage: bun run packages/api/src/scripts/sync-git-stats.ts <projectId> <repoPath> [branch]",
+  );
+  console.log(
+    "Example: bun run packages/api/src/scripts/sync-git-stats.ts cmlsmp63g0000itbru5wvt294 ~/repos/jeric2o development",
   );
 }
 
@@ -167,6 +169,7 @@ function buildCommitData(
 async function main() {
   const projectIdArg = process.argv[2];
   const repoPath = process.argv[3];
+  const branch = process.argv[4]; // optional: e.g. "development", "main"
 
   if (!projectIdArg || !repoPath) {
     printUsage();
@@ -189,9 +192,15 @@ async function main() {
   console.log(`Syncing stats for project: ${project.name} (${project.id})`);
 
   // 2. Run git log
-  console.log(`Running git log on ${repoPath}...`);
+  const gitRef = branch ? `origin/${branch}` : "";
+  const branchArg = gitRef ? ` ${gitRef}` : "";
+  if (branch) {
+    console.log(`Fetching latest for branch: ${branch}...`);
+    execSync(`git -C "${repoPath}" fetch origin ${branch}`, { encoding: "utf-8" });
+  }
+  console.log(`Running git log on ${repoPath}${branchArg}...`);
   const gitLogOutput = execSync(
-    `git -C "${repoPath}" log --format="${COMMIT_DELIMITER}%n%ae%n%aI%n%s" --numstat`,
+    `git -C "${repoPath}" log${branchArg} --format="${COMMIT_DELIMITER}%n%ae%n%aI%n%s" --numstat`,
     { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
   );
 
@@ -259,7 +268,40 @@ async function main() {
     console.log("  Tip: Update the Person's email or gitlabUsername in the app to match these.\n");
   }
 
-  // 4. Build ContributorCommitData from parsed git log
+  // 4. Parse merge commits to extract PR/MR data
+  console.log("Parsing merge commits for PR/MR data...");
+  const mergeLogOutput = execSync(
+    `git -C "${repoPath}" log${branchArg} --merges --format="${COMMIT_DELIMITER}%n%ae%n%aI%n%s" --first-parent`,
+    { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
+  );
+  const mergeCommits = parseGitLog(mergeLogOutput);
+  console.log(`  Found ${mergeCommits.length} merge commits`);
+
+  // Build PRData from merge commits (each merge commit ≈ 1 merged MR)
+  const prData: import("../lib/github").PRData[] = [];
+  for (const mc of mergeCommits) {
+    const username = emailToUsername.get(mc.authorEmail);
+    if (!username) continue;
+    // Extract a cleaner title from merge commit message
+    // GitLab format: "Merge branch 'feature/xyz' into 'main'" or just the MR title
+    const title = mc.subject
+      .replace(/^Merge branch '([^']+)' into '[^']+'$/, "$1")
+      .replace(/^Merge remote-tracking branch '([^']+)'.*$/, "$1");
+    prData.push({
+      title: mc.subject,
+      url: "",
+      author: username,
+      headRefName: title,
+      state: "MERGED" as const,
+      merged: true,
+      mergedAt: mc.date.toISOString(),
+      createdAt: mc.date.toISOString(),
+      reviews: [],
+    });
+  }
+  console.log(`  Matched ${prData.length} merge commits to team members`);
+
+  // 5. Build ContributorCommitData from parsed git log
   const commitData = buildCommitData(commits, emailToUsername);
 
   if (commitData.length === 0) {
@@ -269,8 +311,8 @@ async function main() {
 
   console.log(`  Contributors matched: ${commitData.map((c) => c.username).join(", ")}`);
 
-  // 5. Aggregate using the same logic as GitHub sync (no PR data)
-  const { allTime, ytd } = aggregateStats(commitData, []);
+  // 6. Aggregate using the same logic as GitHub sync — now with PR data!
+  const { allTime, ytd } = aggregateStats(commitData, prData);
 
   function toRecord(s: (typeof allTime)[number], period: StatsPeriod) {
     return {
@@ -307,34 +349,29 @@ async function main() {
     }
   });
 
-  // Store merge entries for the merge digest
+  // Store merge entries for the merge digest (batch insert, skip duplicates)
   console.log("Storing merge entries...");
+  const mergeData = commits
+    .filter((c) => emailToUsername.has(c.authorEmail) && c.subject)
+    .map((c) => ({
+      projectId,
+      title: c.subject,
+      authorUsername: emailToUsername.get(c.authorEmail) as string,
+      mergedAt: c.date,
+    }));
+
+  const BATCH_SIZE = 500;
   let mergeEntriesStored = 0;
-  for (const commit of commits) {
-    const username = emailToUsername.get(commit.authorEmail);
-    if (!username || !commit.subject) continue;
-    await db.mergeEntry
-      .upsert({
-        where: {
-          projectId_authorUsername_title_mergedAt: {
-            projectId,
-            authorUsername: username,
-            title: commit.subject,
-            mergedAt: commit.date,
-          },
-        },
-        update: {},
-        create: {
-          projectId,
-          title: commit.subject,
-          authorUsername: username,
-          mergedAt: commit.date,
-        },
-      })
-      .catch(() => {
-        // Ignore duplicate constraint violations
-      });
-    mergeEntriesStored++;
+  for (let i = 0; i < mergeData.length; i += BATCH_SIZE) {
+    const batch = mergeData.slice(i, i + BATCH_SIZE);
+    const result = await db.mergeEntry.createMany({
+      data: batch,
+      skipDuplicates: true,
+    });
+    mergeEntriesStored += result.count;
+    console.log(
+      `  Batch ${Math.floor(i / BATCH_SIZE) + 1}: inserted ${result.count} of ${batch.length}`,
+    );
   }
   console.log(`  Stored ${mergeEntriesStored} merge entries`);
 
