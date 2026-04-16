@@ -61,38 +61,41 @@ export async function syncGitHubStatsForProject(projectId: string): Promise<void
       ...ytd.map((s) => toRecord(s, "ytd")),
     ];
 
-    await db.$transaction(async (tx) => {
-      if (commitDataAvailable) {
-        // Full sync — delete and recreate everything
-        await tx.contributorStats.deleteMany({ where: { projectId } });
-        if (records.length > 0) {
-          await tx.contributorStats.createMany({ data: records });
-        }
-      } else if (records.length > 0) {
-        // Partial sync — commit data unavailable (GitHub 202).
-        // Only update PR/review fields; preserve existing commit data.
-        for (const record of records) {
-          await tx.contributorStats.upsert({
-            where: {
-              projectId_githubUsername_period: {
-                projectId: record.projectId,
-                githubUsername: record.githubUsername,
-                period: record.period,
+    await db.$transaction(
+      async (tx) => {
+        if (commitDataAvailable) {
+          // Full sync — delete and recreate everything
+          await tx.contributorStats.deleteMany({ where: { projectId } });
+          if (records.length > 0) {
+            await tx.contributorStats.createMany({ data: records });
+          }
+        } else if (records.length > 0) {
+          // Partial sync — commit data unavailable (GitHub 202).
+          // Only update PR/review fields; preserve existing commit data.
+          for (const record of records) {
+            await tx.contributorStats.upsert({
+              where: {
+                projectId_githubUsername_period: {
+                  projectId: record.projectId,
+                  githubUsername: record.githubUsername,
+                  period: record.period,
+                },
               },
-            },
-            update: {
-              prsOpened: record.prsOpened,
-              prsMerged: record.prsMerged,
-              reviewsDone: record.reviewsDone,
-              avgWeeklyReviews: record.avgWeeklyReviews,
-              recentWeeklyReviews: record.recentWeeklyReviews,
-              reviewTrend: record.reviewTrend,
-            },
-            create: record,
-          });
+              update: {
+                prsOpened: record.prsOpened,
+                prsMerged: record.prsMerged,
+                reviewsDone: record.reviewsDone,
+                avgWeeklyReviews: record.avgWeeklyReviews,
+                recentWeeklyReviews: record.recentWeeklyReviews,
+                reviewTrend: record.reviewTrend,
+              },
+              create: record,
+            });
+          }
         }
-      }
-    });
+      },
+      { timeout: 30000 },
+    );
 
     const syncWarning = commitDataAvailable
       ? null
