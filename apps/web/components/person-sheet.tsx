@@ -2,6 +2,17 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import { Button } from "@workspace/ui/components/button";
 import { Combobox } from "@workspace/ui/components/combobox";
 import { Input } from "@workspace/ui/components/input";
@@ -14,7 +25,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -165,6 +176,16 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
 
   const setSkillsMutation = useMutation(
     trpc.skill.setPersonSkills.mutationOptions({
+      onError: (error) => toast.error(error.message),
+    }),
+  );
+
+  const leaveProjectMutation = useMutation(
+    trpc.person.leaveProject.mutationOptions({
+      onSuccess: () => {
+        toast.success("Removed from project");
+        router.refresh();
+      },
       onError: (error) => toast.error(error.message),
     }),
   );
@@ -440,12 +461,44 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
                 {person.projectMemberships.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {person.projectMemberships.map((m) => (
-                      <span
-                        key={m.id}
-                        className="rounded-md bg-muted px-2 py-1 text-xs font-medium"
-                      >
-                        {m.project.name}
-                      </span>
+                      <AlertDialog key={m.id}>
+                        <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                          {m.project.name}
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground ml-0.5 rounded-sm"
+                              disabled={leaveProjectMutation.isPending}
+                            >
+                              <X className="size-3" />
+                              <span className="sr-only">Remove from {m.project.name}</span>
+                            </button>
+                          </AlertDialogTrigger>
+                        </span>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove from {m.project.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will roll them off the project, removing them from all teams and
+                              arrangements. Their contribution history is preserved.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() =>
+                                leaveProjectMutation.mutate({
+                                  personId: person.id,
+                                  projectId: m.projectId,
+                                })
+                              }
+                              className="bg-destructive text-white hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     ))}
                   </div>
                 )}
