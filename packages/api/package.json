@@ -11,10 +11,12 @@
     "sync-git-stats": "bun run src/scripts/sync-git-stats.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.69",
     "@clerk/nextjs": "^6.36.5",
     "@trpc/server": "^11.1.0",
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
+    "ai": "^6.0.163",
     "next": "^16.0.0",
     "zod": "^3.24.0"
   },

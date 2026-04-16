@@ -22,21 +22,25 @@ import { aggregateStats, type ContributorCommitData } from "../lib/github";
 const COMMIT_DELIMITER = "---COMMIT_DELIM---";
 
 function printUsage(): void {
-  console.log("Usage: bun run packages/api/src/scripts/sync-git-stats.ts <projectId> <repoPath>");
   console.log(
-    "Example: bun run packages/api/src/scripts/sync-git-stats.ts cmlsmp63g0000itbru5wvt294 ~/repos/jeric2o",
+    "Usage: bun run packages/api/src/scripts/sync-git-stats.ts <projectId> <repoPath> [branch]",
+  );
+  console.log(
+    "Example: bun run packages/api/src/scripts/sync-git-stats.ts cmlsmp63g0000itbru5wvt294 ~/repos/jeric2o development",
   );
 }
 
 function parseGitLog(rawOutput: string): {
   authorEmail: string;
   date: Date;
+  subject: string;
   additions: number;
   deletions: number;
 }[] {
   const commits: {
     authorEmail: string;
     date: Date;
+    subject: string;
     additions: number;
     deletions: number;
   }[] = [];
@@ -47,9 +51,11 @@ function parseGitLog(rawOutput: string): {
     const lines = block.trim().split("\n");
     // First line: author_email
     // Second line: ISO date
+    // Third line: commit subject
     // Remaining lines: numstat (additions \t deletions \t filename)
     const authorEmail = lines[0]?.trim();
     const dateStr = lines[1]?.trim();
+    const subject = lines[2]?.trim() ?? "";
 
     if (!authorEmail || !dateStr) continue;
 
@@ -59,7 +65,7 @@ function parseGitLog(rawOutput: string): {
     let additions = 0;
     let deletions = 0;
 
-    for (let i = 2; i < lines.length; i++) {
+    for (let i = 3; i < lines.length; i++) {
       const line = lines[i]?.trim();
       if (!line) continue;
       const parts = line.split("\t");
@@ -71,7 +77,7 @@ function parseGitLog(rawOutput: string): {
       if (!Number.isNaN(d)) deletions += d;
     }
 
-    commits.push({ authorEmail: authorEmail.toLowerCase(), date, additions, deletions });
+    commits.push({ authorEmail: authorEmail.toLowerCase(), date, subject, additions, deletions });
   }
 
   return commits;
@@ -163,6 +169,7 @@ function buildCommitData(
 async function main() {
   const projectIdArg = process.argv[2];
   const repoPath = process.argv[3];
+  const branch = process.argv[4]; // optional: e.g. "development", "main"
 
   if (!projectIdArg || !repoPath) {
     printUsage();
@@ -185,9 +192,15 @@ async function main() {
   console.log(`Syncing stats for project: ${project.name} (${project.id})`);
 
   // 2. Run git log
-  console.log(`Running git log on ${repoPath}...`);
+  const gitRef = branch ? `origin/${branch}` : "";
+  const branchArg = gitRef ? ` ${gitRef}` : "";
+  if (branch) {
+    console.log(`Fetching latest for branch: ${branch}...`);
+    execSync(`git -C "${repoPath}" fetch origin ${branch}`, { encoding: "utf-8" });
+  }
+  console.log(`Running git log on ${repoPath}${branchArg}...`);
   const gitLogOutput = execSync(
-    `git -C "${repoPath}" log --format="${COMMIT_DELIMITER}%n%ae%n%aI" --numstat`,
+    `git -C "${repoPath}" log${branchArg} --format="${COMMIT_DELIMITER}%n%ae%n%aI%n%s" --numstat`,
     { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
   );
 
@@ -255,7 +268,106 @@ async function main() {
     console.log("  Tip: Update the Person's email or gitlabUsername in the app to match these.\n");
   }
 
-  // 4. Build ContributorCommitData from parsed git log
+  // 4. Parse merge commits and resolve actual MR authors (not the merger)
+  console.log("Parsing merge commits for PR/MR data...");
+
+  // Step A: Get merge commit hashes + parent hashes
+  const mergeParentOutput = execSync(
+    `git -C "${repoPath}" log${branchArg} --merges --first-parent --format="%H %P"`,
+    { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024 },
+  );
+
+  // Step B: Extract second parent hashes (the branch tips that were merged)
+  const mergeParentMap = new Map<string, string>(); // secondParent → mergeHash
+  const secondParents: string[] = [];
+  for (const line of mergeParentOutput.trim().split("\n")) {
+    if (!line.trim()) continue;
+    const parts = line.trim().split(" ");
+    const mergeHash = parts[0];
+    const secondParent = parts[2]; // first parent is parts[1], second is parts[2]
+    if (mergeHash && secondParent) {
+      mergeParentMap.set(secondParent, mergeHash);
+      secondParents.push(secondParent);
+    }
+  }
+  console.log(`  Found ${secondParents.length} merge commits`);
+
+  // Step C: Batch-resolve second parent authors using --stdin
+  const branchAuthorMap = new Map<string, string>(); // mergeHash → authorEmail
+  if (secondParents.length > 0) {
+    const RESOLVE_BATCH = 500;
+    for (let i = 0; i < secondParents.length; i += RESOLVE_BATCH) {
+      const batch = secondParents.slice(i, i + RESOLVE_BATCH);
+      const input = batch.join("\n");
+      try {
+        const resolved = execSync(
+          `echo "${input}" | git -C "${repoPath}" log --stdin --no-walk --format="%H %ae" 2>/dev/null`,
+          { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 },
+        );
+        for (const line of resolved.trim().split("\n")) {
+          if (!line.trim()) continue;
+          const [hash, email] = line.trim().split(" ");
+          if (hash && email) {
+            const mergeHash = mergeParentMap.get(hash);
+            if (mergeHash) {
+              branchAuthorMap.set(mergeHash, email.toLowerCase());
+            }
+          }
+        }
+      } catch {
+        // Some commits might not resolve (e.g. shallow clones)
+      }
+    }
+    console.log(`  Resolved ${branchAuthorMap.size} MR authors from branch tips`);
+  }
+
+  // Step D: Get merge commit metadata (date + subject)
+  const mergeLogOutput = execSync(
+    `git -C "${repoPath}" log${branchArg} --merges --first-parent --format="${COMMIT_DELIMITER}%n%H%n%ae%n%aI%n%s"`,
+    { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
+  );
+
+  // Parse with a modified approach — first line is now hash
+  const mergeBlocks = mergeLogOutput.split(COMMIT_DELIMITER).filter((b) => b.trim());
+  type MergeInfo = { hash: string; authorEmail: string; date: Date; subject: string };
+  const mergeCommits: MergeInfo[] = [];
+  for (const block of mergeBlocks) {
+    const lines = block.trim().split("\n");
+    const hash = lines[0]?.trim();
+    const mergerEmail = lines[1]?.trim();
+    const dateStr = lines[2]?.trim();
+    const subject = lines[3]?.trim() ?? "";
+    if (!hash || !mergerEmail || !dateStr) continue;
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) continue;
+    // Use the resolved branch author if available, fall back to merger
+    const authorEmail = branchAuthorMap.get(hash) ?? mergerEmail;
+    mergeCommits.push({ hash, authorEmail, date, subject });
+  }
+
+  // Build PRData from merge commits — now attributed to MR authors
+  const prData: import("../lib/github").PRData[] = [];
+  for (const mc of mergeCommits) {
+    const username = emailToUsername.get(mc.authorEmail);
+    if (!username) continue;
+    const title = mc.subject
+      .replace(/^Merge branch '([^']+)' into '[^']+'$/, "$1")
+      .replace(/^Merge remote-tracking branch '([^']+)'.*$/, "$1");
+    prData.push({
+      title: mc.subject,
+      url: "",
+      author: username,
+      headRefName: title,
+      state: "MERGED" as const,
+      merged: true,
+      mergedAt: mc.date.toISOString(),
+      createdAt: mc.date.toISOString(),
+      reviews: [],
+    });
+  }
+  console.log(`  Matched ${prData.length} merge commits to team members`);
+
+  // 5. Build ContributorCommitData from parsed git log
   const commitData = buildCommitData(commits, emailToUsername);
 
   if (commitData.length === 0) {
@@ -265,8 +377,8 @@ async function main() {
 
   console.log(`  Contributors matched: ${commitData.map((c) => c.username).join(", ")}`);
 
-  // 5. Aggregate using the same logic as GitHub sync (no PR data)
-  const { allTime, ytd } = aggregateStats(commitData, []);
+  // 6. Aggregate using the same logic as GitHub sync — now with PR data!
+  const { allTime, ytd } = aggregateStats(commitData, prData);
 
   function toRecord(s: (typeof allTime)[number], period: StatsPeriod) {
     return {
@@ -302,6 +414,37 @@ async function main() {
       await tx.contributorStats.createMany({ data: records });
     }
   });
+
+  // Store merge entries for the merge digest — only merge commits (not all commits)
+  // Each merge commit represents one merged MR; individual branch commits are noise.
+  console.log("Storing merge entries...");
+
+  // First clear old entries for this project so stale data doesn't linger
+  await db.mergeEntry.deleteMany({ where: { projectId } });
+
+  const mergeData = mergeCommits
+    .filter((mc) => emailToUsername.has(mc.authorEmail) && mc.subject)
+    .map((mc) => ({
+      projectId,
+      title: mc.subject,
+      authorUsername: emailToUsername.get(mc.authorEmail) as string,
+      mergedAt: mc.date,
+    }));
+
+  const BATCH_SIZE = 500;
+  let mergeEntriesStored = 0;
+  for (let i = 0; i < mergeData.length; i += BATCH_SIZE) {
+    const batch = mergeData.slice(i, i + BATCH_SIZE);
+    const result = await db.mergeEntry.createMany({
+      data: batch,
+      skipDuplicates: true,
+    });
+    mergeEntriesStored += result.count;
+    console.log(
+      `  Batch ${Math.floor(i / BATCH_SIZE) + 1}: inserted ${result.count} of ${batch.length}`,
+    );
+  }
+  console.log(`  Stored ${mergeEntriesStored} merge entries`);
 
   // Update sync record
   await db.gitHubSync.upsert({
