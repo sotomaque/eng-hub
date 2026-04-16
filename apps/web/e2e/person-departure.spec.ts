@@ -66,10 +66,10 @@ test.describe("Mark as departed dialog", () => {
     // Evan owns project Gamma.
     const evanRow = page.getByRole("row").filter({ hasText: "Evan Chen" });
     await evanRow.getByRole("button", { name: /mark as departed/i }).click();
-    await expect(page.getByText(/Owns \d+ project/i)).toBeVisible();
-    await expect(page.getByText(/Gamma/)).toBeVisible();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Owns \d+ project/i)).toBeVisible();
+    await expect(dialog.getByText(/Gamma/)).toBeVisible();
     // Warning is non-blocking — submit remains enabled.
-    const submit = page.getByRole("dialog").getByRole("button", { name: /mark as departed/i });
-    await expect(submit).toBeEnabled();
+    await expect(dialog.getByRole("button", { name: /mark as departed/i })).toBeEnabled();
   });
 });
