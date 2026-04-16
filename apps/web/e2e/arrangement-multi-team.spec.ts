@@ -10,8 +10,8 @@ import { expect, test } from "./helpers";
 
 async function gotoActiveArrangement(page: Page) {
   await page.goto("/projects/proj-alpha/arrangements");
-  // The first card is the active arrangement (auto-created on first visit).
-  await page.getByRole("heading", { name: "Current Teams" }).first().click();
+  // Click the Edit button on the active arrangement card to navigate to its editor.
+  await page.getByText("Current Teams").first().click();
   await page.waitForURL(/\/projects\/proj-alpha\/arrangements\/[^/]+$/);
 }
 
