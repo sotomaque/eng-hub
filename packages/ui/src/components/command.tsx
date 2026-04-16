@@ -86,4 +86,4 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
   );
 }
 
-export { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem };
+export { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList };

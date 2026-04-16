@@ -52,6 +52,8 @@ export const githubStatsRouter = createTRPCRouter({
                 gitlabUsername: true,
                 email: true,
                 imageUrl: true,
+                hireDate: true,
+                title: { select: { name: true } },
               },
             },
           },
@@ -68,6 +70,8 @@ export const githubStatsRouter = createTRPCRouter({
           imageUrl: string | null;
           leftAt: string | null;
           isTeamMember: boolean;
+          title: string | null;
+          hireDate: string | null;
         }
       > = {};
       for (const tm of teamMembers) {
@@ -79,6 +83,8 @@ export const githubStatsRouter = createTRPCRouter({
           imageUrl: tm.person.imageUrl,
           leftAt: tm.leftAt?.toISOString() ?? null,
           isTeamMember: true,
+          title: tm.person.title?.name ?? null,
+          hireDate: tm.person.hireDate?.toISOString() ?? null,
         };
         if (tm.person.githubUsername) {
           memberMap[tm.person.githubUsername] = info;
@@ -102,6 +108,8 @@ export const githubStatsRouter = createTRPCRouter({
             callsign: true,
             githubUsername: true,
             imageUrl: true,
+            hireDate: true,
+            title: { select: { name: true } },
           },
         });
         for (const p of matchedPeople) {
@@ -114,6 +122,8 @@ export const githubStatsRouter = createTRPCRouter({
               imageUrl: p.imageUrl,
               leftAt: null,
               isTeamMember: false,
+              title: p.title?.name ?? null,
+              hireDate: p.hireDate?.toISOString() ?? null,
             };
           }
         }

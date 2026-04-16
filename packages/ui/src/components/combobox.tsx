@@ -90,5 +90,5 @@ function Combobox({
   );
 }
 
-export { Combobox };
 export type { ComboboxOption, ComboboxProps };
+export { Combobox };

@@ -166,6 +166,8 @@ model Title {
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   people       Person[]
   billets      Billet[]
+  oldTitleChanges TitleChange[] @relation("OldTitleChanges")
+  newTitleChanges TitleChange[] @relation("NewTitleChanges")
 
   @@index([departmentId])
   @@map("titles")
@@ -192,8 +194,10 @@ model Person {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   leftAt         DateTime? @map("left_at")
+  hireDate       DateTime? @map("hire_date")
 
   projectMemberships    TeamMember[]
+  titleChanges          TitleChange[] @relation("PersonTitleChanges")
   managerChanges        ManagerChange[] @relation("PersonManagerChanges")
   oldManagerOfChanges   ManagerChange[] @relation("OldManagerChanges")
   newManagerOfChanges   ManagerChange[] @relation("NewManagerChanges")
@@ -237,6 +241,22 @@ model ManagerChange {
   @@index([oldManagerId])
   @@index([newManagerId])
   @@map("manager_changes")
+}
+
+model TitleChange {
+  id          String   @id @default(cuid())
+  personId    String   @map("person_id")
+  person      Person   @relation("PersonTitleChanges", fields: [personId], references: [id], onDelete: Cascade)
+  oldTitleId  String?  @map("old_title_id")
+  oldTitle    Title?   @relation("OldTitleChanges", fields: [oldTitleId], references: [id], onDelete: SetNull)
+  newTitleId  String?  @map("new_title_id")
+  newTitle    Title?   @relation("NewTitleChanges", fields: [newTitleId], references: [id], onDelete: SetNull)
+  changedBy   String   @map("changed_by")
+  effectiveAt DateTime @map("effective_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([personId, effectiveAt])
+  @@map("title_changes")
 }
 
 model TeamMember {

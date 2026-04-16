@@ -10,6 +10,8 @@ import { ArrowLeft, Building2, Github, Mail, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PersonRoadmapCard } from "@/components/person-roadmap-card";
+import { TitleHistoryCard } from "@/components/title-history-card";
+import { formatTenure } from "@/lib/format-tenure";
 
 export type PersonData = {
   id: string;
@@ -22,6 +24,7 @@ export type PersonData = {
   githubUsername: string | null;
   gitlabUsername: string | null;
   leftAt: string | Date | null;
+  hireDate: string | Date | null;
   department: { name: string } | null;
   title: { name: string } | null;
   manager: {
@@ -129,6 +132,11 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
           <div className="flex flex-wrap gap-2 pt-1">
             {person.department && <Badge variant="secondary">{person.department.name}</Badge>}
             {person.title && <Badge variant="outline">{person.title.name}</Badge>}
+            {person.hireDate && (
+              <Badge variant="outline" className="text-xs">
+                {formatTenure(person.hireDate)} tenure
+              </Badge>
+            )}
           </div>
         </div>
       </div>
@@ -253,6 +261,8 @@ export function PersonProfile({ person, hideBackLink, onEdit }: PersonProfilePro
             )}
           </CardContent>
         </Card>
+
+        <TitleHistoryCard personId={person.id} />
 
         <Card>
           <CardHeader>

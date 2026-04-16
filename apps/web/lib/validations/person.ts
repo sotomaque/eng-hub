@@ -12,6 +12,7 @@ export const createPersonSchema = z.object({
   managerId: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
   titleId: z.string().optional().or(z.literal("")),
+  hireDate: z.coerce.date().nullable().optional(),
 });
 
 export const updatePersonSchema = createPersonSchema.extend({
