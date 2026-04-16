@@ -10,10 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Pencil, Trash2, X } from "lucide-react";
+import { Pencil, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { EditMemberTeamsDialog } from "@/components/edit-member-teams-dialog";
 import { TeamCompositionBar } from "@/components/team-composition-bar";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
@@ -41,6 +43,7 @@ type TeamData = {
 };
 
 type TableTeamViewProps = {
+  arrangementId: string;
   teams: TeamData[];
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
@@ -49,6 +52,7 @@ type TableTeamViewProps = {
 };
 
 export function TableTeamView({
+  arrangementId,
   teams,
   unassignedMembers,
   onRenameTeam,
@@ -57,6 +61,24 @@ export function TableTeamView({
 }: TableTeamViewProps) {
   const router = useRouter();
   const trpc = useTRPC();
+  const [editingMember, setEditingMember] = useState<{
+    id: string;
+    displayName: string;
+    currentTeamIds: string[];
+  } | null>(null);
+
+  const arrangementTeamList = useMemo(
+    () => teams.map((t) => ({ id: t.id, name: t.name })),
+    [teams],
+  );
+
+  function openEditDialog(member: MemberData) {
+    const displayName = `${member.person.firstName}${member.person.callsign ? ` ${member.person.callsign}` : ""} ${member.person.lastName}`;
+    const currentTeamIds = teams
+      .filter((t) => t.assignments.some((a) => a.teamMember.id === member.id))
+      .map((t) => t.id);
+    setEditingMember({ id: member.id, displayName, currentTeamIds });
+  }
 
   const assignMutation = useMutation(
     trpc.arrangement.assignMember.mutationOptions({
@@ -119,18 +141,30 @@ export function TableTeamView({
                       {member.person.title ? ` · ${member.person.title.name}` : ""}
                     </p>
                   </div>
-                  <Select onValueChange={(teamId) => handleAssign(member.id, teamId)}>
-                    <SelectTrigger className="h-8 w-36 text-xs">
-                      <SelectValue placeholder="Assign to…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-1">
+                    <Select onValueChange={(teamId) => handleAssign(member.id, teamId)}>
+                      <SelectTrigger className="h-8 w-36 text-xs">
+                        <SelectValue placeholder="Assign to…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => openEditDialog(member)}
+                      title="Edit teams"
+                    >
+                      <Users className="size-3.5" />
+                      <span className="sr-only">Edit teams</span>
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -206,15 +240,27 @@ export function TableTeamView({
                           </span>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-6"
-                        onClick={() => handleUnassign(a.teamMember.id, team.id)}
-                      >
-                        <X className="size-3" />
-                        <span className="sr-only">Unassign</span>
-                      </Button>
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          onClick={() => openEditDialog(a.teamMember)}
+                          title="Edit teams"
+                        >
+                          <Users className="size-3" />
+                          <span className="sr-only">Edit teams</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          onClick={() => handleUnassign(a.teamMember.id, team.id)}
+                        >
+                          <X className="size-3" />
+                          <span className="sr-only">Unassign</span>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -229,6 +275,24 @@ export function TableTeamView({
           </p>
         )}
       </div>
+
+      {editingMember && (
+        <EditMemberTeamsDialog
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setEditingMember(null);
+          }}
+          arrangementId={arrangementId}
+          teamMemberId={editingMember.id}
+          memberDisplayName={editingMember.displayName}
+          arrangementTeams={arrangementTeamList}
+          currentArrangementTeamIds={editingMember.currentTeamIds}
+          onSuccess={() => {
+            setEditingMember(null);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

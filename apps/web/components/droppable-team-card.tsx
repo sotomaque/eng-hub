@@ -29,6 +29,7 @@ type DroppableTeamCardProps = {
   members: TeamMemberData[];
   onRename: (teamId: string, name: string) => void;
   onDelete: (teamId: string) => void;
+  onMemberClick?: (memberId: string, displayName: string) => void;
   titleColorMap: TitleColorMap;
 };
 
@@ -38,6 +39,7 @@ export function DroppableTeamCard({
   members,
   onRename,
   onDelete,
+  onMemberClick,
   titleColorMap,
 }: DroppableTeamCardProps) {
   const { isOver, setNodeRef } = useDroppable({
@@ -135,6 +137,7 @@ export function DroppableTeamCard({
                 department={member.person.department}
                 sourceTeamId={teamId}
                 imageUrl={member.person.imageUrl}
+                onClick={onMemberClick}
               />
             ))}
           </div>

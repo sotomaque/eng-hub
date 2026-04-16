@@ -13,6 +13,7 @@ type DraggableMemberChipProps = {
   department: { name: string; color: string | null } | null;
   sourceTeamId: string | null;
   imageUrl?: string | null;
+  onClick?: (memberId: string, displayName: string) => void;
 };
 
 export function DraggableMemberChip({
@@ -24,6 +25,7 @@ export function DraggableMemberChip({
   department,
   sourceTeamId,
   imageUrl,
+  onClick,
 }: DraggableMemberChipProps) {
   const displayName = `${firstName}${callsign ? ` ${callsign}` : ""} ${lastName}`;
 
@@ -36,14 +38,19 @@ export function DraggableMemberChip({
     },
   });
 
+  const Chip = onClick ? "button" : "div";
+
   return (
-    <div
-      ref={setNodeRef}
+    <Chip
+      ref={setNodeRef as never}
+      type={onClick ? "button" : undefined}
       {...attributes}
       {...listeners}
+      onClick={onClick ? () => onClick(id, displayName) : undefined}
       className={cn(
-        "flex cursor-grab items-center gap-2 rounded-md border border-l-4 bg-background px-3 py-1.5 text-sm shadow-xs transition-opacity active:cursor-grabbing",
+        "flex w-full cursor-grab items-center gap-2 rounded-md border border-l-4 bg-background px-3 py-1.5 text-left text-sm shadow-xs transition-opacity active:cursor-grabbing",
         isDragging && "opacity-50",
+        onClick && "hover:bg-accent",
       )}
       style={{ borderLeftColor: department?.color ?? "#9ca3af" }}
     >
@@ -63,6 +70,6 @@ export function DraggableMemberChip({
       {department && (
         <span className="text-muted-foreground ml-auto shrink-0 text-xs">{department.name}</span>
       )}
-    </div>
+    </Chip>
   );
 }

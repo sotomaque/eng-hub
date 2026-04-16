@@ -228,6 +228,7 @@ export function ArrangementEditor({ projectId, arrangement }: ArrangementEditorP
       {/* Editor */}
       {viewMode === "visual" ? (
         <VisualTeamEditor
+          arrangementId={arrangement.id}
           teams={arrangement.teams}
           unassignedMembers={arrangement.unassignedMembers}
           onRenameTeam={handleRenameTeam}
@@ -236,6 +237,7 @@ export function ArrangementEditor({ projectId, arrangement }: ArrangementEditorP
         />
       ) : (
         <TableTeamView
+          arrangementId={arrangement.id}
           teams={arrangement.teams}
           unassignedMembers={arrangement.unassignedMembers}
           onRenameTeam={handleRenameTeam}
