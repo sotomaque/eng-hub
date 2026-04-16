@@ -268,22 +268,88 @@ async function main() {
     console.log("  Tip: Update the Person's email or gitlabUsername in the app to match these.\n");
   }
 
-  // 4. Parse merge commits to extract PR/MR data
+  // 4. Parse merge commits and resolve actual MR authors (not the merger)
   console.log("Parsing merge commits for PR/MR data...");
+
+  // Step A: Get merge commit hashes + parent hashes
+  const mergeParentOutput = execSync(
+    `git -C "${repoPath}" log${branchArg} --merges --first-parent --format="%H %P"`,
+    { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024 },
+  );
+
+  // Step B: Extract second parent hashes (the branch tips that were merged)
+  const mergeParentMap = new Map<string, string>(); // secondParent → mergeHash
+  const secondParents: string[] = [];
+  for (const line of mergeParentOutput.trim().split("\n")) {
+    if (!line.trim()) continue;
+    const parts = line.trim().split(" ");
+    const mergeHash = parts[0];
+    const secondParent = parts[2]; // first parent is parts[1], second is parts[2]
+    if (mergeHash && secondParent) {
+      mergeParentMap.set(secondParent, mergeHash);
+      secondParents.push(secondParent);
+    }
+  }
+  console.log(`  Found ${secondParents.length} merge commits`);
+
+  // Step C: Batch-resolve second parent authors using --stdin
+  const branchAuthorMap = new Map<string, string>(); // mergeHash → authorEmail
+  if (secondParents.length > 0) {
+    const RESOLVE_BATCH = 500;
+    for (let i = 0; i < secondParents.length; i += RESOLVE_BATCH) {
+      const batch = secondParents.slice(i, i + RESOLVE_BATCH);
+      const input = batch.join("\n");
+      try {
+        const resolved = execSync(
+          `echo "${input}" | git -C "${repoPath}" log --stdin --no-walk --format="%H %ae" 2>/dev/null`,
+          { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 },
+        );
+        for (const line of resolved.trim().split("\n")) {
+          if (!line.trim()) continue;
+          const [hash, email] = line.trim().split(" ");
+          if (hash && email) {
+            const mergeHash = mergeParentMap.get(hash);
+            if (mergeHash) {
+              branchAuthorMap.set(mergeHash, email.toLowerCase());
+            }
+          }
+        }
+      } catch {
+        // Some commits might not resolve (e.g. shallow clones)
+      }
+    }
+    console.log(`  Resolved ${branchAuthorMap.size} MR authors from branch tips`);
+  }
+
+  // Step D: Get merge commit metadata (date + subject)
   const mergeLogOutput = execSync(
-    `git -C "${repoPath}" log${branchArg} --merges --format="${COMMIT_DELIMITER}%n%ae%n%aI%n%s" --first-parent`,
+    `git -C "${repoPath}" log${branchArg} --merges --first-parent --format="${COMMIT_DELIMITER}%n%H%n%ae%n%aI%n%s"`,
     { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
   );
-  const mergeCommits = parseGitLog(mergeLogOutput);
-  console.log(`  Found ${mergeCommits.length} merge commits`);
 
-  // Build PRData from merge commits (each merge commit ≈ 1 merged MR)
+  // Parse with a modified approach — first line is now hash
+  const mergeBlocks = mergeLogOutput.split(COMMIT_DELIMITER).filter((b) => b.trim());
+  type MergeInfo = { hash: string; authorEmail: string; date: Date; subject: string };
+  const mergeCommits: MergeInfo[] = [];
+  for (const block of mergeBlocks) {
+    const lines = block.trim().split("\n");
+    const hash = lines[0]?.trim();
+    const mergerEmail = lines[1]?.trim();
+    const dateStr = lines[2]?.trim();
+    const subject = lines[3]?.trim() ?? "";
+    if (!hash || !mergerEmail || !dateStr) continue;
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) continue;
+    // Use the resolved branch author if available, fall back to merger
+    const authorEmail = branchAuthorMap.get(hash) ?? mergerEmail;
+    mergeCommits.push({ hash, authorEmail, date, subject });
+  }
+
+  // Build PRData from merge commits — now attributed to MR authors
   const prData: import("../lib/github").PRData[] = [];
   for (const mc of mergeCommits) {
     const username = emailToUsername.get(mc.authorEmail);
     if (!username) continue;
-    // Extract a cleaner title from merge commit message
-    // GitLab format: "Merge branch 'feature/xyz' into 'main'" or just the MR title
     const title = mc.subject
       .replace(/^Merge branch '([^']+)' into '[^']+'$/, "$1")
       .replace(/^Merge remote-tracking branch '([^']+)'.*$/, "$1");
@@ -349,15 +415,20 @@ async function main() {
     }
   });
 
-  // Store merge entries for the merge digest (batch insert, skip duplicates)
+  // Store merge entries for the merge digest — only merge commits (not all commits)
+  // Each merge commit represents one merged MR; individual branch commits are noise.
   console.log("Storing merge entries...");
-  const mergeData = commits
-    .filter((c) => emailToUsername.has(c.authorEmail) && c.subject)
-    .map((c) => ({
+
+  // First clear old entries for this project so stale data doesn't linger
+  await db.mergeEntry.deleteMany({ where: { projectId } });
+
+  const mergeData = mergeCommits
+    .filter((mc) => emailToUsername.has(mc.authorEmail) && mc.subject)
+    .map((mc) => ({
       projectId,
-      title: c.subject,
-      authorUsername: emailToUsername.get(c.authorEmail) as string,
-      mergedAt: c.date,
+      title: mc.subject,
+      authorUsername: emailToUsername.get(mc.authorEmail) as string,
+      mergedAt: mc.date,
     }));
 
   const BATCH_SIZE = 500;
