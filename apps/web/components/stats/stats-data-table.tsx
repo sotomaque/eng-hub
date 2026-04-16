@@ -14,6 +14,7 @@ import {
 } from "@workspace/ui/components/table";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { formatTenure } from "@/lib/format-tenure";
 import { assignTiers, type ContributorStatsData, tierConfig } from "@/lib/tiers";
 
 type MemberInfo = {
@@ -24,6 +25,8 @@ type MemberInfo = {
   imageUrl: string | null;
   leftAt: string | null;
   isTeamMember: boolean;
+  title: string | null;
+  hireDate: string | null;
 };
 
 type StatsDataTableProps = {
@@ -74,6 +77,8 @@ export function StatsDataTable({
               )}
               <TableHead className="w-12">#</TableHead>
               <TableHead>Contributor</TableHead>
+              <TableHead className="hidden md:table-cell">Title</TableHead>
+              <TableHead className="hidden lg:table-cell w-20">Tenure</TableHead>
               <TableHead className="w-16">Tier</TableHead>
               <TableHead className="w-28">Trend</TableHead>
               <TableHead className="text-right">Commits</TableHead>
@@ -138,7 +143,7 @@ export function StatsDataTable({
                       <span className="text-muted-foreground text-xs">
                         {s.githubUsername.includes("@") ? s.githubUsername : `@${s.githubUsername}`}
                       </span>
-                      {(!member || !member.isTeamMember) && (
+                      {!member?.isTeamMember && (
                         <Badge variant="outline" className="ml-1 text-[10px]">
                           External
                         </Badge>
@@ -149,6 +154,12 @@ export function StatsDataTable({
                         </Badge>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                    {member?.title ?? "—"}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground text-sm font-mono">
+                    {formatTenure(member?.hireDate) ?? "—"}
                   </TableCell>
                   <TableCell>
                     <span
