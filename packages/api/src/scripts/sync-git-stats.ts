@@ -31,12 +31,14 @@ function printUsage(): void {
 function parseGitLog(rawOutput: string): {
   authorEmail: string;
   date: Date;
+  subject: string;
   additions: number;
   deletions: number;
 }[] {
   const commits: {
     authorEmail: string;
     date: Date;
+    subject: string;
     additions: number;
     deletions: number;
   }[] = [];
@@ -47,9 +49,11 @@ function parseGitLog(rawOutput: string): {
     const lines = block.trim().split("\n");
     // First line: author_email
     // Second line: ISO date
+    // Third line: commit subject
     // Remaining lines: numstat (additions \t deletions \t filename)
     const authorEmail = lines[0]?.trim();
     const dateStr = lines[1]?.trim();
+    const subject = lines[2]?.trim() ?? "";
 
     if (!authorEmail || !dateStr) continue;
 
@@ -59,7 +63,7 @@ function parseGitLog(rawOutput: string): {
     let additions = 0;
     let deletions = 0;
 
-    for (let i = 2; i < lines.length; i++) {
+    for (let i = 3; i < lines.length; i++) {
       const line = lines[i]?.trim();
       if (!line) continue;
       const parts = line.split("\t");
@@ -71,7 +75,7 @@ function parseGitLog(rawOutput: string): {
       if (!Number.isNaN(d)) deletions += d;
     }
 
-    commits.push({ authorEmail: authorEmail.toLowerCase(), date, additions, deletions });
+    commits.push({ authorEmail: authorEmail.toLowerCase(), date, subject, additions, deletions });
   }
 
   return commits;
@@ -187,7 +191,7 @@ async function main() {
   // 2. Run git log
   console.log(`Running git log on ${repoPath}...`);
   const gitLogOutput = execSync(
-    `git -C "${repoPath}" log --format="${COMMIT_DELIMITER}%n%ae%n%aI" --numstat`,
+    `git -C "${repoPath}" log --format="${COMMIT_DELIMITER}%n%ae%n%aI%n%s" --numstat`,
     { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
   );
 
@@ -302,6 +306,37 @@ async function main() {
       await tx.contributorStats.createMany({ data: records });
     }
   });
+
+  // Store merge entries for the merge digest
+  console.log("Storing merge entries...");
+  let mergeEntriesStored = 0;
+  for (const commit of commits) {
+    const username = emailToUsername.get(commit.authorEmail);
+    if (!username || !commit.subject) continue;
+    await db.mergeEntry
+      .upsert({
+        where: {
+          projectId_authorUsername_title_mergedAt: {
+            projectId,
+            authorUsername: username,
+            title: commit.subject,
+            mergedAt: commit.date,
+          },
+        },
+        update: {},
+        create: {
+          projectId,
+          title: commit.subject,
+          authorUsername: username,
+          mergedAt: commit.date,
+        },
+      })
+      .catch(() => {
+        // Ignore duplicate constraint violations
+      });
+    mergeEntriesStored++;
+  }
+  console.log(`  Stored ${mergeEntriesStored} merge entries`);
 
   // Update sync record
   await db.gitHubSync.upsert({

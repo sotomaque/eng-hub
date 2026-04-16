@@ -19,6 +19,8 @@ export type ReviewData = {
 };
 
 export type PRData = {
+  title: string;
+  url: string;
   author: string;
   headRefName: string;
   state: "OPEN" | "CLOSED" | "MERGED";
@@ -163,6 +165,8 @@ query($owner: String!, $repo: String!, $cursor: String) {
         endCursor
       }
       nodes {
+        title
+        url
         author { login }
         headRefName
         state
@@ -224,6 +228,8 @@ export async function fetchPRStats(
           pullRequests: {
             pageInfo: { hasNextPage: boolean; endCursor: string | null };
             nodes: Array<{
+              title: string;
+              url: string;
               author: { login: string } | null;
               headRefName: string;
               state: string;
@@ -258,6 +264,8 @@ export async function fetchPRStats(
       }
       if (!pr.author?.login) continue;
       allPRs.push({
+        title: pr.title,
+        url: pr.url,
         author: pr.author.login,
         headRefName: pr.headRefName,
         state: pr.state as PRData["state"],

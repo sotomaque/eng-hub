@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 import { CompareContributorsSheet } from "./compare-contributors-sheet";
+import { MergeDigest } from "./merge-digest";
 import { StatsDataTable } from "./stats-data-table";
 import { StatsInsights } from "./stats-insights";
 import { StatsKPICards } from "./stats-kpi-cards";
@@ -192,6 +193,8 @@ export function StatsSection({
           </div>
         </div>
       )}
+
+      <MergeDigest projectId={projectId} memberMap={memberMap} hasAnthropicKey={hasAnthropicKey} />
 
       {isCompareOpen && (
         <CompareContributorsSheet

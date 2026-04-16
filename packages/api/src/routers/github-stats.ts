@@ -1,5 +1,7 @@
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { TRPCError } from "@trpc/server";
 import { db } from "@workspace/db";
+import { generateText } from "ai";
 import { z } from "zod";
 import { CAPABILITIES } from "../lib/capabilities";
 import { type ContributorInput, compareContributors } from "../lib/git-compare";
@@ -7,6 +9,22 @@ import { parseGitHubUrl } from "../lib/github";
 import { compareContributorsViaGitHub } from "../lib/github-compare";
 import { syncGitHubStatsForProject } from "../lib/github-sync";
 import { createTRPCRouter, protectedProcedure, requireCapability } from "../trpc";
+
+const MERGE_SUMMARY_PROMPT = `You are a weekly merge digest generator for a software team. Given a list of merged PRs/commits with titles and authors, generate a concise summary in markdown with these sections:
+
+## This Period — Merge Summary
+One-line: "{count} pull requests/commits merged across {n} contributors."
+
+## By Contributor
+Bullet list of each contributor and their merge count, sorted by count descending. Use display names when available, fall back to usernames.
+
+## Highlights by Area
+Group merges into 3-5 categories based on the titles (e.g. UI/UX, Data/backend, Infra/tooling, Tests, Bug fixes). List a few representative titles per category.
+
+## Top Contributor
+2-3 sentences about who led output, what areas they worked on, and any notable patterns from other top contributors.
+
+Keep it factual and concise. Do not invent details not present in the data.`;
 
 export const githubStatsRouter = createTRPCRouter({
   getByProjectId: protectedProcedure
@@ -261,5 +279,125 @@ export const githubStatsRouter = createTRPCRouter({
           message: `Comparison failed: ${message}`,
         });
       }
+    }),
+
+  getMergeDigest: protectedProcedure
+    .input(z.object({ projectId: z.string(), days: z.enum(["7", "14", "30"]) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
+    .query(async ({ input }) => {
+      const since = new Date(Date.now() - Number(input.days) * 24 * 60 * 60 * 1000);
+      const entries = await db.mergeEntry.findMany({
+        where: { projectId: input.projectId, mergedAt: { gte: since } },
+        orderBy: { mergedAt: "desc" },
+      });
+
+      const byContributor = new Map<string, number>();
+      for (const entry of entries) {
+        byContributor.set(entry.authorUsername, (byContributor.get(entry.authorUsername) ?? 0) + 1);
+      }
+
+      return {
+        entries,
+        byContributor: Object.fromEntries([...byContributor.entries()].sort((a, b) => b[1] - a[1])),
+        total: entries.length,
+      };
+    }),
+
+  getMergeSummary: protectedProcedure
+    .input(z.object({ projectId: z.string(), days: z.enum(["7", "14", "30"]) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
+    .query(async ({ input }) => {
+      return db.mergeSummary.findUnique({
+        where: {
+          projectId_periodDays: {
+            projectId: input.projectId,
+            periodDays: Number(input.days),
+          },
+        },
+      });
+    }),
+
+  generateMergeSummary: protectedProcedure
+    .input(z.object({ projectId: z.string(), days: z.enum(["7", "14", "30"]) }))
+    .use(requireCapability(CAPABILITIES.PROJECT_STATS_READ))
+    .mutation(async ({ input }) => {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "ANTHROPIC_API_KEY is not configured.",
+        });
+      }
+
+      const since = new Date(Date.now() - Number(input.days) * 24 * 60 * 60 * 1000);
+      const entries = await db.mergeEntry.findMany({
+        where: { projectId: input.projectId, mergedAt: { gte: since } },
+        orderBy: { mergedAt: "desc" },
+      });
+
+      if (entries.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No merge entries found for this period. Sync first.",
+        });
+      }
+
+      // Resolve usernames to display names via team members
+      const teamMembers = await db.teamMember.findMany({
+        where: { projectId: input.projectId },
+        include: {
+          person: {
+            select: {
+              firstName: true,
+              lastName: true,
+              callsign: true,
+              githubUsername: true,
+              gitlabUsername: true,
+            },
+          },
+        },
+      });
+
+      const usernameToName = new Map<string, string>();
+      for (const tm of teamMembers) {
+        const displayName = tm.person.callsign ?? `${tm.person.firstName} ${tm.person.lastName}`;
+        if (tm.person.githubUsername) usernameToName.set(tm.person.githubUsername, displayName);
+        if (tm.person.gitlabUsername) usernameToName.set(tm.person.gitlabUsername, displayName);
+      }
+
+      const mergeList = entries.map((e) => {
+        const name = usernameToName.get(e.authorUsername) ?? e.authorUsername;
+        return `- ${e.title} — ${name}`;
+      });
+
+      const anthropic = createAnthropic({ apiKey });
+      const result = await generateText({
+        model: anthropic("claude-sonnet-4-20250514"),
+        system: MERGE_SUMMARY_PROMPT,
+        prompt: `Here are the ${entries.length} merges from the last ${input.days} days:\n\n${mergeList.join("\n")}`,
+      });
+
+      const summary = await db.mergeSummary.upsert({
+        where: {
+          projectId_periodDays: {
+            projectId: input.projectId,
+            periodDays: Number(input.days),
+          },
+        },
+        update: {
+          summary: result.text,
+          mergeCount: entries.length,
+          generatedAt: new Date(),
+        },
+        create: {
+          projectId: input.projectId,
+          periodDays: Number(input.days),
+          summary: result.text,
+          mergeCount: entries.length,
+          generatedAt: new Date(),
+        },
+      });
+
+      return summary;
     }),
 });
