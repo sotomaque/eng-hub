@@ -606,4 +606,81 @@ export const arrangementRouter = createTRPCRouter({
       });
       return result.assignment;
     }),
+
+  setMemberAssignments: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PROJECT_ARRANGEMENTS_WRITE))
+    .input(
+      z.object({
+        arrangementId: z.string(),
+        teamMemberId: z.string(),
+        arrangementTeamIds: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      await db.$transaction(async (tx) => {
+        const arrangement = await tx.teamArrangement.findUniqueOrThrow({
+          where: { id: input.arrangementId },
+        });
+        const arrangementTeams = await tx.arrangementTeam.findMany({
+          where: { arrangementId: input.arrangementId },
+          select: { id: true, liveTeamId: true },
+        });
+
+        const validArrTeamIds = new Set(arrangementTeams.map((at) => at.id));
+        for (const id of input.arrangementTeamIds) {
+          if (!validArrTeamIds.has(id)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Arrangement team ${id} does not belong to arrangement ${input.arrangementId}.`,
+            });
+          }
+        }
+
+        await tx.arrangementAssignment.deleteMany({
+          where: {
+            teamMemberId: input.teamMemberId,
+            arrangementTeam: { arrangementId: input.arrangementId },
+          },
+        });
+
+        if (input.arrangementTeamIds.length > 0) {
+          await tx.arrangementAssignment.createMany({
+            data: input.arrangementTeamIds.map((arrangementTeamId) => ({
+              arrangementTeamId,
+              teamMemberId: input.teamMemberId,
+            })),
+          });
+        }
+
+        if (arrangement.isActive) {
+          const liveTeamIdsInArrangement = arrangementTeams
+            .map((at) => at.liveTeamId)
+            .filter((id): id is string => id !== null);
+
+          if (liveTeamIdsInArrangement.length > 0) {
+            await tx.teamMembership.deleteMany({
+              where: {
+                teamMemberId: input.teamMemberId,
+                teamId: { in: liveTeamIdsInArrangement },
+              },
+            });
+          }
+
+          const selectedLiveTeamIds = arrangementTeams
+            .filter((at) => input.arrangementTeamIds.includes(at.id) && at.liveTeamId)
+            .map((at) => at.liveTeamId as string);
+
+          if (selectedLiveTeamIds.length > 0) {
+            await tx.teamMembership.createMany({
+              data: selectedLiveTeamIds.map((teamId) => ({
+                teamId,
+                teamMemberId: input.teamMemberId,
+              })),
+            });
+          }
+        }
+      });
+
+      return { count: input.arrangementTeamIds.length };
+    }),
 });

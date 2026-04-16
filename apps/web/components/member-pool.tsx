@@ -20,9 +20,10 @@ type MemberData = {
 
 type MemberPoolProps = {
   members: MemberData[];
+  onMemberClick?: (memberId: string, displayName: string) => void;
 };
 
-export function MemberPool({ members }: MemberPoolProps) {
+export function MemberPool({ members, onMemberClick }: MemberPoolProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: "unassigned-pool",
     data: { teamId: null },
@@ -102,6 +103,7 @@ export function MemberPool({ members }: MemberPoolProps) {
                     department={member.person.department}
                     sourceTeamId={null}
                     imageUrl={member.person.imageUrl}
+                    onClick={onMemberClick}
                   />
                 ))}
               </div>

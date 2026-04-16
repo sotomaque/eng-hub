@@ -12,9 +12,10 @@ import {
 } from "@dnd-kit/core";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DroppableTeamCard } from "@/components/droppable-team-card";
+import { EditMemberTeamsDialog } from "@/components/edit-member-teams-dialog";
 import { MemberPool } from "@/components/member-pool";
 import type { TitleColorMap } from "@/lib/constants/team";
 import { useTRPC } from "@/lib/trpc/client";
@@ -42,6 +43,7 @@ type TeamData = {
 };
 
 type VisualTeamEditorProps = {
+  arrangementId: string;
   teams: TeamData[];
   unassignedMembers: MemberData[];
   onRenameTeam: (teamId: string, name: string) => void;
@@ -52,6 +54,7 @@ type VisualTeamEditorProps = {
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } } as const;
 
 export function VisualTeamEditor({
+  arrangementId,
   teams,
   unassignedMembers,
   onRenameTeam,
@@ -64,6 +67,23 @@ export function VisualTeamEditor({
     id: string;
     displayName: string;
   } | null>(null);
+  const [editingMember, setEditingMember] = useState<{
+    id: string;
+    displayName: string;
+    currentTeamIds: string[];
+  } | null>(null);
+
+  const arrangementTeamList = useMemo(
+    () => teams.map((t) => ({ id: t.id, name: t.name })),
+    [teams],
+  );
+
+  function openEditDialog(memberId: string, displayName: string) {
+    const currentTeamIds = teams
+      .filter((t) => t.assignments.some((a) => a.teamMember.id === memberId))
+      .map((t) => t.id);
+    setEditingMember({ id: memberId, displayName, currentTeamIds });
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -150,7 +170,7 @@ export function VisualTeamEditor({
     >
       <div className="flex gap-4" style={{ minHeight: "60vh" }}>
         <div className="w-64 shrink-0">
-          <MemberPool members={unassignedMembers} />
+          <MemberPool members={unassignedMembers} onMemberClick={openEditDialog} />
         </div>
 
         <div className="grid flex-1 auto-rows-min gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -162,6 +182,7 @@ export function VisualTeamEditor({
               members={team.assignments.map((a) => a.teamMember)}
               onRename={onRenameTeam}
               onDelete={onDeleteTeam}
+              onMemberClick={openEditDialog}
               titleColorMap={titleColorMap}
             />
           ))}
@@ -181,6 +202,24 @@ export function VisualTeamEditor({
           </div>
         )}
       </DragOverlay>
+
+      {editingMember && (
+        <EditMemberTeamsDialog
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setEditingMember(null);
+          }}
+          arrangementId={arrangementId}
+          teamMemberId={editingMember.id}
+          memberDisplayName={editingMember.displayName}
+          arrangementTeams={arrangementTeamList}
+          currentArrangementTeamIds={editingMember.currentTeamIds}
+          onSuccess={() => {
+            setEditingMember(null);
+            router.refresh();
+          }}
+        />
+      )}
     </DndContext>
   );
 }
