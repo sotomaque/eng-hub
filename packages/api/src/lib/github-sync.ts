@@ -97,6 +97,35 @@ export async function syncGitHubStatsForProject(projectId: string): Promise<void
       { timeout: 30000 },
     );
 
+    // Store individual merged PRs for the merge digest
+    const mergedPRs = prData.filter((pr) => pr.merged && pr.mergedAt);
+    if (mergedPRs.length > 0) {
+      for (const pr of mergedPRs) {
+        await db.mergeEntry
+          .upsert({
+            where: {
+              projectId_authorUsername_title_mergedAt: {
+                projectId,
+                authorUsername: pr.author,
+                title: pr.title,
+                mergedAt: new Date(pr.mergedAt as string),
+              },
+            },
+            update: {},
+            create: {
+              projectId,
+              title: pr.title,
+              authorUsername: pr.author,
+              mergedAt: new Date(pr.mergedAt as string),
+              url: pr.url,
+            },
+          })
+          .catch(() => {
+            // Ignore duplicate constraint violations
+          });
+      }
+    }
+
     const syncWarning = commitDataAvailable
       ? null
       : "Commit stats temporarily unavailable from GitHub. PR/review data updated. Try syncing again in a few minutes.";
