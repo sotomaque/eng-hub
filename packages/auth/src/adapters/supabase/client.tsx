@@ -23,6 +23,10 @@ export function SignInButton(_props: { children: React.ReactNode }): never {
   throw new Error(MSG);
 }
 
+export function UserMenu(): never {
+  throw new Error(MSG);
+}
+
 export function useAuthSession(): ClientAuthSession {
   throw new Error(MSG);
 }

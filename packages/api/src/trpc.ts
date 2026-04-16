@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { getServerSession } from "@workspace/auth/server";
+import { db } from "@workspace/db";
 import { ZodError } from "zod";
 import {
   assertAccess,
@@ -9,19 +10,34 @@ import {
   resolveAccess,
 } from "./lib/access";
 import type { Capability } from "./lib/capabilities";
-import { resolveClerkPerson } from "./lib/hierarchy";
+import { resolveAuthPerson } from "./lib/hierarchy";
 
 // ── Context ──────────────────────────────────────────────────
 
 export const createTRPCContext = async () => {
-  const { userId } = await getServerSession();
+  const { userId, email } = await getServerSession();
 
-  // Eagerly resolve personId + ABAC access for the authenticated user
   let personId: string | null = null;
   let access: ResolvedAccess | null = null;
 
   if (userId) {
-    personId = await resolveClerkPerson(userId);
+    personId = await resolveAuthPerson(userId);
+
+    // Auto-link by email on first login (e.g. Entra ID user with no existing link)
+    if (!personId && email) {
+      const byEmail = await db.person.findUnique({
+        where: { email },
+        select: { id: true, clerkUserId: true },
+      });
+      if (byEmail && !byEmail.clerkUserId) {
+        await db.person.update({
+          where: { id: byEmail.id },
+          data: { clerkUserId: userId },
+        });
+        personId = byEmail.id;
+      }
+    }
+
     if (personId) {
       access = await resolveAccess(personId);
     }

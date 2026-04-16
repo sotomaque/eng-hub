@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 const mockResolveClerkPerson = mock(() => Promise.resolve("person-1"));
 
 mock.module("../../lib/hierarchy", () => ({
-  resolveClerkPerson: mockResolveClerkPerson,
+  resolveAuthPerson: mockResolveClerkPerson,
   isInManagementChain: mock(() => Promise.resolve(false)),
   canViewMeetings: mock(() => Promise.resolve(false)),
 }));

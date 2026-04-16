@@ -1,11 +1,11 @@
 import { db } from "@workspace/db";
 
 /**
- * Resolve a Clerk userId to a Person ID.
+ * Resolve an external auth provider userId to a Person ID.
  */
-export async function resolveClerkPerson(clerkUserId: string): Promise<string | null> {
+export async function resolveAuthPerson(externalUserId: string): Promise<string | null> {
   const viewer = await db.person.findUnique({
-    where: { clerkUserId },
+    where: { clerkUserId: externalUserId },
     select: { id: true },
   });
   return viewer?.id ?? null;
@@ -33,23 +33,23 @@ async function getManagementChain(personId: string): Promise<string[]> {
 }
 
 /**
- * Check if clerkUserId is anywhere in the management chain above targetPersonId.
+ * Check if externalUserId is anywhere in the management chain above targetPersonId.
  */
 export async function isInManagementChain(
-  clerkUserId: string,
+  externalUserId: string,
   targetPersonId: string,
 ): Promise<boolean> {
-  const viewerId = await resolveClerkPerson(clerkUserId);
+  const viewerId = await resolveAuthPerson(externalUserId);
   if (!viewerId) return false;
   const chain = await getManagementChain(targetPersonId);
   return chain.includes(viewerId);
 }
 
 /**
- * Check if clerkUserId is the direct manager of personId.
+ * Check if externalUserId is the direct manager of personId.
  */
-export async function isDirectManager(clerkUserId: string, personId: string): Promise<boolean> {
-  const viewerId = await resolveClerkPerson(clerkUserId);
+export async function isDirectManager(externalUserId: string, personId: string): Promise<boolean> {
+  const viewerId = await resolveAuthPerson(externalUserId);
   if (!viewerId) return false;
   const person = await db.person.findUnique({
     where: { id: personId },
@@ -60,9 +60,9 @@ export async function isDirectManager(clerkUserId: string, personId: string): Pr
 }
 
 /**
- * Check if clerkUserId can view meetings for personId.
+ * Check if externalUserId can view meetings for personId.
  * True if viewer is anywhere in the management chain above personId.
  */
-export async function canViewMeetings(clerkUserId: string, personId: string): Promise<boolean> {
-  return isInManagementChain(clerkUserId, personId);
+export async function canViewMeetings(externalUserId: string, personId: string): Promise<boolean> {
+  return isInManagementChain(externalUserId, personId);
 }

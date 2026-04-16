@@ -1,6 +1,13 @@
 "use client";
 
-import { ClerkProvider, SignedIn, SignedOut, SignInButton, useUser } from "@clerk/nextjs";
+import {
+  ClerkProvider,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useUser,
+} from "@clerk/nextjs";
 import type { ClientAuthSession } from "../../types";
 
 /**
@@ -15,6 +22,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export { SignedIn, SignedOut, SignInButton };
+
+export function UserMenu() {
+  return <UserButton />;
+}
 
 /** Hook to read the current session state on the client. */
 export function useAuthSession(): ClientAuthSession {

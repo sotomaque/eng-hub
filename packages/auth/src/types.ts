@@ -1,6 +1,7 @@
 /** The minimum session data returned by any auth provider. */
 export type AuthSession = {
   userId: string | null;
+  email?: string | null;
 };
 
 /** Client-side session state available via useAuthSession(). */

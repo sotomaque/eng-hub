@@ -31,7 +31,7 @@ describe("isInManagementChain", () => {
   });
 
   test("returns true when viewer is in the management chain", async () => {
-    // resolveClerkPerson → viewer-id
+    // resolveAuthPerson → viewer-id
     mockFindUnique.mockResolvedValueOnce({ id: "viewer-id" });
     // getManagementChain returns chain including viewer-id
     mockQueryRaw.mockResolvedValueOnce([{ id: "manager-a" }, { id: "viewer-id" }]);
@@ -119,7 +119,7 @@ describe("isDirectManager", () => {
   });
 
   test("returns true when clerk user is the direct manager", async () => {
-    // resolveClerkPerson → manager-id
+    // resolveAuthPerson → manager-id
     mockFindUnique.mockResolvedValueOnce({ id: "manager-id" });
     // person lookup → managerId matches
     mockFindUnique.mockResolvedValueOnce({ managerId: "manager-id" });
