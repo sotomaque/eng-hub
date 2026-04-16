@@ -78,6 +78,16 @@ test.describe("Arrangement multi-team assignment", () => {
 
     // Bob should now appear only in Design
     await expect(page.getByRole("button", { name: /Bob Jones/i })).toHaveCount(1);
+
+    // Clean up: restore Bob to Frontend only (original seed state)
+    await page
+      .getByRole("button", { name: /Bob Jones/i })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("button", { name: "Frontend" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Design" }).click();
+    await page.getByRole("button", { name: /^save$/i }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
   });
 });
 
@@ -97,5 +107,15 @@ test.describe("Team page reflects multi-team memberships", () => {
     await page.goto("/projects/proj-alpha/team");
     const main = page.locator("main");
     await expect(main.getByText("Carol Lee")).toHaveCount(2);
+
+    // Clean up: remove Carol from Frontend so other spec files see single-team state
+    await gotoActiveArrangement(page);
+    await page
+      .getByRole("button", { name: /Carol Lee/i })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("button", { name: "Frontend" }).click();
+    await page.getByRole("button", { name: /^save$/i }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
   });
 });

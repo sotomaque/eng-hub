@@ -4,10 +4,10 @@ test.describe("Project team", () => {
   test("team page shows seeded members", async ({ page }) => {
     await page.goto("/projects/proj-alpha/team");
     const main = page.locator("main");
-    await expect(main.getByText("Alice Smith")).toBeVisible();
-    await expect(main.getByText("Bob Jones")).toBeVisible();
-    await expect(main.getByText("Carol Lee")).toBeVisible();
-    await expect(main.getByText("Diana Park")).toBeVisible();
+    await expect(main.getByText("Alice Smith").first()).toBeVisible();
+    await expect(main.getByText("Bob Jones").first()).toBeVisible();
+    await expect(main.getByText("Carol Lee").first()).toBeVisible();
+    await expect(main.getByText("Diana Park").first()).toBeVisible();
   });
 
   test("team page shows add member button", async ({ page }) => {
@@ -153,7 +153,7 @@ test.describe("Manager transfer on roll off", () => {
     // Alice should no longer appear
     await expect(page.locator("main").getByText("Alice Smith")).toBeHidden();
     // Bob and Carol should still be visible (not rolled off)
-    await expect(page.locator("main").getByText("Bob Jones")).toBeVisible();
-    await expect(page.locator("main").getByText("Carol Lee")).toBeVisible();
+    await expect(page.locator("main").getByText("Bob Jones").first()).toBeVisible();
+    await expect(page.locator("main").getByText("Carol Lee").first()).toBeVisible();
   });
 });
