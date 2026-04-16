@@ -189,6 +189,7 @@ model Person {
   title          Title?   @relation(fields: [titleId], references: [id], onDelete: SetNull)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
+  leftAt         DateTime? @map("left_at")
 
   projectMemberships    TeamMember[]
   managerChanges        ManagerChange[] @relation("PersonManagerChanges")
@@ -215,6 +216,7 @@ model Person {
   @@index([managerId])
   @@index([departmentId])
   @@index([titleId])
+  @@index([leftAt])
   @@map("people")
 }
 

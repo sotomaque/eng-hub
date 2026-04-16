@@ -10,6 +10,7 @@
     "db:migrate:new": "supabase db diff -f",
     "db:reset": "supabase db reset",
     "db:studio": "prisma studio",
+    "link:e2e-user": "set -a && . ../../apps/web/.env && set +a && bun -e \"const id = process.env.E2E_CLERK_USER_ID; if (!id) { console.error('E2E_CLERK_USER_ID not set in apps/web/.env'); process.exit(1); } const {PrismaClient} = await import('@prisma/client'); const db = new PrismaClient(); const r = await db.person.update({ where: { id: 'person-alice' }, data: { clerkUserId: id }, select: { id: true, firstName: true, clerkUserId: true } }); console.log('linked:', r); await db.\\$disconnect();\"",
     "lint:types": "tsc --noEmit"
   },
   "dependencies": {

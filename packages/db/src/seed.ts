@@ -30,13 +30,14 @@ export async function resetAndSeed(): Promise<void> {
 
   // ── People ─────────────────────────────────────────────────────
   await db.$executeRawUnsafe(`
-    INSERT INTO people (id, first_name, last_name, email, role_id, title_id, updated_at) VALUES
-      ('person-alice', 'Alice', 'Smith', 'alice@test.com', 'dept-eng', 'title-em', NOW()),
-      ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe', NOW()),
-      ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe', NOW()),
-      ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer', NOW()),
-      ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW()),
-      ('person-frank', 'Frank', 'Wu', 'frank@test.com', 'dept-eng', 'title-swe', NOW())
+    INSERT INTO people (id, first_name, last_name, email, role_id, title_id, updated_at, left_at) VALUES
+      ('person-alice', 'Alice', 'Smith', 'alice@test.com', 'dept-eng', 'title-em', NOW(), NULL),
+      ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe', NOW(), NULL),
+      ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe', NOW(), NULL),
+      ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer', NOW(), NULL),
+      ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW(), NULL),
+      ('person-frank', 'Frank', 'Wu', 'frank@test.com', 'dept-eng', 'title-swe', NOW(), NULL),
+      ('person-gina', 'Gina', 'Rolloff', 'gina@test.com', 'dept-eng', 'title-swe', NOW(), NOW() - INTERVAL '30 days')
     ON CONFLICT (id) DO NOTHING
   `);
 

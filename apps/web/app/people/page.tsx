@@ -35,6 +35,7 @@ type PageProps = {
     department?: string;
     project?: string;
     skill?: string;
+    showDeparted?: string;
   }>;
 };
 
@@ -48,6 +49,7 @@ async function PeopleContent({
   departments,
   projects,
   skills,
+  showDeparted,
 }: {
   page: number;
   pageSize: number;
@@ -58,6 +60,7 @@ async function PeopleContent({
   departments?: string[];
   projects?: string[];
   skills?: string[];
+  showDeparted?: boolean;
 }) {
   const trpc = await createServerCaller();
   const [{ items, totalCount }, projectNames, departmentNames, skillNames] = await Promise.all([
@@ -71,6 +74,7 @@ async function PeopleContent({
       sortBy,
       sortOrder,
       multiProject,
+      includeDeparted: showDeparted,
     }),
     getCachedProjectNames(),
     getCachedDepartmentNames(),
@@ -92,6 +96,7 @@ async function PeopleContent({
       departments={departments}
       projects={projects}
       skills={skills}
+      showDeparted={showDeparted}
     />
   );
 }
@@ -139,6 +144,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const departments = params.department?.split(",").filter(Boolean);
   const projects = params.project?.split(",").filter(Boolean);
   const skills = params.skill?.split(",").filter(Boolean);
+  const showDeparted = params.showDeparted === "true" ? true : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -156,6 +162,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
             departments={departments}
             projects={projects}
             skills={skills}
+            showDeparted={showDeparted}
           />
         </Suspense>
       </main>

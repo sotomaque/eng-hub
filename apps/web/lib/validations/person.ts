@@ -18,5 +18,11 @@ export const updatePersonSchema = createPersonSchema.extend({
   id: z.string(),
 });
 
+export const markAsDepartedSchema = z.object({
+  id: z.string(),
+  leftAt: z.coerce.date(),
+});
+
 export type CreatePersonInput = z.infer<typeof createPersonSchema>;
 export type UpdatePersonInput = z.infer<typeof updatePersonSchema>;
+export type MarkAsDepartedInput = z.infer<typeof markAsDepartedSchema>;

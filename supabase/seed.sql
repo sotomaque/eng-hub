@@ -26,12 +26,13 @@ INSERT INTO titles (id, name, sort_order, department_id) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- People (no clerk_user_id — E2E tests use Clerk Testing Tokens)
-INSERT INTO people (id, first_name, last_name, email, role_id, title_id, updated_at) VALUES
-  ('person-alice', 'Alice', 'Smith', 'alice@test.com', 'dept-eng', 'title-em', NOW()),
-  ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe', NOW()),
-  ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe', NOW()),
-  ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer', NOW()),
-  ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW())
+INSERT INTO people (id, first_name, last_name, email, role_id, title_id, updated_at, left_at) VALUES
+  ('person-alice', 'Alice', 'Smith', 'alice@test.com', 'dept-eng', 'title-em', NOW(), NULL),
+  ('person-bob', 'Bob', 'Jones', 'bob@test.com', 'dept-eng', 'title-sr-swe', NOW(), NULL),
+  ('person-carol', 'Carol', 'Lee', 'carol@test.com', 'dept-eng', 'title-swe', NOW(), NULL),
+  ('person-diana', 'Diana', 'Park', 'diana@test.com', 'dept-design', 'title-designer', NOW(), NULL),
+  ('person-evan', 'Evan', 'Chen', 'evan@test.com', 'dept-product', 'title-pm', NOW(), NULL),
+  ('person-gina', 'Gina', 'Rolloff', 'gina@test.com', 'dept-eng', 'title-swe', NOW(), NOW() - INTERVAL '30 days')
 ON CONFLICT (id) DO NOTHING;
 
 -- Manager relationships (Alice manages Bob and Carol)
@@ -145,4 +146,12 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO meetings (id, date, content, author_id, person_id, template_id, created_at, updated_at) VALUES
   ('meet-1', NOW() - INTERVAL '7 days', '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Discussed sprint progress. Bob is on track with the frontend refactor."}]}]}', 'person-alice', 'person-bob', 'mt-1on1', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days'),
   ('meet-2', NOW(), '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Weekly sync with Carol about backend performance."}]}]}', 'person-alice', 'person-carol', NULL, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Access grants
+-- Alice: Admin + Full Access (everything). Bob: Project Member (scoped to membership).
+INSERT INTO access_grants (id, person_id, profile_id, project_id) VALUES
+  ('grant-alice-admin', 'person-alice', 'profile-admin', NULL),
+  ('grant-alice-full',  'person-alice', 'profile-full-access', NULL),
+  ('grant-bob-member',  'person-bob',   'profile-project-member', NULL)
 ON CONFLICT (id) DO NOTHING;

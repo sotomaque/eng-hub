@@ -1,33 +1,24 @@
 "use client";
 
 import type { Team, TeamMembership } from "@prisma/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { FolderPlus, Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { cn } from "@workspace/ui/lib/utils";
+import { format } from "date-fns";
+import { EyeOff, FolderPlus, Layers, Pencil, Plus, UserMinus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { ExportButton } from "@/components/export-button";
+import { MarkAsDepartedDialog } from "@/components/mark-as-departed-dialog";
 import { useTRPC } from "@/lib/trpc/client";
 
 type MembershipWithRelations = {
@@ -46,6 +37,7 @@ type PersonWithMemberships = {
   imageUrl: string | null;
   githubUsername: string | null;
   gitlabUsername: string | null;
+  leftAt: string | Date | null;
   department: { name: string } | null;
   title: { name: string } | null;
   projectMemberships: MembershipWithRelations[];
@@ -66,6 +58,7 @@ type PeopleTableProps = {
   departments?: string[];
   projects?: string[];
   skills?: string[];
+  showDeparted?: boolean;
 };
 
 export function PeopleTable({
@@ -83,6 +76,7 @@ export function PeopleTable({
   departments,
   projects,
   skills,
+  showDeparted,
 }: PeopleTableProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -110,6 +104,7 @@ export function PeopleTable({
     departments?: string[];
     projects?: string[];
     skills?: string[];
+    showDeparted?: boolean;
   }) {
     const params = new URLSearchParams();
     params.set("page", overrides.page ?? "1");
@@ -128,6 +123,8 @@ export function PeopleTable({
     if (p?.length) params.set("project", p.join(","));
     const sk = overrides.skills ?? skills;
     if (sk?.length) params.set("skill", sk.join(","));
+    const sd = overrides.showDeparted !== undefined ? overrides.showDeparted : showDeparted;
+    if (sd) params.set("showDeparted", "true");
     return params.toString();
   }
 
@@ -145,17 +142,11 @@ export function PeopleTable({
   const meQuery = useQuery(trpc.person.me.queryOptions());
   const myPersonId = meQuery.data?.id ?? null;
 
-  const deleteMutation = useMutation(
-    trpc.person.delete.mutationOptions({
-      onSuccess: () => {
-        toast.success("Person deleted");
-        router.refresh();
-      },
-      onError: (error) => toast.error(error.message),
-    }),
-  );
-
-  const deletingId = deleteMutation.isPending ? (deleteMutation.variables?.id ?? null) : null;
+  const [departingPerson, setDepartingPerson] = useState<{
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null>(null);
 
   function handleFilterChange(key: "departments" | "projects" | "skills", values: string[]) {
     const qs = buildParams({ page: "1", [key]: values });
@@ -212,6 +203,7 @@ export function PeopleTable({
       cell: ({ row }) => {
         const person = row.original;
         const isMe = person.id === myPersonId;
+        const leftAtDate = person.leftAt ? new Date(person.leftAt) : null;
         return (
           <Link
             href={`/people/${person.id}`}
@@ -225,10 +217,17 @@ export function PeopleTable({
                 {person.lastName[0]}
               </AvatarFallback>
             </Avatar>
-            <span className="font-medium">{row.getValue("name")}</span>
+            <span className={cn("font-medium", leftAtDate && "text-muted-foreground")}>
+              {row.getValue("name")}
+            </span>
             {isMe && (
               <Badge variant="outline" className="text-xs font-normal">
                 You
+              </Badge>
+            )}
+            {leftAtDate && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                Departed · {format(leftAtDate, "MMM yyyy")}
               </Badge>
             )}
           </Link>
@@ -308,33 +307,22 @@ export function PeopleTable({
               <FolderPlus className="size-4" />
               <span className="sr-only">Add to project</span>
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Trash2 className="size-4" />
-                  <span className="sr-only">Delete</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete person?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete &quot;{person.firstName} {person.lastName}&quot;
-                    and remove them from all projects.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => deleteMutation.mutate({ id: person.id })}
-                    disabled={deletingId === person.id}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    {deletingId === person.id ? "Deleting\u2026" : "Delete"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            {!person.leftAt && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setDepartingPerson({
+                    id: person.id,
+                    firstName: person.firstName,
+                    lastName: person.lastName,
+                  })
+                }
+              >
+                <UserMinus className="size-4" />
+                <span className="sr-only">Mark as departed</span>
+              </Button>
+            )}
           </div>
         );
       },
@@ -438,6 +426,21 @@ export function PeopleTable({
                 <Layers className="mr-2 size-4" />
                 Multi-project
               </Button>
+              <Button
+                variant={showDeparted ? "default" : "outline"}
+                size="sm"
+                className="h-8 border-dashed"
+                onClick={() => {
+                  const qs = buildParams({
+                    page: "1",
+                    showDeparted: !showDeparted,
+                  });
+                  router.push(`/people?${qs}`, { scroll: false });
+                }}
+              >
+                <EyeOff className="mr-2 size-4" />
+                Show departed
+              </Button>
               <ExportButton
                 filename="people"
                 fetchData={() =>
@@ -448,6 +451,7 @@ export function PeopleTable({
                       projects,
                       skills,
                       multiProject,
+                      includeDeparted: showDeparted,
                     }),
                   )
                 }
@@ -465,6 +469,20 @@ export function PeopleTable({
           )}
         />
       </div>
+
+      {departingPerson && (
+        <MarkAsDepartedDialog
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setDepartingPerson(null);
+          }}
+          person={departingPerson}
+          onSuccess={() => {
+            setDepartingPerson(null);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
