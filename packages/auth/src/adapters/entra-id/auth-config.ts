@@ -6,7 +6,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     MicrosoftEntraID({
       clientId: process.env.ENTRA_CLIENT_ID,
       clientSecret: process.env.ENTRA_CLIENT_SECRET,
-      issuer: `https://login.microsoftonline.com/${process.env.ENTRA_TENANT_ID}/v2.0`,
+      issuer: `https://login.microsoftonline.us/${process.env.ENTRA_TENANT_ID}/v2.0`,
     }),
   ],
   callbacks: {
