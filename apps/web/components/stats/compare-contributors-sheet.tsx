@@ -146,12 +146,12 @@ export function CompareContributorsSheet({
   // Trigger fetch once on mount via useEffect (not during render) so the
   // mutation observer is properly connected after React commits the component.
   const { mutate } = compareMutation;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     if (uniquePersonIds.length >= 2) {
       compareLoading.start();
       mutate({ projectId, personIds: uniquePersonIds });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   const data = compareMutation.data;
