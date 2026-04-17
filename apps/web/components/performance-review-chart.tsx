@@ -28,11 +28,8 @@ type PerformanceReviewChartProps = {
   onSelectReview: (reviewId: string) => void;
 };
 
-function ChartTooltipContent({
-  active,
-  payload,
-  label,
-}: TooltipContentProps<number | string, string | number>) {
+// biome-ignore lint/suspicious/noExplicitAny: recharts TooltipContentProps generics are invariant; accepting any avoids fighting the type system
+function ChartTooltipContent({ active, payload, label }: TooltipContentProps<any, any>) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border bg-popover px-3 py-2 text-popover-foreground text-sm shadow-md">
