@@ -75,6 +75,7 @@ const personEditSelect = {
   managerId: true,
   departmentId: true,
   titleId: true,
+  hireDate: true,
   department: { select: { id: true, name: true } },
   title: { select: { id: true, name: true } },
   projectMemberships: {
@@ -112,6 +113,7 @@ const createPersonSchema = z.object({
   managerId: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
   titleId: z.string().optional().or(z.literal("")),
+  hireDate: z.coerce.date().nullable().optional(),
 });
 
 const updatePersonSchema = createPersonSchema.extend({
@@ -353,6 +355,7 @@ export const personRouter = createTRPCRouter({
     .use(requireCapability(CAPABILITIES.PERSON_WRITE))
     .mutation(async ({ ctx, input }) => {
       const managerId = input.managerId || null;
+      const titleId = input.titleId || null;
       const person = await db.person.create({
         data: {
           firstName: input.firstName,
@@ -365,19 +368,40 @@ export const personRouter = createTRPCRouter({
           imageUrl: input.imageUrl || null,
           managerId,
           departmentId: input.departmentId || null,
-          titleId: input.titleId || null,
+          titleId,
+          hireDate: input.hireDate ?? null,
         },
       });
 
+      // Log initial manager + title in parallel (independent writes)
+      const initialAudits: Promise<unknown>[] = [];
       if (managerId) {
-        await db.managerChange.create({
-          data: {
-            personId: person.id,
-            oldManagerId: null,
-            newManagerId: managerId,
-            changedBy: ctx.userId,
-          },
-        });
+        initialAudits.push(
+          db.managerChange.create({
+            data: {
+              personId: person.id,
+              oldManagerId: null,
+              newManagerId: managerId,
+              changedBy: ctx.userId,
+            },
+          }),
+        );
+      }
+      if (titleId) {
+        initialAudits.push(
+          db.titleChange.create({
+            data: {
+              personId: person.id,
+              oldTitleId: null,
+              newTitleId: titleId,
+              changedBy: ctx.userId,
+              effectiveAt: input.hireDate ?? new Date(),
+            },
+          }),
+        );
+      }
+      if (initialAudits.length > 0) {
+        await Promise.all(initialAudits);
       }
 
       return person;
@@ -389,11 +413,12 @@ export const personRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const newManagerId = data.managerId || null;
+      const newTitleId = data.titleId || null;
 
       // Get current state
       const current = await db.person.findUniqueOrThrow({
         where: { id },
-        select: { managerId: true },
+        select: { managerId: true, titleId: true },
       });
 
       // Cycle detection
@@ -420,21 +445,40 @@ export const personRouter = createTRPCRouter({
           imageUrl: data.imageUrl || null,
           managerId: newManagerId,
           departmentId: data.departmentId || null,
-          titleId: data.titleId || null,
+          titleId: newTitleId,
+          hireDate: data.hireDate ?? null,
         },
       });
 
-      // Log manager change if it changed
-      const managerChanged = newManagerId !== current.managerId;
-      if (managerChanged) {
-        await db.managerChange.create({
-          data: {
-            personId: id,
-            oldManagerId: current.managerId,
-            newManagerId,
-            changedBy: ctx.userId,
-          },
-        });
+      // Log audit rows in parallel (independent writes)
+      const auditWrites: Promise<unknown>[] = [];
+      if (newManagerId !== current.managerId) {
+        auditWrites.push(
+          db.managerChange.create({
+            data: {
+              personId: id,
+              oldManagerId: current.managerId,
+              newManagerId,
+              changedBy: ctx.userId,
+            },
+          }),
+        );
+      }
+      if (newTitleId !== current.titleId) {
+        auditWrites.push(
+          db.titleChange.create({
+            data: {
+              personId: id,
+              oldTitleId: current.titleId,
+              newTitleId,
+              changedBy: ctx.userId,
+              effectiveAt: new Date(),
+            },
+          }),
+        );
+      }
+      if (auditWrites.length > 0) {
+        await Promise.all(auditWrites);
       }
 
       return person;
@@ -692,4 +736,47 @@ export const personRouter = createTRPCRouter({
       data: { clerkUserId: null },
     });
   }),
+
+  getTitleHistory: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_READ))
+    .input(z.object({ personId: z.string() }))
+    .query(async ({ input }) => {
+      return db.titleChange.findMany({
+        where: { personId: input.personId },
+        include: {
+          oldTitle: { select: { id: true, name: true } },
+          newTitle: { select: { id: true, name: true } },
+        },
+        orderBy: { effectiveAt: "desc" },
+      });
+    }),
+
+  addTitleHistoryEntry: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+    .input(
+      z.object({
+        personId: z.string(),
+        oldTitleId: z.string().nullable(),
+        newTitleId: z.string().nullable(),
+        effectiveAt: z.coerce.date(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return db.titleChange.create({
+        data: {
+          personId: input.personId,
+          oldTitleId: input.oldTitleId,
+          newTitleId: input.newTitleId,
+          changedBy: ctx.userId,
+          effectiveAt: input.effectiveAt,
+        },
+      });
+    }),
+
+  deleteTitleHistoryEntry: protectedProcedure
+    .use(requireCapability(CAPABILITIES.PERSON_WRITE))
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      return db.titleChange.delete({ where: { id: input.id } });
+    }),
 });

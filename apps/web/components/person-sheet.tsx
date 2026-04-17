@@ -14,9 +14,11 @@ import {
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
 import { Button } from "@workspace/ui/components/button";
+import { Calendar } from "@workspace/ui/components/calendar";
 import { Combobox } from "@workspace/ui/components/combobox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import {
   Sheet,
   SheetContent,
@@ -25,13 +27,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
-import { Loader2, Plus, X } from "lucide-react";
+import { cn } from "@workspace/ui/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon, History, Loader2, Plus, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/image-uploader";
 import { TagInput } from "@/components/tag-input";
+import { TitleHistoryDialog } from "@/components/title-history-dialog";
 import { useTRPC } from "@/lib/trpc/client";
 import { type CreatePersonInput, createPersonSchema } from "@/lib/validations/person";
 
@@ -51,6 +56,7 @@ type PersonWithMemberships = {
   managerId: string | null;
   departmentId: string | null;
   titleId: string | null;
+  hireDate: string | Date | null;
   department: { id: string; name: string } | null;
   title: { id: string; name: string } | null;
   projectMemberships: {
@@ -75,6 +81,7 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [skillNames, setSkillNames] = useState<string[]>(EMPTY_SKILLS);
   const [skillsDirty, setSkillsDirty] = useState(false);
+  const [titleHistoryOpen, setTitleHistoryOpen] = useState(false);
   const skillsInitialized = useRef(false);
   const emailManuallyEdited = useRef(isEditing);
 
@@ -125,6 +132,7 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
       managerId: person?.managerId ?? "",
       departmentId: person?.departmentId ?? "",
       titleId: person?.titleId ?? "",
+      hireDate: person?.hireDate ? new Date(person.hireDate) : null,
     },
   });
 
@@ -365,19 +373,32 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
                     />
                   )}
                 />
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0 text-xs"
-                  onClick={() => {
-                    const personParam = isEditing ? `edit=${person.id}` : "create=true";
-                    router.push(`/people?${personParam}&manageTitles=true`, {
-                      scroll: false,
-                    });
-                  }}
-                >
-                  Manage Titles
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => {
+                      const personParam = isEditing ? `edit=${person.id}` : "create=true";
+                      router.push(`/people?${personParam}&manageTitles=true`, {
+                        scroll: false,
+                      });
+                    }}
+                  >
+                    Manage Titles
+                  </Button>
+                  {isEditing && person && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto gap-1 p-0 text-xs"
+                      onClick={() => setTitleHistoryOpen(true)}
+                    >
+                      <History className="size-3" />
+                      History
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Department</Label>
@@ -416,6 +437,58 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
                   Manage Departments
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hireDate">Hire Date</Label>
+              <Controller
+                name="hireDate"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="hireDate"
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {field.value
+                            ? format(new Date(field.value), "MMM d, yyyy")
+                            : "Pick a hire date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(date ?? null)}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {field.value && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => field.onChange(null)}
+                      >
+                        <X className="size-4" />
+                        <span className="sr-only">Clear hire date</span>
+                      </Button>
+                    )}
+                  </div>
+                )}
+              />
+              <p className="text-muted-foreground text-xs">
+                Used to calculate tenure on the profile page and stats tables.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -541,6 +614,14 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
           </SheetFooter>
         </form>
       </SheetContent>
+      {isEditing && person && (
+        <TitleHistoryDialog
+          open={titleHistoryOpen}
+          onOpenChange={setTitleHistoryOpen}
+          personId={person.id}
+          personName={`${person.firstName} ${person.lastName}`}
+        />
+      )}
     </Sheet>
   );
 }

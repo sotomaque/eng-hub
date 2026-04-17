@@ -14,7 +14,8 @@ mock.module("@clerk/nextjs/server", () => ({
 
 const mockFindUniqueOrThrow = mock(() =>
   Promise.resolve({
-    managerId: null,
+    managerId: null as string | null,
+    titleId: null as string | null,
   }),
 );
 const mockPersonFindUnique = mock(() =>
@@ -22,6 +23,7 @@ const mockPersonFindUnique = mock(() =>
 );
 const mockPersonUpdate = mock(() => Promise.resolve({ id: "person-1" }));
 const mockManagerChangeCreate = mock(() => Promise.resolve({}));
+const mockTitleChangeCreate = mock(() => Promise.resolve({}));
 const mockPersonFindMany = mock(() => Promise.resolve([]));
 const mockQueryRaw = mock(() => Promise.resolve([{ found: false }]));
 
@@ -40,6 +42,9 @@ mock.module("@workspace/db", () => ({
     },
     managerChange: {
       create: mockManagerChangeCreate,
+    },
+    titleChange: {
+      create: mockTitleChangeCreate,
     },
     teamMember: {
       create: mock(() => Promise.resolve({ id: "tm-1" })),
@@ -84,10 +89,12 @@ describe("person.update", () => {
   beforeEach(() => {
     mockFindUniqueOrThrow.mockReset().mockResolvedValue({
       managerId: null,
+      titleId: null,
     });
     mockPersonFindUnique.mockReset();
     mockPersonUpdate.mockReset().mockResolvedValue({ id: "person-1" });
     mockManagerChangeCreate.mockReset();
+    mockTitleChangeCreate.mockReset();
     mockPersonFindMany.mockReset().mockResolvedValue([]);
     mockQueryRaw.mockReset().mockResolvedValue([{ found: false }]);
   });
@@ -101,6 +108,7 @@ describe("person.update", () => {
   test("logs manager change when manager changes", async () => {
     mockFindUniqueOrThrow.mockResolvedValue({
       managerId: "old-mgr",
+      titleId: null,
     });
 
     await caller.update({ ...validInput, managerId: "new-mgr" });
@@ -118,6 +126,7 @@ describe("person.update", () => {
   test("does not log when manager stays the same", async () => {
     mockFindUniqueOrThrow.mockResolvedValue({
       managerId: "same-mgr",
+      titleId: null,
     });
 
     await caller.update({ ...validInput, managerId: "same-mgr" });
@@ -128,6 +137,7 @@ describe("person.update", () => {
   test("throws BAD_REQUEST on cycle detection", async () => {
     mockFindUniqueOrThrow.mockResolvedValue({
       managerId: null,
+      titleId: null,
     });
     // cycle detected by recursive CTE
     mockQueryRaw.mockResolvedValueOnce([{ found: true }]);
@@ -141,6 +151,7 @@ describe("person.update", () => {
   test("allows setting manager when no cycle exists", async () => {
     mockFindUniqueOrThrow.mockResolvedValue({
       managerId: null,
+      titleId: null,
     });
 
     const result = await caller.update({
