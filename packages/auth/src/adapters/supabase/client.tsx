@@ -27,6 +27,14 @@ export function UserMenu(): never {
   throw new Error(MSG);
 }
 
+export function useSignOut(): () => Promise<void> {
+  throw new Error(MSG);
+}
+
+export function useSignIn(): (opts?: { callbackUrl?: string }) => Promise<void> {
+  throw new Error(MSG);
+}
+
 export function useAuthSession(): ClientAuthSession {
   throw new Error(MSG);
 }

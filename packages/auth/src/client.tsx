@@ -54,3 +54,9 @@ export const UserMenu = adapter.UserMenu;
 export function useAuthSession() {
   return adapter.useAuthSession();
 }
+export function useSignOut() {
+  return adapter.useSignOut();
+}
+export function useSignIn() {
+  return adapter.useSignIn();
+}

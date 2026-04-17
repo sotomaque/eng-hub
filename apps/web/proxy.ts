@@ -5,6 +5,7 @@ const AUTH_PROVIDER = process.env.AUTH_PROVIDER ?? "clerk";
 const PUBLIC_PATHS = [
   "/",
   "/faq",
+  "/sign-in",
   "/api/health",
   "/api/trpc/health.ping",
   "/api/uploadthing",
@@ -23,6 +24,7 @@ async function clerkMiddleware(request: NextRequest) {
   const isPublicRoute = createRouteMatcher([
     "/",
     "/faq",
+    "/sign-in",
     "/api/health(.*)",
     "/api/trpc/health.ping(.*)",
     "/api/uploadthing(.*)",

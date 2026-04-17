@@ -11,4 +11,10 @@ export type ClientAuthSession = {
   isLoaded: boolean;
   /** True when the current user has admin privileges. */
   isAdmin: boolean;
+  /** Display name if available. */
+  name?: string | null;
+  /** Primary email address if available. */
+  email?: string | null;
+  /** Profile image URL if available. */
+  imageUrl?: string | null;
 };

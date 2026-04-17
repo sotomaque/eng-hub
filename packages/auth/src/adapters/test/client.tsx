@@ -27,6 +27,14 @@ export function UserMenu() {
   return null;
 }
 
+export function useSignOut(): () => Promise<void> {
+  return async () => {};
+}
+
+export function useSignIn(): (opts?: { callbackUrl?: string }) => Promise<void> {
+  return async () => {};
+}
+
 export function useAuthSession(): ClientAuthSession {
   return { userId: null, isLoaded: true, isAdmin: true };
 }
