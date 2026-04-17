@@ -28,14 +28,18 @@ type PerformanceReviewChartProps = {
   onSelectReview: (reviewId: string) => void;
 };
 
-function ChartTooltipContent({ active, payload, label }: TooltipContentProps<number, string>) {
+function ChartTooltipContent({
+  active,
+  payload,
+  label,
+}: TooltipContentProps<number | string, string | number>) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border bg-popover px-3 py-2 text-popover-foreground text-sm shadow-md">
-      <p className="mb-1 font-medium">{label}</p>
+      <p className="mb-1 font-medium">{String(label)}</p>
       {payload.map((entry) => (
         <p key={String(entry.dataKey)} style={{ color: entry.color }}>
-          {entry.name}: {Number(entry.value).toFixed(1)}
+          {String(entry.name)}: {Number(entry.value).toFixed(1)}
         </p>
       ))}
     </div>
@@ -125,10 +129,10 @@ export function PerformanceReviewChart({ data, onSelectReview }: PerformanceRevi
                   r: isHighlighted ? 8 : isAverage ? 7 : 6,
                   cursor: "pointer",
                   strokeWidth: 2,
-                  onClick: (_e: unknown, dotPayload: { payload?: { id?: string } }) => {
+                  onClick: ((_e: unknown, dotPayload: { payload?: { id?: string } }) => {
                     const reviewId = dotPayload?.payload?.id;
                     if (reviewId) onSelectReview(reviewId);
-                  },
+                  }) as never,
                 }}
               />
             );
