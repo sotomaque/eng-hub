@@ -3,7 +3,14 @@ export type StorageBucket = "images" | "documents";
 
 /** Options passed to useFileUpload(). */
 export type UseFileUploadOptions = {
-  onUploadComplete?: (url: string, fileName?: string) => void;
+  /**
+   * Called after a successful upload. `storedValue` is what the caller should
+   * persist to the database — a relative object path for the Supabase adapter,
+   * a full URL for the UploadThing adapter. Consumers should render it through
+   * `resolveStorageUrl()` from `@workspace/storage/url` (or rely on the Prisma
+   * `$extends` transform, which calls it automatically on read).
+   */
+  onUploadComplete?: (storedValue: string, fileName?: string) => void;
   onUploadError?: (error: Error) => void;
 };
 
@@ -23,5 +30,6 @@ export type PresignRequest = {
 /** Response from POST /api/storage/presign. */
 export type PresignResponse = {
   uploadUrl: string;
-  publicUrl: string;
+  /** Relative object path — persist this to the database, not the full URL. */
+  path: string;
 };

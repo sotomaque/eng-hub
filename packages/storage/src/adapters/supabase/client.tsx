@@ -25,7 +25,7 @@ export function useSupabaseFileUpload(
         body: JSON.stringify({ bucket, fileName: file.name, contentType: file.type }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const { uploadUrl, publicUrl }: PresignResponse = await res.json();
+      const { uploadUrl, path }: PresignResponse = await res.json();
 
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
@@ -34,7 +34,7 @@ export function useSupabaseFileUpload(
       });
       if (!uploadRes.ok) throw new Error("Direct upload to storage failed");
 
-      options.onUploadComplete?.(publicUrl, file.name);
+      options.onUploadComplete?.(path, file.name);
     } catch (err) {
       options.onUploadError?.(err instanceof Error ? err : new Error("Upload failed"));
     } finally {

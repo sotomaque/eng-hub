@@ -1,6 +1,6 @@
-import type { PrismaClient } from "@workspace/db";
+import type { DbClient } from "@workspace/db";
 
-type TransactionClient = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
+type TransactionClient = Parameters<Parameters<DbClient["$transaction"]>[0]>[0];
 
 /**
  * Rebuilds the active arrangement's teams and assignments from the current

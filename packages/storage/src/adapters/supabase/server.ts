@@ -13,23 +13,21 @@ function getSupabaseAdminClient() {
 
 /**
  * Creates a signed upload URL for a file and returns both the upload URL
- * (for the client to PUT to) and the public URL (to persist in the database).
+ * (for the client to PUT to) and the relative object path (to persist in the
+ * database). Callers render the path through `resolveStorageUrl()` — storing
+ * just the path keeps DB rows portable across Supabase hosts.
  */
 export async function createPresignedUpload(
   bucket: string,
   fileName: string,
-): Promise<{ uploadUrl: string; publicUrl: string }> {
+): Promise<{ uploadUrl: string; path: string }> {
   const supabase = getSupabaseAdminClient();
-  const key = `${crypto.randomUUID()}/${fileName}`;
+  const path = `${crypto.randomUUID()}/${fileName}`;
 
-  const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(key);
+  const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(path);
   if (error || !data) {
     throw error ?? new Error("Failed to create presigned upload URL");
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(bucket).getPublicUrl(key);
-
-  return { uploadUrl: data.signedUrl, publicUrl };
+  return { uploadUrl: data.signedUrl, path };
 }
