@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveStorageUrl } from "@workspace/storage/url";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
@@ -72,7 +73,7 @@ export function ImageUploader({
       <div className="flex items-center gap-4">
         <Avatar className={isSquare ? "size-16 rounded-md" : "size-16"}>
           <AvatarImage
-            src={currentImageUrl ?? undefined}
+            src={resolveStorageUrl(currentImageUrl, "images") ?? undefined}
             alt={label}
             className={isSquare ? "rounded-md" : ""}
           />

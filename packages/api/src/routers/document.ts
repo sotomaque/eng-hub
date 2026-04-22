@@ -16,7 +16,7 @@ const createDocumentSchema = z
   .object({
     title: z.string().min(1).max(200),
     description: z.string().max(2000).optional(),
-    fileUrl: z.string().url(),
+    fileUrl: z.string(),
     fileName: z.string().min(1),
     fileSize: z.number().int().positive().optional(),
     mimeType: z.string().optional(),
