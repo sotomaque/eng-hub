@@ -27,8 +27,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
-import { cn } from "@workspace/ui/lib/utils";
-import { format } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 import { CalendarIcon, History, Loader2, Plus, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -445,49 +444,15 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
                 name="hireDate"
                 control={control}
                 render={({ field }) => (
-                  <div className="flex items-center gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="hireDate"
-                          type="button"
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 size-4" />
-                          {field.value
-                            ? format(new Date(field.value), "MMM d, yyyy")
-                            : "Pick a hire date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ?? null)}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {field.value && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="shrink-0"
-                        onClick={() => field.onChange(null)}
-                      >
-                        <X className="size-4" />
-                        <span className="sr-only">Clear hire date</span>
-                      </Button>
-                    )}
-                  </div>
+                  <HireDateField
+                    value={field.value ? new Date(field.value) : null}
+                    onChange={field.onChange}
+                  />
                 )}
               />
               <p className="text-muted-foreground text-xs">
-                Used to calculate tenure on the profile page and stats tables.
+                Type directly (MM/DD/YYYY) or click to open the picker. Used for tenure on the
+                profile page and stats tables.
               </p>
             </div>
 
@@ -623,5 +588,97 @@ export function PersonSheet({ person, onClose, onAddToProject }: PersonSheetProp
         />
       )}
     </Sheet>
+  );
+}
+
+/**
+ * Hybrid date input: users can type MM/DD/YYYY directly OR click the icon to
+ * open the shadcn Calendar popover. The dropdown caption makes jumping years
+ * into the past (common for hire dates) fast.
+ */
+function HireDateField({
+  value,
+  onChange,
+}: {
+  value: Date | null;
+  onChange: (value: Date | null) => void;
+}) {
+  const [text, setText] = useState(value ? format(value, "MM/dd/yyyy") : "");
+  const [open, setOpen] = useState(false);
+
+  // Keep the text in sync when the field value changes externally (e.g. the
+  // calendar selection or a form reset).
+  useEffect(() => {
+    setText(value ? format(value, "MM/dd/yyyy") : "");
+  }, [value]);
+
+  function handleTextChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const isDeleting = (e.nativeEvent as InputEvent).inputType?.startsWith("delete");
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+
+    // Progressive mask: 04 → 04/, 0413 → 04/13/. When deleting, stop at the
+    // digit boundary instead of re-inserting the slash the user just removed.
+    let formatted = digits;
+    if (digits.length >= 2 && !(isDeleting && digits.length === 2)) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    if (digits.length >= 4 && !(isDeleting && digits.length === 4)) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    }
+    setText(formatted);
+
+    if (digits.length === 0) {
+      onChange(null);
+    } else if (digits.length === 8) {
+      const parsed = parse(formatted, "MM/dd/yyyy", new Date());
+      if (isValid(parsed)) onChange(parsed);
+    }
+    // Partial (1-7 digits) → keep form value stable; wait for a full date.
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        id="hireDate"
+        type="text"
+        inputMode="numeric"
+        placeholder="MM/DD/YYYY"
+        value={text}
+        onChange={handleTextChange}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="outline" size="icon" className="shrink-0">
+            <CalendarIcon className="size-4" />
+            <span className="sr-only">Open calendar</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            captionLayout="dropdown"
+            selected={value ?? undefined}
+            onSelect={(d) => {
+              onChange(d ?? null);
+              setOpen(false);
+            }}
+            startMonth={new Date(1990, 0)}
+            endMonth={new Date()}
+          />
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="shrink-0"
+          onClick={() => onChange(null)}
+        >
+          <X className="size-4" />
+          <span className="sr-only">Clear hire date</span>
+        </Button>
+      )}
+    </div>
   );
 }

@@ -15,7 +15,10 @@ const managerSelect = {
 
 const personInclude = {
   manager: { select: managerSelect },
-  directReports: { select: { ...managerSelect, email: true } },
+  directReports: {
+    where: { leftAt: null },
+    select: { ...managerSelect, email: true },
+  },
   department: true,
   title: { include: { department: true } },
   projectMemberships: {
