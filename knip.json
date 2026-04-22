@@ -28,7 +28,8 @@
       "project": ["src/**/*.ts"]
     },
     "packages/db": {
-      "project": ["src/**/*.ts"]
+      "entry": ["scripts/**/*.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts"]
     },
     "packages/auth": {
       "entry": ["src/adapters/**/*.{ts,tsx}"],

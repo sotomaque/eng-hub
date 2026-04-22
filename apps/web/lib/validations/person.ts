@@ -8,7 +8,7 @@ export const createPersonSchema = z.object({
   emailAliases: z.array(z.string().min(1)),
   githubUsername: z.string().optional().or(z.literal("")),
   gitlabUsername: z.string().optional().or(z.literal("")),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   managerId: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
   titleId: z.string().optional().or(z.literal("")),

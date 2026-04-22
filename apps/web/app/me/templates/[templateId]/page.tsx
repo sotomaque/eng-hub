@@ -1,14 +1,14 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthSession } from "@workspace/auth/client";
 import { Loader2 } from "lucide-react";
 import { notFound, useParams } from "next/navigation";
 import { TemplateForm } from "@/components/template-form";
 import { useTRPC } from "@/lib/trpc/client";
 
 export default function EditTemplatePage() {
-  const { userId } = useAuth();
+  const { userId } = useAuthSession();
   const params = useParams<{ templateId: string }>();
   const trpc = useTRPC();
   const templateQuery = useQuery(

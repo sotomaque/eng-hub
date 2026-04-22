@@ -51,14 +51,6 @@ describe("createDocumentSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  test("rejects invalid fileUrl", () => {
-    const result = createDocumentSchema.safeParse({
-      ...validInput,
-      fileUrl: "not-a-url",
-    });
-    expect(result.success).toBe(false);
-  });
-
   test("rejects empty fileName", () => {
     const result = createDocumentSchema.safeParse({
       ...validInput,

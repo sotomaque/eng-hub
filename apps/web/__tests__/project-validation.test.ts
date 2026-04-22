@@ -48,14 +48,6 @@ describe("createProjectSchema", () => {
     });
     expect(result.success).toBe(true);
   });
-
-  test("rejects invalid imageUrl (non-empty non-URL)", () => {
-    const result = createProjectSchema.safeParse({
-      name: "Project",
-      imageUrl: "bad",
-    });
-    expect(result.success).toBe(false);
-  });
 });
 
 describe("createProjectSchema — type field", () => {

@@ -77,7 +77,7 @@ const createProjectSchema = z.object({
   description: z.string().optional(),
   githubUrl: z.string().url().optional().or(z.literal("")),
   gitlabUrl: z.string().url().optional().or(z.literal("")),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   parentId: z.string().optional().or(z.literal("")),
   fundedById: z.string().optional().or(z.literal("")),
   budget: z.number().positive().nullable().optional(),

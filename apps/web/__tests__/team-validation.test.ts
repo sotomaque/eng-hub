@@ -37,14 +37,6 @@ describe("createTeamSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  test("rejects invalid imageUrl", () => {
-    const result = createTeamSchema.safeParse({
-      ...validInput,
-      imageUrl: "not-a-url",
-    });
-    expect(result.success).toBe(false);
-  });
-
   test("rejects empty name", () => {
     const result = createTeamSchema.safeParse({
       ...validInput,

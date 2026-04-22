@@ -66,14 +66,6 @@ describe("createPersonSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  test("rejects invalid imageUrl (non-empty non-URL)", () => {
-    const result = createPersonSchema.safeParse({
-      ...validInput,
-      imageUrl: "not-a-url",
-    });
-    expect(result.success).toBe(false);
-  });
-
   test("does not require departmentId (optional for person)", () => {
     const result = createPersonSchema.safeParse(validInput);
     expect(result.success).toBe(true);

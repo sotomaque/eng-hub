@@ -21,6 +21,7 @@
   "exports": {
     ".": "./src/types.ts",
     "./server": "./src/server.ts",
-    "./client": "./src/client.tsx"
+    "./client": "./src/client.tsx",
+    "./url": "./src/url.ts"
   }
 }

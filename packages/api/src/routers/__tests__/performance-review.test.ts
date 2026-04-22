@@ -7,7 +7,7 @@ const mockIsDirectManager = mock(() => Promise.resolve(false));
 const mockIsInManagementChain = mock(() => Promise.resolve(false));
 
 mock.module("../../lib/hierarchy", () => ({
-  resolveClerkPerson: mockResolveClerkPerson,
+  resolveAuthPerson: mockResolveClerkPerson,
   isDirectManager: mockIsDirectManager,
   isInManagementChain: mockIsInManagementChain,
 }));

@@ -31,7 +31,7 @@ function useUploadThingFileUpload(
   return { startUpload, isUploading };
 }
 
-const PROVIDER = process.env.NEXT_PUBLIC_STORAGE_PROVIDER ?? "uploadthing";
+const PROVIDER = process.env.NEXT_PUBLIC_STORAGE_PROVIDER ?? "supabase";
 
 /**
  * Provider-agnostic file upload hook.

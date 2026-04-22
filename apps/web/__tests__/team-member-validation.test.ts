@@ -73,14 +73,6 @@ describe("createTeamMemberSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  test("rejects invalid imageUrl (non-empty non-URL)", () => {
-    const result = createTeamMemberSchema.safeParse({
-      ...validInput,
-      imageUrl: "not-a-url",
-    });
-    expect(result.success).toBe(false);
-  });
-
   test("accepts empty teamIds array", () => {
     const result = createTeamMemberSchema.safeParse({
       ...validInput,

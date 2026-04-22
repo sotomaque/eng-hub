@@ -6,6 +6,9 @@ import { config } from "dotenv";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 config({ path: path.resolve(__dirname, ".env") });
 
+const AUTH_PROVIDER = process.env.AUTH_PROVIDER ?? "clerk";
+const isTestAuth = AUTH_PROVIDER === "test";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -20,27 +23,35 @@ export default defineConfig({
   },
 
   projects: [
-    {
-      name: "setup",
-      testMatch: /global\.setup\.ts/,
-    },
+    ...(isTestAuth
+      ? []
+      : [
+          {
+            name: "setup" as const,
+            testMatch: /global\.setup\.ts/,
+          },
+        ]),
     {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: path.join(__dirname, "playwright/.clerk/user.json"),
+        ...(isTestAuth
+          ? {}
+          : { storageState: path.join(__dirname, "playwright/.clerk/user.json") }),
       },
       testIgnore: /abac\.spec\.ts/,
-      dependencies: ["setup"],
+      ...(isTestAuth ? {} : { dependencies: ["setup"] }),
     },
     {
       name: "restricted",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: path.join(__dirname, "playwright/.clerk/user2.json"),
+        ...(isTestAuth
+          ? {}
+          : { storageState: path.join(__dirname, "playwright/.clerk/user2.json") }),
       },
       testMatch: /abac\.spec\.ts/,
-      dependencies: ["setup"],
+      ...(isTestAuth ? {} : { dependencies: ["setup"] }),
     },
   ],
 

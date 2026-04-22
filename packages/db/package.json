@@ -14,7 +14,9 @@
     "lint:types": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "~6.9.0"
+    "@prisma/client": "~6.9.0",
+    "@supabase/supabase-js": "^2.49.4",
+    "@workspace/storage": "workspace:*"
   },
   "devDependencies": {
     "@workspace/typescript-config": "workspace:*",

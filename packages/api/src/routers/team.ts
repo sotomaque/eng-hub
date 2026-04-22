@@ -26,7 +26,7 @@ export const teamRouter = createTRPCRouter({
         projectId: z.string(),
         name: z.string().min(1),
         description: z.string().optional().or(z.literal("")),
-        imageUrl: z.string().url().optional().or(z.literal("")),
+        imageUrl: z.string().optional().or(z.literal("")),
       }),
     )
     .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))
@@ -52,7 +52,7 @@ export const teamRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().min(1),
         description: z.string().optional().or(z.literal("")),
-        imageUrl: z.string().url().optional().or(z.literal("")),
+        imageUrl: z.string().optional().or(z.literal("")),
       }),
     )
     .use(requireCapability(CAPABILITIES.PROJECT_TEAM_WRITE))

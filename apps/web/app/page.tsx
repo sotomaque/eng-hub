@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AppUserButton } from "@/components/app-user-button";
 
 import { LandingHeroCard } from "@/components/landing/hero-card";
 import { LandingTerminal } from "@/components/landing/terminal";
@@ -122,7 +123,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-2">
             <SignedOut>
-              <SignInButton mode="modal">
+              <SignInButton>
                 <Button
                   size="sm"
                   className="rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10"
@@ -132,9 +133,7 @@ export default function HomePage() {
               </SignInButton>
             </SignedOut>
             <SignedIn>
-              <Button asChild size="sm" className="rounded-full">
-                <Link href="/projects">Dashboard</Link>
-              </Button>
+              <AppUserButton />
             </SignedIn>
           </div>
         </div>

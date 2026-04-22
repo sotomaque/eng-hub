@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useAuthSession } from "@workspace/auth/client";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { FileText, Plus, Trash2 } from "lucide-react";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 
 export default function TemplatesPage() {
-  const { userId } = useAuth();
+  const { userId } = useAuthSession();
   const trpc = useTRPC();
   const templatesQuery = useQuery(trpc.meetingTemplate.getAll.queryOptions());
 
