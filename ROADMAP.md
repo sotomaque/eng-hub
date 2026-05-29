@@ -115,15 +115,17 @@ UploadThing works well as a managed file upload service, but like Clerk it's a c
 
 ### Current usage
 
-UploadThing is used in two places today:
+UploadThing is used across these files today:
 
-| Route / File | Purpose |
-|---|---|
-| `apps/web/lib/uploadthing.ts` | File router — defines `imageUploader` (4 MB) and `pdfUploader` (16 MB) with auth middleware |
-| `apps/web/lib/uploadthing-components.ts` | Client helpers — `UploadButton` and `useUploadThing` hook |
-| `apps/web/app/api/uploadthing/route.ts` | Next.js API route handler (`GET`, `POST`) |
-| `apps/web/components/image-uploader.tsx` | UI component — uses `useUploadThing("imageUploader")` for avatar/image uploads |
-| `apps/web/components/performance-review-sheet.tsx` | UI component — uses upload for review attachments |
+| Route / File | Purpose | Abstracted? |
+|---|---|---|
+| `apps/web/lib/uploadthing.ts` | File router — defines `imageUploader` (4 MB) and `documentUploader` (16 MB) with auth middleware | ❌ Still UploadThing-specific |
+| `apps/web/lib/uploadthing-components.ts` | Client helpers — `UploadButton` and `useUploadThing` hook | ❌ Still UploadThing-specific |
+| `apps/web/app/api/uploadthing/route.ts` | Next.js API route handler (`GET`, `POST`) | ❌ Still UploadThing-specific |
+| `apps/web/lib/storage.tsx` | Provider factory — selects UploadThing bridge or Supabase adapter via env var | ✅ Adapter boundary |
+| `apps/web/components/image-uploader.tsx` | UI component — uses `useFileUpload("images")` for avatar/image uploads | ✅ Uses adapter |
+| `apps/web/components/performance-review-sheet.tsx` | UI component — uses `useFileUpload("documents")` for review attachments | ✅ Uses adapter |
+| `apps/web/app/api/storage/presign/route.ts` | Presign endpoint for Supabase adapter | ✅ Adapter-only |
 
 ### Recommended path: Abstract storage behind an adapter
 
@@ -131,17 +133,19 @@ Follow the same pattern as `packages/auth` — define a storage adapter interfac
 
 ```
 packages/storage/src/
-├── types.ts                        # StorageAdapter interface
-├── server.ts                       # Server entry point (dynamic adapter selection)
-├── client.tsx                      # Client entry point (hooks & components)
+├── types.ts                        # StorageAdapter interface           ✅ implemented
+├── server.ts                       # Server entry point                 ✅ implemented (re-exports Supabase)
+├── client.tsx                      # Client entry point                 ✅ implemented (re-exports Supabase)
 └── adapters/
-    ├── uploadthing/                # Current provider (cloud/managed)
-    │   ├── server.ts
-    │   └── client.tsx
-    └── supabase/                   # Self-hosted (S3-compatible)
-        ├── server.ts
-        └── client.tsx
+    ├── uploadthing/                # Current provider (cloud/managed)   🔲 not yet created
+    │   ├── server.ts               #   UploadThing file router + route
+    │   └── client.tsx              #   useUploadThing hook wrapper
+    └── supabase/                   # Self-hosted (S3-compatible)        ✅ implemented
+        ├── server.ts               #   Presigned upload URLs
+        └── client.tsx              #   useSupabaseFileUpload hook
 ```
+
+**Current gap vs. `packages/auth`:** The auth package has proper adapters for all three providers (Clerk, Supabase Auth, better-auth) inside `packages/auth/src/adapters/`. The storage package only has the Supabase adapter inside the package — the UploadThing bridge still lives in `apps/web/lib/storage.tsx` and `apps/web/lib/uploadthing*.ts` rather than in `packages/storage/src/adapters/uploadthing/`. The provider-selection factory also lives in `apps/web/lib/storage.tsx` instead of in the package entry point.
 
 ### Migration strategy
 
@@ -156,6 +160,14 @@ packages/storage/src/
    - `apps/web/components/image-uploader.tsx` — `useFileUpload("images")` (was `useUploadThing("imageUploader")`)
    - `apps/web/components/performance-review-sheet.tsx` — `useFileUpload("documents")` (was `useUploadThing("pdfUploader")`)
    - `apps/web/app/api/storage/presign/route.ts` — new presign endpoint for Supabase adapter
+
+   Still UploadThing-specific (follow-on work):
+   - `apps/web/lib/uploadthing.ts` — `createUploadthing()` file router with auth middleware; should move to `packages/storage/src/adapters/uploadthing/server.ts`
+   - `apps/web/lib/uploadthing-components.ts` — `generateReactHelpers()` / `generateUploadButton()`; should move to `packages/storage/src/adapters/uploadthing/client.tsx`
+   - `apps/web/app/api/uploadthing/route.ts` — UploadThing-specific API route; should be replaced by a generic `/api/storage/upload` route that delegates to the active adapter
+   - `apps/web/lib/storage.tsx` — provider factory + UploadThing bridge in one file; the factory should move into `packages/storage/src/client.tsx` and the UploadThing bridge into the adapter
+   - `apps/web/env.ts` — `UPLOADTHING_TOKEN` validation; should be conditional on `STORAGE_PROVIDER=uploadthing`
+   - `apps/web/proxy.ts` — UploadThing route proxy pattern
 
 4. ✅ **Implement Supabase Storage adapter** — Best fit for self-hosting since Supabase Storage is already part of the self-hosted stack:
    - Uses S3-compatible API under the hood — works with any S3 client
@@ -183,7 +195,20 @@ packages/storage/src/
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    ```
 
-7. **Supabase bucket setup** — Add SQL migration for storage buckets:
+7. 🔲 **Move UploadThing bridge into `packages/storage`** — Complete the adapter boundary so the package structure matches `packages/auth`:
+   - Create `packages/storage/src/adapters/uploadthing/server.ts` — move file router from `apps/web/lib/uploadthing.ts`
+   - Create `packages/storage/src/adapters/uploadthing/client.tsx` — move `useUploadThing` wrapper from `apps/web/lib/uploadthing-components.ts`
+   - Move provider factory from `apps/web/lib/storage.tsx` into `packages/storage/src/client.tsx`
+   - Update `packages/storage/src/server.ts` to dynamically export based on `STORAGE_PROVIDER`
+   - Delete `apps/web/lib/uploadthing.ts`, `apps/web/lib/uploadthing-components.ts`, and `apps/web/lib/storage.tsx`
+   - Update imports in `apps/web` to use `@workspace/storage/client` directly (like `@workspace/auth/client`)
+
+8. 🔲 **Add server-side storage operations to the adapter** — The current adapter only covers client-side uploads. Add server-side operations for feature parity:
+   - `deleteFile(bucket, key)` — remove uploaded files (e.g., when a person's avatar is cleared)
+   - `getSignedUrl(bucket, key, expiresIn)` — generate time-limited URLs for private files (documents bucket)
+   - `listFiles(bucket, prefix)` — list files in a bucket/folder (admin tooling)
+
+9. 🔲 **Supabase bucket setup** — Add SQL migration for storage buckets:
 
    ```sql
    -- Create buckets for file uploads
@@ -202,6 +227,29 @@ packages/storage/src/
      on storage.objects for select
      using (bucket_id = 'images');
    ```
+
+10. 🔲 **Add an S3-compatible adapter (alternative)** — For teams that want to use their own S3-compatible storage (AWS S3, MinIO, Cloudflare R2) without Supabase Storage:
+
+    ```
+    packages/storage/src/adapters/
+    ├── uploadthing/     # Cloud/managed (UploadThing)
+    ├── supabase/        # Self-hosted (Supabase Storage)
+    └── s3/              # Self-hosted (any S3-compatible provider)
+        ├── server.ts    # AWS SDK v3 presigned URLs
+        └── client.tsx   # Direct S3 upload hook
+    ```
+
+    Configured via:
+    ```env
+    STORAGE_PROVIDER=s3
+    S3_ENDPOINT=https://s3.amazonaws.com   # or MinIO/R2 endpoint
+    S3_BUCKET=eng-hub-uploads
+    S3_REGION=us-east-1
+    S3_ACCESS_KEY_ID=...
+    S3_SECRET_ACCESS_KEY=...
+    ```
+
+    This is low-priority since Supabase Storage is itself S3-compatible, but it removes the Supabase dependency for teams that only want a database + S3.
 
 ### Activating Supabase Storage
 
@@ -257,7 +305,12 @@ Repeat for each model that stores file URLs (`performanceReview.pdfUrl`, etc.).
 
 #### Step 4 — Remove UploadThing (optional cleanup)
 
-Once all URLs are backfilled, remove `UPLOADTHING_TOKEN` from Vercel and delete `apps/web/app/api/uploadthing/route.ts`.
+Once all URLs are backfilled and the UploadThing adapter bridge has been moved into `packages/storage`, remove:
+- `UPLOADTHING_TOKEN` from Vercel env vars
+- `apps/web/app/api/uploadthing/route.ts`
+- `uploadthing` and `@uploadthing/react` from `apps/web/package.json`
+- `UPLOADTHING_TOKEN` from `apps/web/env.ts`
+- UploadThing proxy pattern from `apps/web/proxy.ts`
 
 ### Why Supabase Storage over other S3 alternatives?
 
@@ -265,6 +318,7 @@ Once all URLs are backfilled, remove `UPLOADTHING_TOKEN` from Vercel and delete 
 - **RLS integration** — Access control policies live in the database, same as every other table. No separate IAM or ACL system.
 - **S3-compatible** — If teams later want to point at AWS S3, MinIO, or R2, the S3-compatible API makes it a config change.
 - **Consistent tooling** — Buckets, policies, and files are visible in Supabase Studio alongside the rest of the database.
+- **Mirrors the auth pattern** — Just as Supabase Auth replaces Clerk for self-hosted deploys, Supabase Storage replaces UploadThing. One platform, one set of credentials, one deployment.
 
 ---
 
